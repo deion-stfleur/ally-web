@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
+import SmsPhoneShowcase from "../components/SmsPhoneShowcase";
+import allyAvatar from "../assets/nav-brand.png";
 import {
   IconAndroid,
   IconApple,
@@ -20,45 +22,37 @@ function IconStar() {
   );
 }
 
-function IconTabChart() {
+function IconTabInbox() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M18 20V10M12 20V4M6 20v-6" strokeLinecap="round" />
+      <path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="m22 6-10 7L2 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function IconTabBook() {
+function IconTabCalendar() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+      <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" />
+      <path d="M16 2v4M8 2v4M3 10h18" strokeLinecap="round" />
     </svg>
   );
 }
 
-function IconTabFlask() {
+function IconTabDraft() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M9 3h6M10 9v11a2 2 0 002 2h0a2 2 0 002-2V9M8 3h8l-1 6H9L8 3z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M14 2v6h6M12 18v-6M9 15h6" strokeLinecap="round" />
     </svg>
   );
 }
 
-function IconTabRocket() {
+function IconTabSend() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3A22 22 0 0122 2c0 5-3 9-7 10l-3-3z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 12H4s0-4 2-6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconRocketKnob() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-      <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09zM12 15l-3-3a22 22 0 012-3A22 22 0 0122 2c0 5-3 9-7 10l-3-3z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 12H4s0-4 2-6" strokeLinecap="round" />
+      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -91,11 +85,134 @@ function IconSparkle() {
   );
 }
 
-const TABS = [
-  { id: "analyse", label: "Analyse", Icon: IconTabChart },
-  { id: "train", label: "Train", Icon: IconTabBook },
-  { id: "testing", label: "Testing", Icon: IconTabFlask },
-  { id: "deploy", label: "Deploy", Icon: IconTabRocket },
+/**
+ * Each tab drives a unique showcase card + progress accent so the preview matches how people use Ally.
+ */
+const SHOWCASE_TABS = [
+  {
+    id: "catchup",
+    label: "Catch up",
+    Icon: IconTabInbox,
+    accent: "#0284c7",
+    progressGradient: "linear-gradient(90deg, #38bdf8 0%, #0369a1 100%)",
+    cardTitle: "What changed while you were away",
+    floating: "Summarizing threads…",
+    steps: [
+      {
+        type: "done",
+        text: "Point Ally at a messy thread or label—she reads it like a teammate.",
+      },
+      {
+        type: "current",
+        step: 2,
+        text: "She stacks recent Gmail + Calendar context into one tight recap.",
+        chevron: true,
+      },
+      {
+        type: "todo",
+        step: 3,
+        text: "You get bullets, owners, and what can wait till Monday.",
+      },
+      {
+        type: "todo",
+        step: 4,
+        text: "Follow up in chat or SMS with the next “what about…?”",
+      },
+    ],
+  },
+  {
+    id: "prep",
+    label: "Prep",
+    Icon: IconTabCalendar,
+    accent: "#059669",
+    progressGradient: "linear-gradient(90deg, #34d399 0%, #047857 100%)",
+    cardTitle: "Walk into the room already briefed",
+    floating: "Pulling your calendar…",
+    steps: [
+      {
+        type: "done",
+        text: "Tell Ally who the meeting’s with and what you’re nervous about.",
+      },
+      {
+        type: "current",
+        step: 2,
+        text: "She pulls the invite, last thread, and any Drive doc linked to it.",
+        chevron: true,
+      },
+      {
+        type: "todo",
+        step: 3,
+        text: "You get a short brief: goals, risks, suggested questions.",
+      },
+      {
+        type: "todo",
+        step: 4,
+        text: "Ask for a tougher version—or a one-liner for Slack on the way in.",
+      },
+    ],
+  },
+  {
+    id: "draft",
+    label: "Draft",
+    Icon: IconTabDraft,
+    accent: "#7c3aed",
+    progressGradient: "linear-gradient(90deg, #a78bfa 0%, #5b21b6 100%)",
+    cardTitle: "Sound like you—not a template",
+    floating: "Drafting in your voice…",
+    steps: [
+      {
+        type: "done",
+        text: "Paste a rough idea or bullet list—no polished paragraph required.",
+      },
+      {
+        type: "current",
+        step: 2,
+        text: "Ally turns it into a Gmail draft or Google Doc in your workspace.",
+        chevron: true,
+      },
+      {
+        type: "todo",
+        step: 3,
+        text: "Tune tone (warmer, shorter, more direct) in the same thread.",
+      },
+      {
+        type: "todo",
+        step: 4,
+        text: "When it feels right, send—or schedule—for later in one instruction.",
+      },
+    ],
+  },
+  {
+    id: "send",
+    label: "Send",
+    Icon: IconTabSend,
+    accent: "#ea580c",
+    progressGradient: "linear-gradient(90deg, #fb923c 0%, #c2410c 100%)",
+    cardTitle: "Close the loop without another tab",
+    floating: "Scheduling send…",
+    steps: [
+      {
+        type: "done",
+        text: "Lock the final draft with Ally when you’re happy with the wording.",
+      },
+      {
+        type: "current",
+        step: 2,
+        text: "She can schedule send, set reminders, or queue a follow-up nudge.",
+        chevron: true,
+      },
+      {
+        type: "todo",
+        step: 3,
+        text: "You stay in one conversation while Gmail + Calendar update underneath.",
+      },
+      {
+        type: "todo",
+        step: 4,
+        text: "Stack the next errand—Ally keeps context from this thread.",
+      },
+    ],
+  },
 ];
 
 const INTEGRATIONS = [
@@ -111,11 +228,13 @@ const PROGRESS_TARGET = 99;
 
 export default function Landing() {
   const [activeTab, setActiveTab] = useState(0);
+  const [progressNonce, setProgressNonce] = useState(0);
   const showcaseRef = useRef(null);
   const [progressPct, setProgressPct] = useState(0);
   const [progressArmed, setProgressArmed] = useState(false);
   const [showAllyMark, setShowAllyMark] = useState(false);
   const rafRef = useRef(0);
+  const panel = SHOWCASE_TABS[activeTab];
 
   useEffect(() => {
     const el = showcaseRef.current;
@@ -134,6 +253,8 @@ export default function Landing() {
 
   useEffect(() => {
     if (!progressArmed) return undefined;
+    setProgressPct(0);
+    setShowAllyMark(false);
     const t0 = performance.now();
     const duration = 2000;
     let cancelled = false;
@@ -154,7 +275,14 @@ export default function Landing() {
       cancelled = true;
       cancelAnimationFrame(rafRef.current);
     };
-  }, [progressArmed]);
+  }, [progressArmed, progressNonce]);
+
+  function handleTabClick(index) {
+    setActiveTab(index);
+    setProgressPct(0);
+    setShowAllyMark(false);
+    setProgressNonce((n) => n + 1);
+  }
 
   return (
     <div className="alm">
@@ -167,21 +295,21 @@ export default function Landing() {
             Works with the tools you already use
           </div>
           <h1 className="alm-hero__title">
-            <strong>Message Ally. Check things off your list.</strong>{" "}
-            <span>Gmail, Calendar, Drive—and more—in one conversation.</span>
+            <strong>Text Ally. Your Google apps answer.</strong>{" "}
+            <span>Gmail, Calendar, Sheets, Drive—one thread.</span>
           </h1>
           <p className="alm-hero__lead">
-            Sign in with Google, then chat or text a plain request: summarize a thread,
-            prep for a meeting, find a file—whatever you need next, without tab sprawl.
+            Sign in with Google. Ask in plain language—Ally’s tied to your inbox, calendar,
+            Sheets, and Drive so you skip the tab hunt.
           </p>
           <Link to="/login" className="alm-hero__cta">
             Start free trial
           </Link>
         </section>
 
-        <div className="alm-tabs">
-          <div className="alm-tabs__track" role="tablist" aria-label="Product areas">
-            {TABS.map((tab, i) => {
+        <div className="alm-tabs" style={{ "--tab-accent": panel.accent }}>
+          <div className="alm-tabs__track" role="tablist" aria-label="How you use Ally">
+            {SHOWCASE_TABS.map((tab, i) => {
               const Icon = tab.Icon;
               return (
                 <button
@@ -190,7 +318,7 @@ export default function Landing() {
                   role="tab"
                   aria-selected={i === activeTab}
                   className={`alm-tabs__btn${i === activeTab ? " is-active" : ""}`}
-                  onClick={() => setActiveTab(i)}
+                  onClick={() => handleTabClick(i)}
                 >
                   <Icon />
                   {tab.label}
@@ -204,26 +332,33 @@ export default function Landing() {
           ref={showcaseRef}
           className="alm-showcase"
           aria-label="Product preview"
+          style={{ "--showcase-accent": panel.accent }}
         >
           <div className="alm-showcase__bg" />
           <div className="alm-showcase__overlay" />
           <div className="alm-showcase__content">
             <div className="alm-card">
-              <h2 className="alm-card__title">Your day in a few messages</h2>
+              <h2 className="alm-card__title">{panel.cardTitle}</h2>
               <div className="alm-progress">
                 <div className="alm-progress__wrap">
                   <div className="alm-progress__track">
                     <div
                       className="alm-progress__fill"
-                      style={{ width: `${progressPct}%` }}
+                      style={{
+                        width: `${progressPct}%`,
+                        background: panel.progressGradient,
+                      }}
                     />
                   </div>
                   <div
                     className={`alm-progress__tip${progressArmed ? " is-on" : ""}`}
-                    style={{ left: `${Math.max(progressPct, 1)}%` }}
+                    style={{
+                      left: `${Math.max(progressPct, 1)}%`,
+                      borderColor: panel.accent,
+                    }}
                     aria-hidden
                   >
-                    <IconRocketKnob />
+                    <img src={allyAvatar} alt="" className="alm-progress__tip-avatar" width={40} height={40} />
                   </div>
                 </div>
                 <div className="alm-progress__meta">
@@ -237,35 +372,42 @@ export default function Landing() {
                 </div>
               </div>
               <ul className="alm-checklist">
-                <li>
-                  <IconCheckCircle />
-                  Text Ally something simple (&ldquo;Summarize my last thread&rdquo;)
-                </li>
-                <li>
-                  <span className="alm-step" aria-hidden>
-                    2
-                  </span>
-                  Ally pulls Gmail &amp; Calendar context
-                  <IconChevRightSm />
-                </li>
-                <li className="is-muted">
-                  <span className="alm-step" aria-hidden>
-                    3
-                  </span>
-                  Get bullets, a draft, or next steps in one reply
-                </li>
-                <li className="is-muted">
-                  <span className="alm-step" aria-hidden>
-                    4
-                  </span>
-                  Ask again for whatever&apos;s next on your list
-                </li>
+                {panel.steps.map((row, idx) => {
+                  const rowKey = `${panel.id}-${idx}`;
+                  if (row.type === "done") {
+                    return (
+                      <li key={rowKey}>
+                        <IconCheckCircle />
+                        {row.text}
+                      </li>
+                    );
+                  }
+                  if (row.type === "current") {
+                    return (
+                      <li key={rowKey}>
+                        <span className="alm-step" aria-hidden>
+                          {row.step}
+                        </span>
+                        {row.text}
+                        {row.chevron ? <IconChevRightSm /> : null}
+                      </li>
+                    );
+                  }
+                  return (
+                    <li key={rowKey} className="is-muted">
+                      <span className="alm-step" aria-hidden>
+                        {row.step}
+                      </span>
+                      {row.text}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
           <div className="alm-floating">
             <IconSparkle />
-            Drafting…
+            {panel.floating}
           </div>
         </section>
 
@@ -282,6 +424,8 @@ export default function Landing() {
             ))}
           </div>
         </footer>
+
+        <SmsPhoneShowcase />
       </main>
       <MarketingFooter />
     </div>

@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
 from db.models import SendblueInboundDedupe, User
+from services.phone_e164 import normalize_e164
 from services.chat_persist import (
     append_pair,
     create_conversation,
@@ -44,20 +45,6 @@ def sendblue_missing_env() -> list[str]:
     if not settings.sendblue_owner_email:
         missing.append("SENDBLUE_OWNER_EMAIL")
     return missing
-
-
-def _normalize_e164(raw: str) -> str:
-    s = (raw or "").strip()
-    digits = "".join(c for c in s if c.isdigit())
-    if not digits:
-        return ""
-    if s.strip().startswith("+"):
-        return "+" + digits
-    if len(digits) == 10:
-        return "+1" + digits
-    if len(digits) == 11 and digits.startswith("1"):
-        return "+" + digits
-    return "+" + digits
 
 
 def _verify_webhook_secret(request: Request) -> None:
@@ -103,6 +90,44 @@ def _send_message_sync(*, content: str, to_number: str) -> None:
         from_number=settings.sendblue_from_number or "",
         number=to_number,
     )
+
+
+def sendblue_outbound_configured() -> bool:
+    """True when the Sendblue SDK can send SMS (webhook-only env vars not required)."""
+    return bool(
+        settings.sendblue_api_key
+        and settings.sendblue_api_secret
+        and (settings.sendblue_from_number or "").strip()
+    )
+
+
+async def send_sendblue_text_async(*, to_number: str, content: str) -> None:
+    """Best-effort outbound SMS; no-ops if not configured; logs failures."""
+    to_number = (to_number or "").strip()
+    content = (content or "").strip()
+    if not to_number or not content:
+        return
+    if not sendblue_outbound_configured():
+        logger.debug("sendblue outbound skipped: missing API key, secret, or from number")
+        return
+    plain = _sms_plain(content, max_len=480)
+    try:
+        await asyncio.to_thread(
+            _send_message_sync,
+            content=plain,
+            to_number=to_number,
+        )
+    except Exception:
+        logger.exception("sendblue outbound failed to=%s", to_number)
+
+
+async def send_phone_saved_welcome_sms(*, to_e164: str) -> None:
+    """Welcome text after the user saves `phone_e164` in the web app."""
+    msg = (
+        "Ally here — your number is saved. Text this line anytime; "
+        "it stays linked to the same account as the web app."
+    )
+    await send_sendblue_text_async(to_number=to_e164, content=msg)
 
 
 async def _resolve_owner_user(db: AsyncSession) -> User | None:
@@ -170,8 +195,8 @@ async def process_sendblue_inbound(
         return
 
     caller = str(payload.get("from_number") or payload.get("number") or "").strip()
-    allow = _normalize_e164(settings.sendblue_allowed_e164 or "")
-    if _normalize_e164(caller) != allow:
+    allow = normalize_e164(settings.sendblue_allowed_e164 or "")
+    if normalize_e164(caller) != allow:
         logger.warning("sendblue rejected caller=%s expected=%s", caller, allow)
         return
 

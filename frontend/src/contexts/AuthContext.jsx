@@ -90,6 +90,16 @@ export function AuthProvider({ children }) {
 
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
+  const refreshUser = useCallback(async () => {
+    if (!sessionToken) {
+      setUser(null);
+      return null;
+    }
+    const { data } = await api.get("/api/auth/me");
+    setUser(data);
+    return data;
+  }, [sessionToken]);
+
   const login = useCallback(async () => {
     setAuthError(null);
     const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim();
@@ -113,10 +123,14 @@ export function AuthProvider({ children }) {
         fn();
       };
 
+      const redirectUri =
+        typeof window !== "undefined" ? window.location.origin : "";
+
       const client = window.google.accounts.oauth2.initCodeClient({
         client_id: clientId,
         scope: SCOPES,
         ux_mode: "popup",
+        redirect_uri: redirectUri,
         select_account: true,
         error_callback: () => {
           finish(() => {
@@ -142,7 +156,7 @@ export function AuthProvider({ children }) {
           try {
             const { data } = await api.post("/api/auth/google", {
               code: resp.code,
-              redirect_uri: "postmessage",
+              redirect_uri: redirectUri,
             });
             const token = data.access_token;
             setAuthHeader(token);
@@ -154,8 +168,7 @@ export function AuthProvider({ children }) {
             }
             setSessionToken(token);
             try {
-              const me = await api.get("/api/auth/me");
-              setUser(me.data);
+              await refreshUser();
             } catch (meErr) {
               try {
                 sessionStorage.removeItem(OPEN_HOME_AFTER_AUTH_KEY);
@@ -183,7 +196,7 @@ export function AuthProvider({ children }) {
       });
       client.requestCode();
     });
-  }, []);
+  }, [refreshUser]);
 
   const logout = useCallback(async () => {
     try {
@@ -214,10 +227,11 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(sessionToken),
       authError,
       clearAuthError,
+      refreshUser,
       login,
       logout,
     }),
-    [sessionToken, user, authError, clearAuthError, login, logout]
+    [sessionToken, user, authError, clearAuthError, refreshUser, login, logout]
   );
 
   return (

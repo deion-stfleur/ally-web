@@ -1,5 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ChatSearchModal from "../components/ChatSearchModal";
+import PhonePromptModal from "../components/PhonePromptModal";
 import { useNavigate } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
 import ChatLanding from "../components/ChatLanding";
@@ -12,11 +13,22 @@ import { useAuth } from "../hooks/useAuth";
 import { useChat } from "../hooks/useChat";
 import { newClientTodoId, useUserTodos } from "../hooks/useUserTodos";
 
+const PHONE_PROMPT_DISMISS_KEY = "ally_chat_phone_prompt_dismissed";
+
+function localCalendarDateKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export default function Chat() {
   const navigate = useNavigate();
-  const { user, sessionToken, logout } = useAuth();
+  const { user, sessionToken, logout, refreshUser } = useAuth();
   const [contextOpen, setContextOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [phonePromptOpen, setPhonePromptOpen] = useState(false);
   const {
     todos: railTodos,
     setTodos: setRailTodos,
@@ -38,6 +50,30 @@ export default function Chat() {
     sendError,
     loadConversation,
   } = useChat({ sessionToken });
+
+  useEffect(() => {
+    if (!sessionToken || !user) return;
+    if (user.phone_e164) return;
+    let dismissed = null;
+    try {
+      dismissed = window.localStorage.getItem(PHONE_PROMPT_DISMISS_KEY);
+    } catch {
+      /* ignore */
+    }
+    if (dismissed === localCalendarDateKey()) return;
+    setPhonePromptOpen(true);
+  }, [sessionToken, user]);
+
+  const dismissPhonePrompt = useCallback((opts) => {
+    if (!opts?.saved) {
+      try {
+        window.localStorage.setItem(PHONE_PROMPT_DISMISS_KEY, localCalendarDateKey());
+      } catch {
+        /* ignore */
+      }
+    }
+    setPhonePromptOpen(false);
+  }, []);
 
   const sendFromComposer = useCallback(
     (text) => {
@@ -67,6 +103,11 @@ export default function Chat() {
     <div
       className={`flex h-full min-h-0 text-slate-900 ${showChatChrome ? "bg-[#F9FAFB]" : "bg-sky-100/40"}`}
     >
+      <PhonePromptModal
+        open={phonePromptOpen}
+        onDismiss={dismissPhonePrompt}
+        refreshUser={refreshUser}
+      />
       <ChatRail
         user={user}
         onLogout={onLogoutClick}

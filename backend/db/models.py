@@ -30,6 +30,7 @@ class User(Base):
         Text, nullable=True
     )
     google_scopes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    phone_e164: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -70,10 +70,11 @@ export default function Login() {
               </p>
             )}
             <p className="alm-login-hint">
-              In Google Cloud Console, add this app&apos;s origin to{" "}
-              <strong>Authorized JavaScript origins</strong> and add{" "}
-              <strong>postmessage</strong> under <strong>Authorized redirect URIs</strong>{" "}
-              for the OAuth web client.
+              In Google Cloud Console, add this app&apos;s origin under{" "}
+              <strong>Authorized JavaScript origins</strong> and the same{" "}
+              <strong>origin</strong> (no path) under <strong>Authorized redirect URIs</strong>{" "}
+              for the OAuth web client—e.g. your Netlify URL and{" "}
+              <code className="text-[11px]">http://localhost:3000</code>.
             </p>
           </div>
         </div>

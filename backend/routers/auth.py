@@ -3,16 +3,30 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from jose import jwt
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
-from deps import get_current_session, get_db_optional
-from models.schemas import AuthTokenResponse, GoogleAuthRequest, UserMeResponse
+from db.models import User
+from deps import get_current_session, get_db, get_db_optional
+from models.schemas import (
+    AuthTokenResponse,
+    GoogleAuthRequest,
+    UpdatePhoneRequest,
+    UserMeResponse,
+)
 from services import google_auth as google_auth_service
-from services.chat_persist import google_sub_from_userinfo, upsert_app_user
+from services.chat_persist import (
+    google_sub_from_userinfo,
+    resolve_db_user_id,
+    upsert_app_user,
+)
 from services.google_token_crypto import encrypt_refresh_token
+from services.phone_e164 import normalize_e164
+from services.sendblue_webhook_service import send_phone_saved_welcome_sms
 from services.session_store import UserSession, delete_session, save_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -90,11 +104,69 @@ async def auth_google(
 
 
 @router.get("/me", response_model=UserMeResponse)
-async def auth_me(session: UserSession = Depends(get_current_session)) -> UserMeResponse:
+async def auth_me(
+    session: UserSession = Depends(get_current_session),
+    db: AsyncSession | None = Depends(get_db_optional),
+) -> UserMeResponse:
+    phone_e164: str | None = None
+    if db is not None:
+        user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
+        if user_id is not None:
+            r = await db.execute(select(User.phone_e164).where(User.id == user_id))
+            phone_e164 = r.scalar_one_or_none()
     return UserMeResponse(
         email=session.email,
         name=session.name,
         picture=session.picture,
+        phone_e164=phone_e164,
+    )
+
+
+@router.patch("/me/phone", response_model=UserMeResponse)
+async def auth_update_phone(
+    body: UpdatePhoneRequest,
+    background_tasks: BackgroundTasks,
+    session: UserSession = Depends(get_current_session),
+    db: AsyncSession = Depends(get_db),
+) -> UserMeResponse:
+    normalized = normalize_e164(body.phone)
+    if not normalized or len(normalized) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Enter a valid phone number with country code (e.g. +15551234567).",
+        )
+    user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User profile not found; sign in again from the web app.",
+        )
+    r = await db.execute(select(User).where(User.id == user_id))
+    row = r.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+    previous_phone = row.phone_e164
+    row.phone_e164 = normalized
+    row.updated_at = datetime.now(timezone.utc)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That phone number is already linked to another account.",
+        ) from None
+    await db.refresh(row)
+    if previous_phone != normalized:
+        background_tasks.add_task(send_phone_saved_welcome_sms, to_e164=normalized)
+    return UserMeResponse(
+        email=session.email,
+        name=session.name,
+        picture=session.picture,
+        phone_e164=row.phone_e164,
     )
 
 

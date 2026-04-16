@@ -27,6 +27,13 @@ class UserMeResponse(BaseModel):
     email: str | None = None
     name: str | None = None
     picture: str | None = None
+    phone_e164: str | None = None
+
+
+class UpdatePhoneRequest(BaseModel):
+    """Digits or +E.164; server normalizes to E.164."""
+
+    phone: str = Field(..., min_length=7, max_length=32)
 
 
 class ChatMessageItem(BaseModel):
