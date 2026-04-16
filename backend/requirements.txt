@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+anthropic
+google-auth
+google-auth-oauthlib
+google-api-python-client
+httpx
+pydantic
+python-jose[cryptography]
+sqlalchemy[asyncio]>=2.0
+asyncpg
+alembic
+psycopg[binary]>=3.1
+cryptography
+sendblue>=1.9

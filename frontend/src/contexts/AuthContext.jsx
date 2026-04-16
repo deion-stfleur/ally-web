@@ -1,0 +1,234 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { api, setAuthHeader } from "../api/client";
+import { OPEN_HOME_AFTER_AUTH_KEY } from "../hooks/useChat";
+
+const AuthContext = createContext(null);
+
+/** Persist JWT so refresh keeps you signed in (while the server session still exists). */
+const SESSION_TOKEN_KEY = "ally_session_token";
+
+const SCOPES = [
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/drive.file",
+  "https://www.googleapis.com/auth/documents",
+  "https://www.googleapis.com/auth/spreadsheets",
+  "https://www.googleapis.com/auth/presentations",
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/gmail.modify",
+].join(" ");
+
+function loadGsiScript() {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (window.google?.accounts?.oauth2) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://accounts.google.com/gsi/client";
+    s.async = true;
+    s.defer = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Failed to load Google Sign-In script"));
+    document.head.appendChild(s);
+  });
+}
+
+function formatApiError(err) {
+  const d = err.response?.data?.detail;
+  if (typeof d === "string") return d;
+  if (Array.isArray(d)) return d.map((x) => x.msg ?? JSON.stringify(x)).join("; ");
+  if (d && typeof d === "object") return JSON.stringify(d);
+  return err.message || "Request failed";
+}
+
+function readStoredSessionToken() {
+  if (typeof window === "undefined") return null;
+  const t = window.localStorage.getItem(SESSION_TOKEN_KEY);
+  return t && t.trim() ? t.trim() : null;
+}
+
+export function AuthProvider({ children }) {
+  const [sessionToken, setSessionToken] = useState(() => {
+    const t = readStoredSessionToken();
+    if (t) setAuthHeader(t);
+    return t;
+  });
+  const [user, setUser] = useState(null);
+  const [authError, setAuthError] = useState(null);
+
+  useEffect(() => {
+    if (!sessionToken) {
+      setUser(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get("/api/auth/me")
+      .then((res) => {
+        if (!cancelled) setUser(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuthHeader(null);
+          setSessionToken(null);
+          window.localStorage.removeItem(SESSION_TOKEN_KEY);
+          setUser(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionToken]);
+
+  const clearAuthError = useCallback(() => setAuthError(null), []);
+
+  const login = useCallback(async () => {
+    setAuthError(null);
+    const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim();
+    if (!clientId) {
+      const msg = "Missing REACT_APP_GOOGLE_CLIENT_ID in .env.local";
+      setAuthError(msg);
+      throw new Error(msg);
+    }
+    await loadGsiScript();
+    if (!window.google?.accounts?.oauth2?.initCodeClient) {
+      const msg = "Google OAuth client API not available";
+      setAuthError(msg);
+      throw new Error(msg);
+    }
+
+    await new Promise((resolve, reject) => {
+      let settled = false;
+      const finish = (fn) => {
+        if (settled) return;
+        settled = true;
+        fn();
+      };
+
+      const client = window.google.accounts.oauth2.initCodeClient({
+        client_id: clientId,
+        scope: SCOPES,
+        ux_mode: "popup",
+        select_account: true,
+        error_callback: () => {
+          finish(() => {
+            const msg = "Google sign-in was cancelled or failed";
+            setAuthError(msg);
+            reject(new Error(msg));
+          });
+        },
+        callback: async (resp) => {
+          if (resp.error) {
+            const msg =
+              resp.error_description || resp.error || "Google sign-in error";
+            setAuthError(msg);
+            finish(() => reject(new Error(msg)));
+            return;
+          }
+          if (!resp.code) {
+            const msg = "No authorization code returned";
+            setAuthError(msg);
+            finish(() => reject(new Error(msg)));
+            return;
+          }
+          try {
+            const { data } = await api.post("/api/auth/google", {
+              code: resp.code,
+              redirect_uri: "postmessage",
+            });
+            const token = data.access_token;
+            setAuthHeader(token);
+            window.localStorage.setItem(SESSION_TOKEN_KEY, token);
+            try {
+              sessionStorage.setItem(OPEN_HOME_AFTER_AUTH_KEY, token);
+            } catch {
+              /* ignore */
+            }
+            setSessionToken(token);
+            try {
+              const me = await api.get("/api/auth/me");
+              setUser(me.data);
+            } catch (meErr) {
+              try {
+                sessionStorage.removeItem(OPEN_HOME_AFTER_AUTH_KEY);
+              } catch {
+                /* ignore */
+              }
+              window.localStorage.removeItem(SESSION_TOKEN_KEY);
+              setAuthError(
+                `Signed in, but loading your profile failed: ${formatApiError(meErr)}`
+              );
+              finish(() => reject(meErr));
+              return;
+            }
+            finish(() => resolve());
+          } catch (e) {
+            const msg = formatApiError(e);
+            setAuthError(msg);
+            setAuthHeader(null);
+            window.localStorage.removeItem(SESSION_TOKEN_KEY);
+            setSessionToken(null);
+            setUser(null);
+            finish(() => reject(e));
+          }
+        },
+      });
+      client.requestCode();
+    });
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      if (sessionToken) {
+        await api.post("/api/auth/logout");
+      }
+    } catch {
+      // Clear local session even if server fails
+    } finally {
+      setAuthHeader(null);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(SESSION_TOKEN_KEY);
+        try {
+          sessionStorage.removeItem(OPEN_HOME_AFTER_AUTH_KEY);
+        } catch {
+          /* ignore */
+        }
+      }
+      setSessionToken(null);
+      setUser(null);
+    }
+  }, [sessionToken]);
+
+  const value = useMemo(
+    () => ({
+      sessionToken,
+      user,
+      isAuthenticated: Boolean(sessionToken),
+      authError,
+      clearAuthError,
+      login,
+      logout,
+    }),
+    [sessionToken, user, authError, clearAuthError, login, logout]
+  );
+
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return ctx;
+}

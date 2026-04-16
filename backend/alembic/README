@@ -1,0 +1,3 @@
+Run from the backend directory with DATABASE_URL set:
+
+  alembic upgrade head

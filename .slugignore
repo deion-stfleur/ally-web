@@ -1,0 +1,8 @@
+# Keep Heroku slug small (500 MB cap). API dyno does not need the frontend bundle.
+frontend/node_modules
+frontend/build
+backend/venv
+.git
+**/__pycache__
+*.pyc
+.DS_Store

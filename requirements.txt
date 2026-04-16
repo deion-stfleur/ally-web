@@ -1,0 +1,2 @@
+# Heroku (and other hosts) install from repo root; backend pins real versions.
+-r backend/requirements.txt

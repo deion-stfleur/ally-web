@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.mt-8.flex.flex-wrap.items-center.justify-center.gap-2 {
+  display: none;
+}
+
+button.rounded-lg.p-2.text-slate-500.transition.hover\:bg-slate-100.hover\:text-slate-800.disabled\:opacity-40 {
+  display: none;
+}
+
+button.rounded-lg.p-2.text-slate-300 {
+  display: none;
+}
+
+aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/90.bg-white.py-4 {
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .xl\:text-7xl {
+      font-size: 6.5rem !important;
+      line-height: 1;
+      text-align: center;
+      max-width: 500px !important;
+      margin: auto !important;
+      font-weight: 100 !important;
+      font-style: oblique !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:items-end {
+      align-items: center !important;
+  }
+}
+
+.rounded-3xl.border.border-sky-200\/60.bg-sky-100\/35.p-4.shadow-\[0_24px_50px_-20px_rgba\(15\,23\,42\,0\.2\)\].backdrop-blur-xl {
+  max-width: 600px;
+  margin: auto;
+}

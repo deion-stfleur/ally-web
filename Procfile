@@ -1,0 +1,3 @@
+release: cd backend && alembic upgrade head
+web: cd backend && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+worker: cd backend && python worker.py
