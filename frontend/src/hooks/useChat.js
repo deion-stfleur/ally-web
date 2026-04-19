@@ -41,6 +41,8 @@ export function useChat(opts = {}) {
   const [pendingEmail, setPendingEmail] = useState(null);
   const [emailSending, setEmailSending] = useState(false);
   const [sendError, setSendError] = useState(null);
+  /** @type {React.MutableRefObject<{ media_type: string, data_base64: string }[]>} */
+  const pendingReceiptImagesRef = useRef([]);
 
   const priorSessionTokenRef = useRef(null);
   /**
@@ -192,6 +194,17 @@ export function useChat(opts = {}) {
     }
   }, [messages, sessionToken]);
 
+  const addReceiptImages = useCallback((items) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    const cur = pendingReceiptImagesRef.current;
+    const next = [...cur, ...items].slice(0, 4);
+    pendingReceiptImagesRef.current = next;
+  }, []);
+
+  const clearPendingReceiptImages = useCallback(() => {
+    pendingReceiptImagesRef.current = [];
+  }, []);
+
   const sendMessage = useCallback(async (text) => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -205,7 +218,12 @@ export function useChat(opts = {}) {
       .slice(-20)
       .map((m) => ({ role: m.role, content: m.content }));
 
-    const userMsg = { id: nextId(), role: "user", content: trimmed };
+    const imgs = pendingReceiptImagesRef.current;
+    const userDisplay =
+      imgs.length > 0
+        ? `${trimmed}\n\n[${imgs.length} receipt image(s) attached]`
+        : trimmed;
+    const userMsg = { id: nextId(), role: "user", content: userDisplay };
     const afterUser = [...prior, userMsg];
     messagesRef.current = afterUser;
     setMessages(afterUser);
@@ -213,6 +231,9 @@ export function useChat(opts = {}) {
     setStreaming(true);
     try {
       const payload = { message: trimmed, history };
+      if (imgs.length > 0) {
+        payload.images = imgs;
+      }
       if (conversationIdRef.current) {
         payload.conversation_id = conversationIdRef.current;
       }
@@ -259,6 +280,7 @@ export function useChat(opts = {}) {
         return next;
       });
     } finally {
+      pendingReceiptImagesRef.current = [];
       setStreaming(false);
     }
   }, []);
@@ -307,6 +329,7 @@ export function useChat(opts = {}) {
     setConversationId(null);
     conversationIdRef.current = null;
     messagesRef.current = [];
+    pendingReceiptImagesRef.current = [];
     setPendingEmail(null);
     setSendError(null);
     try {
@@ -322,6 +345,7 @@ export function useChat(opts = {}) {
       if (!id || !sessionToken) return;
       setSendError(null);
       setPendingEmail(null);
+      pendingReceiptImagesRef.current = [];
       try {
         const { data } = await api.get(`/api/chat/conversations/${id}`);
         const mapped = (data.messages || []).map((m) => ({
@@ -356,6 +380,8 @@ export function useChat(opts = {}) {
   return {
     messages,
     sendMessage,
+    addReceiptImages,
+    clearPendingReceiptImages,
     startNewChat,
     loadConversation,
     streaming,

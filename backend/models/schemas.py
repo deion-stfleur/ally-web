@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 from typing import Literal
 from uuid import UUID
 
+import base64
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -28,6 +30,28 @@ class UserMeResponse(BaseModel):
     name: str | None = None
     picture: str | None = None
     phone_e164: str | None = None
+    default_receipts_spreadsheet_id: str | None = None
+    default_receipts_sheet_range: str | None = None
+    receipts_confirm_before_append: bool = True
+
+
+class ReceiptSettingsPatch(BaseModel):
+    """PATCH body; omit a field to leave it unchanged."""
+
+    default_receipts_spreadsheet_id: str | None = Field(
+        default=None,
+        max_length=128,
+        description="Google Sheet ID from the spreadsheet URL; empty string clears.",
+    )
+    default_receipts_sheet_range: str | None = Field(
+        default=None,
+        max_length=256,
+        description="A1 range for append, e.g. Sheet1!A:Z",
+    )
+    receipts_confirm_before_append: bool | None = Field(
+        default=None,
+        description="If true, Ally asks before appending a receipt row.",
+    )
 
 
 class UpdatePhoneRequest(BaseModel):
@@ -41,12 +65,35 @@ class ChatMessageItem(BaseModel):
     content: str = Field(..., min_length=1)
 
 
+class ChatImagePart(BaseModel):
+    """One inline image for Claude vision (receipts, screenshots)."""
+
+    media_type: Literal["image/jpeg", "image/png", "image/gif", "image/webp"]
+    data_base64: str = Field(..., min_length=8, max_length=12_000_000)
+
+    @field_validator("data_base64")
+    @classmethod
+    def validate_image_size(cls, v: str) -> str:
+        try:
+            raw = base64.b64decode(v, validate=True)
+        except Exception as exc:
+            raise ValueError("Invalid base64 image data") from exc
+        if len(raw) > 5_500_000:
+            raise ValueError("Image too large after decode (max ~5.5MB)")
+        return v
+
+
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=32000)
     history: list[ChatMessageItem] = Field(default_factory=list, max_length=50)
     conversation_id: UUID | None = Field(
         default=None,
         description="Omit or null to start a new thread when persisting to Postgres.",
+    )
+    images: list[ChatImagePart] = Field(
+        default_factory=list,
+        max_length=4,
+        description="Optional receipt/screenshot images as base64.",
     )
 
 

@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import base64
 import logging
 import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from deps import get_current_session, get_db_optional
-from db.models import Conversation
+from db.models import Conversation, User
 from models.schemas import (
     ChatRequest,
     ChatResponse,
@@ -21,7 +23,7 @@ from models.schemas import (
     ScheduleEmailActionPayload,
     ScheduledJobResponse,
 )
-from services.claude_service import run_chat
+from services.claude_service import ReceiptDefaults, run_chat
 from services.chat_persist import (
     append_pair,
     create_conversation,
@@ -35,6 +37,16 @@ from services.schedule_service import create_send_gmail_job
 from services.session_store import UserSession
 
 logger = logging.getLogger(__name__)
+
+
+def _receipt_defaults_from_user(row: User | None) -> ReceiptDefaults | None:
+    if row is None:
+        return None
+    return ReceiptDefaults(
+        spreadsheet_id=(row.default_receipts_spreadsheet_id or "").strip() or None,
+        sheet_range=(row.default_receipts_sheet_range or "").strip() or "Sheet1!A:Z",
+        confirm_before_append=bool(row.receipts_confirm_before_append),
+    )
 
 
 def _parse_run_at_iso(s: str) -> datetime:
@@ -164,11 +176,39 @@ async def chat_endpoint(
     db: AsyncSession | None = Depends(get_db_optional),
 ) -> ChatResponse:
     history = [m.model_dump() for m in body.history]
+    image_parts: list[tuple[str, str]] | None = None
+    if body.images:
+        image_parts = [(img.media_type, img.data_base64) for img in body.images]
+        for _mt, b64 in image_parts:
+            try:
+                raw = base64.b64decode(b64, validate=True)
+            except Exception as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid image data.",
+                ) from exc
+            if len(raw) > 5_500_000:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Image too large.",
+                )
+
+    receipt_row: User | None = None
+    if db is not None:
+        user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
+        if user_id is not None:
+            r_user = await db.execute(select(User).where(User.id == user_id))
+            receipt_row = r_user.scalar_one_or_none()
+
+    rd = _receipt_defaults_from_user(receipt_row)
+
     try:
         reply, action_dict = await run_chat(
             body.message,
             history,
             session.credentials,
+            receipt_defaults=rd,
+            image_parts=image_parts,
         )
     except Exception as exc:
         raise HTTPException(
@@ -215,10 +255,15 @@ async def chat_endpoint(
                         user_id=user_id,
                         title=_title_from_message(body.message),
                     )
+                user_text_for_log = body.message
+                if body.images:
+                    user_text_for_log = (
+                        f"{body.message}\n\n[User attached {len(body.images)} image(s).]"
+                    )
                 await append_pair(
                     db,
                     conversation=conv,
-                    user_text=body.message,
+                    user_text=user_text_for_log,
                     assistant_text=text,
                 )
                 if schedule_payload is not None:

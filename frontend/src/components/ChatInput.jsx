@@ -1,13 +1,30 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import FileChip from "./FileChip";
+
+const ALLOWED_IMG = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+
+function readFileBase64(file) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const s = String(fr.result || "");
+      const i = s.indexOf(",");
+      resolve(i >= 0 ? s.slice(i + 1) : s);
+    };
+    fr.onerror = () => reject(new Error("read failed"));
+    fr.readAsDataURL(file);
+  });
+}
 
 export default function ChatInput({
   onSend,
   disabled,
   attachIds,
   onRemoveAttach,
+  onReceiptImages,
 }) {
   const [text, setText] = useState("");
+  const receiptFileRef = useRef(null);
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -69,10 +86,45 @@ export default function ChatInput({
               </select>
             </label>
             <div className="flex items-center gap-1">
+              <input
+                ref={receiptFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                multiple
+                className="sr-only"
+                aria-hidden
+                tabIndex={-1}
+                onChange={async (e) => {
+                  const input = e.target;
+                  const files = input.files;
+                  if (!files?.length || !onReceiptImages || disabled) {
+                    input.value = "";
+                    return;
+                  }
+                  const items = [];
+                  for (const f of files) {
+                    if (!ALLOWED_IMG.has(f.type)) continue;
+                    try {
+                      const data_base64 = await readFileBase64(f);
+                      items.push({ media_type: f.type, data_base64 });
+                    } catch {
+                      /* skip */
+                    }
+                    if (items.length >= 4) break;
+                  }
+                  if (items.length) onReceiptImages(items);
+                  input.value = "";
+                }}
+              />
               <button
                 type="button"
-                disabled={disabled}
-                title="Attach (use Context panel)"
+                disabled={disabled || !onReceiptImages}
+                onClick={() => receiptFileRef.current?.click()}
+                title={
+                  onReceiptImages
+                    ? "Attach receipt image (max 4, sent with next message)"
+                    : "Receipt images unavailable"
+                }
                 className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-40"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

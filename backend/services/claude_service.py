@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from typing import Any
 
 from anthropic import AsyncAnthropic
@@ -18,6 +19,88 @@ from services import (
 )
 
 ACTION_BLOCK = re.compile(r"<action>\s*([\s\S]*?)\s*</action>", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class ReceiptDefaults:
+    """Per-user defaults for receipt → Google Sheets (and optional Drive doc)."""
+
+    spreadsheet_id: str | None
+    sheet_range: str
+    confirm_before_append: bool
+
+
+def _receipt_system_suffix(rd: ReceiptDefaults) -> str:
+    cfg = {
+        "default_spreadsheet_id": rd.spreadsheet_id,
+        "append_range_a1": rd.sheet_range,
+        "confirm_before_append": rd.confirm_before_append,
+    }
+    return (
+        "\n\n## Receipts & expense rows\n"
+        "When the user sends a **receipt image** or asks to log an expense from a photo:\n"
+        "1. Read merchant, date, total, currency, tax (if visible), and short notes from the image.\n"
+        "2. **Default destination is Google Sheets.** Use `append_google_sheet_rows` with "
+        "`spreadsheet_id` = default_spreadsheet_id from settings and `range_a1` = append_range_a1, "
+        "unless the user explicitly asks for a **Google Doc / Drive document** instead—in that case "
+        "use `create_google_doc` with title like `Receipt — {merchant} — {date}` and body = plain-text extraction.\n"
+        "3. Row shape: one row with values in order: **Date (ISO)**, **Merchant**, **Total**, **Currency**, **Tax**, **Notes**.\n"
+        "4. If `confirm_before_append` is true: on the **first** receipt turn, **do not** call "
+        "`append_google_sheet_rows`. Show the extracted fields and the exact row you would append, and ask the user "
+        "to reply **yes** / **add it** / **confirm** to proceed. After they confirm in a follow-up message, call "
+        "`append_google_sheet_rows` using the same settings.\n"
+        "5. If `default_spreadsheet_id` is null, ask once for a spreadsheet URL or id, or offer `create_google_sheet` "
+        "(e.g. title \"Ally Receipts\") and tell them to save that id in Ally settings.\n"
+        f"Receipt settings JSON: {json.dumps(cfg)}\n"
+    )
+
+
+def _user_message_content(
+    text: str,
+    image_parts: list[tuple[str, str]] | None,
+) -> str | list[dict[str, Any]]:
+    """Plain string, or multimodal blocks for Claude."""
+    if not image_parts:
+        return text
+    blocks: list[dict[str, Any]] = [{"type": "text", "text": text}]
+    for media_type, b64 in image_parts[:4]:
+        blocks.append(
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": media_type,
+                    "data": b64,
+                },
+            }
+        )
+    return blocks
+
+
+def _should_attach_receipt_instructions(
+    text: str,
+    image_parts: list[tuple[str, str]] | None,
+    rd: ReceiptDefaults,
+) -> bool:
+    if image_parts:
+        return True
+    t = (text or "").strip().lower()
+    if t in ("yes", "y", "ok", "confirm", "add it", "proceed", "go ahead"):
+        return rd.confirm_before_append
+    msg_l = (text or "").lower()
+    keys = (
+        "receipt",
+        "expense",
+        "invoice",
+        "refund",
+        "scan",
+        "append",
+        "spreadsheet",
+        "log this",
+        "extract",
+    )
+    return any(k in msg_l for k in keys)
+
 
 GMAIL_TOOL_NAMES = frozenset(
     {"list_gmail_threads", "search_gmail", "get_gmail_thread"}
@@ -482,21 +565,34 @@ async def run_chat(
     user_message: str,
     history: list[dict[str, str]],
     google_credentials: Credentials,
+    *,
+    receipt_defaults: ReceiptDefaults | None = None,
+    image_parts: list[tuple[str, str]] | None = None,
 ) -> tuple[str, dict[str, Any] | None]:
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
+    system = SYSTEM
+    if receipt_defaults is not None and _should_attach_receipt_instructions(
+        user_message, image_parts, receipt_defaults
+    ):
+        system = SYSTEM + _receipt_system_suffix(receipt_defaults)
     messages: list[dict[str, Any]] = []
     for h in history[-30:]:
         role, content = h.get("role"), h.get("content")
         if role in ("user", "assistant") and content:
             messages.append({"role": role, "content": content})
-    messages.append({"role": "user", "content": user_message})
+    messages.append(
+        {
+            "role": "user",
+            "content": _user_message_content(user_message, image_parts),
+        }
+    )
 
     max_rounds = 24
     for _ in range(max_rounds):
         resp = await client.messages.create(
             model=settings.anthropic_model,
             max_tokens=8192,
-            system=SYSTEM,
+            system=system,
             messages=messages,
             tools=ALL_TOOLS,
         )

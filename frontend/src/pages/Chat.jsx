@@ -39,6 +39,7 @@ export default function Chat() {
   const {
     messages,
     sendMessage,
+    addReceiptImages,
     startNewChat,
     streaming,
     attachIds,
@@ -206,11 +207,13 @@ export default function Chat() {
           onRemoveAttach={(id) =>
             setAttachIds((prev) => prev.filter((x) => x !== id))
           }
+          onReceiptImages={addReceiptImages}
         />
       </div>
       <ChatRightRail
         user={user}
         sessionToken={sessionToken}
+        refreshUser={refreshUser}
         onPickQuickRequest={sendFromComposer}
         composerBusy={streaming || emailSending}
         todos={railTodos}

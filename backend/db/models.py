@@ -55,6 +55,15 @@ class User(Base):
         cascade="all, delete-orphan",
         order_by="UserTodo.sort_order",
     )
+    default_receipts_spreadsheet_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True
+    )
+    default_receipts_sheet_range: Mapped[str | None] = mapped_column(
+        String(256), nullable=True
+    )
+    receipts_confirm_before_append: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="true", default=True
+    )
     sendblue_conversation_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("conversations.id", ondelete="SET NULL"),

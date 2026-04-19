@@ -15,6 +15,7 @@ from deps import get_current_session, get_db, get_db_optional
 from models.schemas import (
     AuthTokenResponse,
     GoogleAuthRequest,
+    ReceiptSettingsPatch,
     UpdatePhoneRequest,
     UserMeResponse,
 )
@@ -109,16 +110,27 @@ async def auth_me(
     db: AsyncSession | None = Depends(get_db_optional),
 ) -> UserMeResponse:
     phone_e164: str | None = None
+    default_receipts_spreadsheet_id: str | None = None
+    default_receipts_sheet_range: str | None = None
+    receipts_confirm_before_append = True
     if db is not None:
         user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
         if user_id is not None:
-            r = await db.execute(select(User.phone_e164).where(User.id == user_id))
-            phone_e164 = r.scalar_one_or_none()
+            r = await db.execute(select(User).where(User.id == user_id))
+            row = r.scalar_one_or_none()
+            if row is not None:
+                phone_e164 = row.phone_e164
+                default_receipts_spreadsheet_id = row.default_receipts_spreadsheet_id
+                default_receipts_sheet_range = row.default_receipts_sheet_range
+                receipts_confirm_before_append = bool(row.receipts_confirm_before_append)
     return UserMeResponse(
         email=session.email,
         name=session.name,
         picture=session.picture,
         phone_e164=phone_e164,
+        default_receipts_spreadsheet_id=default_receipts_spreadsheet_id,
+        default_receipts_sheet_range=default_receipts_sheet_range,
+        receipts_confirm_before_append=receipts_confirm_before_append,
     )
 
 
@@ -167,6 +179,57 @@ async def auth_update_phone(
         name=session.name,
         picture=session.picture,
         phone_e164=row.phone_e164,
+        default_receipts_spreadsheet_id=row.default_receipts_spreadsheet_id,
+        default_receipts_sheet_range=row.default_receipts_sheet_range,
+        receipts_confirm_before_append=bool(row.receipts_confirm_before_append),
+    )
+
+
+@router.patch("/me/receipt-settings", response_model=UserMeResponse)
+async def auth_patch_receipt_settings(
+    body: ReceiptSettingsPatch,
+    session: UserSession = Depends(get_current_session),
+    db: AsyncSession = Depends(get_db),
+) -> UserMeResponse:
+    user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User profile not found; sign in again from the web app.",
+        )
+    r = await db.execute(select(User).where(User.id == user_id))
+    row = r.scalar_one_or_none()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found.",
+        )
+    data = body.model_dump(exclude_unset=True)
+    if "default_receipts_spreadsheet_id" in data:
+        v = data["default_receipts_spreadsheet_id"]
+        row.default_receipts_spreadsheet_id = (
+            (v or "").strip() or None if v is not None else None
+        )
+    if "default_receipts_sheet_range" in data:
+        v = data["default_receipts_sheet_range"]
+        row.default_receipts_sheet_range = (
+            (v or "").strip() or None if v is not None else None
+        )
+    if "receipts_confirm_before_append" in data:
+        v = data["receipts_confirm_before_append"]
+        if v is not None:
+            row.receipts_confirm_before_append = bool(v)
+    row.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(row)
+    return UserMeResponse(
+        email=session.email,
+        name=session.name,
+        picture=session.picture,
+        phone_e164=row.phone_e164,
+        default_receipts_spreadsheet_id=row.default_receipts_spreadsheet_id,
+        default_receipts_sheet_range=row.default_receipts_sheet_range,
+        receipts_confirm_before_append=bool(row.receipts_confirm_before_append),
     )
 
 
