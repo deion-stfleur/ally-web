@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import logging
 import re
 import uuid
 from typing import Any
 
-import httpx
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from fastapi import HTTPException, Request, status
 from sqlalchemy import func, select
@@ -23,37 +21,18 @@ from services.chat_persist import (
     get_owned_conversation,
     load_conversation_messages,
 )
-from services.claude_service import ReceiptDefaults, run_chat
+from services.claude_service import run_chat
 from services.job_runner import _credentials_from_user
 
 logger = logging.getLogger(__name__)
 
-_MEDIA_MAX_BYTES = 5_500_000
 
-
-async def _fetch_sendblue_media_as_image_parts(
-    media_url: str,
-) -> list[tuple[str, str]]:
-    url = (media_url or "").strip()
-    if not url:
-        return []
-    async with httpx.AsyncClient(timeout=45.0, follow_redirects=True) as client:
-        resp = await client.get(url)
-        resp.raise_for_status()
-        body = resp.content
-        ct = (resp.headers.get("content-type") or "").split(";")[0].strip().lower()
-    if len(body) > _MEDIA_MAX_BYTES:
-        raise ValueError("media too large")
-    mt_map = {
-        "image/jpeg": "image/jpeg",
-        "image/jpg": "image/jpeg",
-        "image/png": "image/png",
-        "image/gif": "image/gif",
-        "image/webp": "image/webp",
-    }
-    media_type = mt_map.get(ct, "image/jpeg")
-    b64 = base64.standard_b64encode(body).decode("ascii")
-    return [(media_type, b64)]
+def _sendblue_message_type_normalized(v: object) -> str:
+    if v is None:
+        return ""
+    if isinstance(v, str):
+        return v.strip().lower()
+    return str(v).strip().lower()
 
 
 def sendblue_integration_ready() -> bool:
@@ -198,14 +177,18 @@ async def process_sendblue_inbound(
     _verify_webhook_secret(request)
 
     if payload.get("is_outbound") is True:
+        logger.debug("sendblue skip outbound callback")
         return
 
-    if (payload.get("message_type") or "").lower() not in ("", "message"):
-        return
-
+    # Only skip real group threads — strict allowlist ("message" only) drops some 1:1 payloads.
+    mt = _sendblue_message_type_normalized(payload.get("message_type"))
     gid = (payload.get("group_id") or "").strip()
-    if gid:
-        logger.info("sendblue skip group message group_id=%s", gid)
+    if gid or mt == "group":
+        logger.info(
+            "sendblue skip group message group_id=%s message_type=%s",
+            gid or "(empty)",
+            mt or "(empty)",
+        )
         return
 
     handle = str(payload.get("message_handle") or "").strip()
@@ -221,6 +204,11 @@ async def process_sendblue_inbound(
         content = "[User sent media only; describe or ask them to type a question.]"
 
     if not content:
+        logger.info(
+            "sendblue skip empty content status=%r message_type=%r",
+            payload.get("status"),
+            mt,
+        )
         return
 
     caller = str(payload.get("from_number") or payload.get("number") or "").strip()
@@ -269,35 +257,8 @@ async def process_sendblue_inbound(
             history.append({"role": m.role, "content": m.content})
     history = history[-20:]
 
-    image_parts: list[tuple[str, str]] | None = None
-    if media:
-        try:
-            image_parts = await _fetch_sendblue_media_as_image_parts(media)
-        except Exception:
-            logger.exception("sendblue media fetch failed url=%s", media[:120])
-            image_parts = None
-
-    line = (content or "").strip()
-    if image_parts and line.startswith("[User sent media"):
-        line = (
-            "Extract this receipt from the image. Apply Ally receipt rules "
-            "(Sheets default, confirm if configured, Drive only if I ask)."
-        )
-
-    rd = ReceiptDefaults(
-        spreadsheet_id=(user.default_receipts_spreadsheet_id or "").strip() or None,
-        sheet_range=(user.default_receipts_sheet_range or "").strip() or "Sheet1!A:Z",
-        confirm_before_append=bool(user.receipts_confirm_before_append),
-    )
-
     try:
-        reply, _action = await run_chat(
-            line,
-            history,
-            creds,
-            receipt_defaults=rd,
-            image_parts=image_parts,
-        )
+        reply, _action = await run_chat(content, history, creds)
     except Exception:
         logger.exception("sendblue Claude failed")
         reply = "Sorry — I could not complete that request. Try again in a moment."
@@ -307,13 +268,10 @@ async def process_sendblue_inbound(
     if conv is None:
         await db.rollback()
         raise RuntimeError("sendblue conversation disappeared")
-    user_log = content
-    if media:
-        user_log = f"{content}\n\n[Incoming MMS / image]"
     await append_pair(
         db,
         conversation=conv,
-        user_text=user_log,
+        user_text=content,
         assistant_text=text,
     )
     await db.commit()
