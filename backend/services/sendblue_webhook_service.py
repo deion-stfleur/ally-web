@@ -32,7 +32,24 @@ def _sendblue_message_type_normalized(v: object) -> str:
         return ""
     if isinstance(v, str):
         return v.strip().lower()
-    return str(v).strip().lower()
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return str(v).strip().lower()
+    # Arrays/objects would stringify oddly; treat as unknown (not "group").
+    logger.warning("sendblue unexpected message_type type=%s", type(v).__name__)
+    return ""
+
+
+def _sendblue_payload_str(payload: dict[str, Any], key: str) -> str:
+    """Sendblue fields are strings in docs; coerce so we never crash on `.strip()`."""
+    v = payload.get(key)
+    if v is None:
+        return ""
+    if isinstance(v, str):
+        return v.strip()
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return str(v).strip()
+    logger.warning("sendblue unexpected %s type=%s", key, type(v).__name__)
+    return ""
 
 
 def sendblue_integration_ready() -> bool:
@@ -182,7 +199,7 @@ async def process_sendblue_inbound(
 
     # Only skip real group threads — strict allowlist ("message" only) drops some 1:1 payloads.
     mt = _sendblue_message_type_normalized(payload.get("message_type"))
-    gid = (payload.get("group_id") or "").strip()
+    gid = _sendblue_payload_str(payload, "group_id")
     if gid or mt == "group":
         logger.info(
             "sendblue skip group message group_id=%s message_type=%s",

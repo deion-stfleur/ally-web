@@ -33,11 +33,18 @@ async def sendblue_receive(
     """Sendblue `receive` webhook — no JWT (optional shared secret in headers)."""
     if not sendblue_integration_ready():
         miss = sendblue_missing_env()
-        logger.warning(
-            "Sendblue POST ignored: incomplete env (missing: %s). Restart uvicorn after editing backend/.env.",
+        logger.error(
+            "Sendblue POST rejected: incomplete config (missing: %s). "
+            "Set these on Heroku Config Vars or backend/.env.",
             ", ".join(miss) if miss else "(unknown)",
         )
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "error": "sendblue_not_configured",
+                "missing": miss,
+            },
+        )
 
     try:
         payload = await request.json()
@@ -50,5 +57,15 @@ async def sendblue_receive(
     if not isinstance(payload, dict):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON")
 
-    await process_sendblue_inbound(db, request=request, payload=payload)
+    try:
+        await process_sendblue_inbound(db, request=request, payload=payload)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("sendblue inbound handler crashed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="sendblue handler error",
+        ) from None
+
     return PlainTextResponse("ok", status_code=200)
