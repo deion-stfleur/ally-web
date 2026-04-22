@@ -220,6 +220,23 @@ export function AuthProvider({ children }) {
     }
   }, [sessionToken]);
 
+  /** Permanently deletes server-side profile (DB cascades) and clears local session. */
+  const deleteAccount = useCallback(async () => {
+    if (!sessionToken) return;
+    await api.delete("/api/auth/me");
+    setAuthHeader(null);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(SESSION_TOKEN_KEY);
+      try {
+        sessionStorage.removeItem(OPEN_HOME_AFTER_AUTH_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+    setSessionToken(null);
+    setUser(null);
+  }, [sessionToken]);
+
   const value = useMemo(
     () => ({
       sessionToken,
@@ -230,8 +247,18 @@ export function AuthProvider({ children }) {
       refreshUser,
       login,
       logout,
+      deleteAccount,
     }),
-    [sessionToken, user, authError, clearAuthError, refreshUser, login, logout]
+    [
+      sessionToken,
+      user,
+      authError,
+      clearAuthError,
+      refreshUser,
+      login,
+      logout,
+      deleteAccount,
+    ]
   );
 
   return (

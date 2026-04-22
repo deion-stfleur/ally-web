@@ -570,6 +570,218 @@
   line-height: 1.2;
 }
 
+/* ----- automations carousel (full-bleed; below integrates with) ----- */
+.alm-auto {
+  /* Effective card width for flex + scroll padding (narrow viewports shrink card). */
+  --alm-auto-card-w: min(280px, calc(100vw - 32px));
+  margin-top: 56px;
+  padding: 40px 0 48px;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.alm-auto__head {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.alm-auto__title {
+  margin: 0 auto 12px;
+  text-align: center;
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--alm-black);
+  line-height: 1.15;
+}
+
+.alm-auto__sub {
+  margin: 0 auto 32px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--alm-muted);
+  max-width: 480px;
+  line-height: 1.45;
+}
+
+.alm-auto__carousel-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+}
+
+.alm-auto__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 4;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--alm-border);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  color: var(--alm-black);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.alm-auto__arrow--prev {
+  left: 12px;
+}
+
+.alm-auto__arrow--next {
+  right: 12px;
+}
+
+.alm-auto__arrow:hover:not(:disabled) {
+  transform: translateY(-50%) scale(1.05);
+}
+
+.alm-auto__arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.alm-auto__scroller {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  /* Snap disabled — infinite loop resets scrollLeft and fights snap. */
+  scroll-snap-type: none;
+  padding: 12px 0 20px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.alm-auto__scroller::-webkit-scrollbar {
+  height: 6px;
+}
+
+.alm-auto__scroller::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 99px;
+}
+
+.alm-auto__card {
+  flex: 0 0 var(--alm-auto-card-w);
+  max-width: var(--alm-auto-card-w);
+  background: var(--alm-white);
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+  padding: 20px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.alm-auto__card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.alm-auto__card-title {
+  margin: 0 0 10px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--alm-black);
+}
+
+.alm-auto__card-copy {
+  margin: 0;
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--alm-muted);
+}
+
+.alm-auto__author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  margin-bottom: 14px;
+}
+
+.alm-auto__author-avatar {
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.alm-auto__author-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--alm-black);
+}
+
+.alm-auto__verified {
+  flex-shrink: 0;
+}
+
+.alm-auto__card-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 11px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--alm-border);
+  background: #fafafa;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--alm-black);
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.alm-auto__card-cta:hover {
+  background: var(--alm-white);
+  border-color: #d4d4d4;
+}
+
+.alm-auto__footer {
+  text-align: center;
+  margin-top: 8px;
+  padding: 0 24px;
+}
+
+.alm-auto__view-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 12px 28px;
+  border-radius: 999px;
+  background: var(--alm-black);
+  color: var(--alm-white);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.alm-auto__view-all:hover {
+  opacity: 0.92;
+}
+
 /* ----- SMS showcase: copy + CSS phone (below integrations) ----- */
 .alm-sms {
   margin-top: 48px;

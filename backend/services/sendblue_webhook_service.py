@@ -194,7 +194,13 @@ async def process_sendblue_inbound(
     _verify_webhook_secret(request)
 
     if payload.get("is_outbound") is True:
-        logger.debug("sendblue skip outbound callback")
+        # Same URL often receives status updates for sends (QUEUED/SENT/etc.). Not an inbound SMS.
+        logger.info(
+            "sendblue webhook ignored (outbound/status): status=%s service=%r handle=%s",
+            payload.get("status"),
+            payload.get("service"),
+            str(payload.get("message_handle") or "")[:40],
+        )
         return
 
     # Only skip real group threads — strict allowlist ("message" only) drops some 1:1 payloads.

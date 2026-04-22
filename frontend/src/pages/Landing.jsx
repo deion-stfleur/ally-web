@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import LandingAutomations from "../components/LandingAutomations";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import SmsPhoneShowcase from "../components/SmsPhoneShowcase";
@@ -295,12 +296,10 @@ export default function Landing() {
             Works with the tools you already use
           </div>
           <h1 className="alm-hero__title">
-            <strong>Text Ally. Your Google apps answer.</strong>{" "}
-            <span>Gmail, Calendar, Sheets, Drive—one thread.</span>
+            <strong>Say hello to Ally. Your AI native assistant.</strong>{" "}
           </h1>
           <p className="alm-hero__lead">
-            Sign in with Google. Ask in plain language—Ally’s tied to your inbox, calendar,
-            Sheets, and Drive so you skip the tab hunt.
+           Get things done or find answers—right from your texts.
           </p>
           <Link to="/login" className="alm-hero__cta">
             Start free trial
@@ -424,6 +423,8 @@ export default function Landing() {
             ))}
           </div>
         </footer>
+
+        <LandingAutomations />
 
         <SmsPhoneShowcase />
       </main>

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from jose import jwt
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -231,6 +231,24 @@ async def auth_patch_receipt_settings(
         default_receipts_sheet_range=row.default_receipts_sheet_range,
         receipts_confirm_before_append=bool(row.receipts_confirm_before_append),
     )
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_me(
+    session: UserSession = Depends(get_current_session),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Remove the signed-in user row (cascades chats, todos, jobs) and invalidate the session."""
+    user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
+    if user_id is not None:
+        await db.execute(
+            update(User)
+            .where(User.id == user_id)
+            .values(sendblue_conversation_id=None)
+        )
+        await db.execute(delete(User).where(User.id == user_id))
+        await db.commit()
+    delete_session(session.id)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
