@@ -6,9 +6,10 @@ import re
 import uuid
 from typing import Any
 
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from fastapi import HTTPException, Request, status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +26,19 @@ from services.claude_service import run_chat
 from services.job_runner import _credentials_from_user
 
 logger = logging.getLogger(__name__)
+
+
+def _stripe_sms_gating_enabled() -> bool:
+    """When price + secret are set, inbound SMS requires an active Stripe subscription."""
+    return bool(
+        (settings.stripe_price_sms_monthly or "").strip()
+        and (settings.stripe_secret_key or "").strip()
+    )
+
+
+def _user_sms_plan_active(user: User) -> bool:
+    st = (user.stripe_subscription_status or "").strip().lower()
+    return st in ("active", "trialing")
 
 
 def _sendblue_message_type_normalized(v: object) -> str:
@@ -65,10 +79,6 @@ def sendblue_missing_env() -> list[str]:
         missing.append("SENDBLUE_API_SECRET or SENDBLUE_API_API_SECRET")
     if not settings.sendblue_from_number:
         missing.append("SENDBLUE_FROM_NUMBER")
-    if not settings.sendblue_allowed_e164:
-        missing.append("SENDBLUE_ALLOWED_E164")
-    if not settings.sendblue_owner_email:
-        missing.append("SENDBLUE_OWNER_EMAIL")
     return missing
 
 
@@ -149,18 +159,10 @@ async def send_sendblue_text_async(*, to_number: str, content: str) -> None:
 async def send_phone_saved_welcome_sms(*, to_e164: str) -> None:
     """Welcome text after the user saves `phone_e164` in the web app."""
     msg = (
-        "Ally here — your number is saved. Text this line anytime; "
+        "Ally here: your number is saved. Text this line anytime; "
         "it stays linked to the same account as the web app."
     )
     await send_sendblue_text_async(to_number=to_e164, content=msg)
-
-
-async def _resolve_owner_user(db: AsyncSession) -> User | None:
-    email = (settings.sendblue_owner_email or "").strip().lower()
-    if not email:
-        return None
-    r = await db.execute(select(User).where(func.lower(User.email) == email))
-    return r.scalar_one_or_none()
 
 
 async def _get_or_create_sendblue_conversation(
@@ -234,18 +236,30 @@ async def process_sendblue_inbound(
         )
         return
 
-    caller = str(payload.get("from_number") or payload.get("number") or "").strip()
-    allow = normalize_e164(settings.sendblue_allowed_e164 or "")
-    if normalize_e164(caller) != allow:
-        logger.warning("sendblue rejected caller=%s expected=%s", caller, allow)
+    caller_raw = str(payload.get("from_number") or payload.get("number") or "").strip()
+    caller = normalize_e164(caller_raw)
+    if not caller:
+        logger.warning("sendblue missing/invalid caller from_number=%r number=%r", payload.get("from_number"), payload.get("number"))
         return
 
-    user = await _resolve_owner_user(db)
-    if user is None:
-        logger.error(
-            "sendblue no user for SENDBLUE_OWNER_EMAIL=%s",
-            settings.sendblue_owner_email,
-        )
+    # Phone-first: route inbound by verified user phone.
+    r_user = await db.execute(select(User).where(User.phone_e164 == caller))
+    user = r_user.scalar_one_or_none()
+    if user is None or user.phone_verified_at is None:
+        logger.info("sendblue unknown phone=%s; prompting signup", caller)
+        if sendblue_outbound_configured():
+            try:
+                link = f"{settings.frontend_url.rstrip('/')}/login"
+                await asyncio.to_thread(
+                    _send_message_sync,
+                    content=_sms_plain(
+                        f"Welcome to Ally. Please sign up first: {link} (verify this phone), then text again.",
+                        max_len=480,
+                    ),
+                    to_number=caller,
+                )
+            except Exception:
+                logger.exception("sendblue signup prompt SMS failed")
         return
 
     try:
@@ -256,19 +270,38 @@ async def process_sendblue_inbound(
         logger.debug("sendblue duplicate message_handle=%s", handle)
         return
 
+    if _stripe_sms_gating_enabled() and not _user_sms_plan_active(user):
+        await db.commit()
+        pay_url = f"{settings.frontend_url.rstrip('/')}/pricing"
+        msg = (
+            "Ally SMS needs an active plan ($12.99/mo). Subscribe here, then text again: "
+            f"{pay_url}"
+        )
+        try:
+            await asyncio.to_thread(
+                _send_message_sync,
+                content=_sms_plain(msg, max_len=480),
+                to_number=caller,
+            )
+        except Exception:
+            logger.exception("sendblue upsell SMS failed")
+        return
+
     creds = _credentials_from_user(user)
     if creds is None:
         logger.error("sendblue user %s has no Google refresh token", user.id)
-        await db.commit()
-        await asyncio.to_thread(
-            _send_message_sync,
-            content="Sign in to Ally in the browser once so Google can connect, then text again.",
-            to_number=allow,
-        )
-        return
+        # Still allow non-Google questions (finance/web search) to get a reply.
+        creds = None
 
-    if not creds.valid:
-        creds.refresh(GoogleAuthRequest())
+    if creds is not None and not creds.valid:
+        try:
+            creds.refresh(GoogleAuthRequest())
+        except RefreshError as e:
+            # Common: user revoked access in Google Security settings, or refresh token rotated/expired.
+            logger.exception("sendblue Google refresh failed user_id=%s", user.id)
+            await db.commit()
+            # Continue without Google tools so finance/web questions still work over SMS.
+            creds = None
 
     conv_id = await _get_or_create_sendblue_conversation(db, user=user)
     _conv, prior_msgs = await load_conversation_messages(
@@ -281,10 +314,15 @@ async def process_sendblue_inbound(
     history = history[-20:]
 
     try:
-        reply, _action = await run_chat(content, history, creds)
+        reply, _action = await run_chat(
+            content,
+            history,
+            creds,
+            enable_google_tools=creds is not None,
+        )
     except Exception:
         logger.exception("sendblue Claude failed")
-        reply = "Sorry — I could not complete that request. Try again in a moment."
+        reply = "Sorry, I could not complete that request. Try again in a moment."
 
     text = (reply or "").strip() or " "
     conv = await get_owned_conversation(db, user_id=user.id, conversation_id=conv_id)
@@ -304,7 +342,7 @@ async def process_sendblue_inbound(
         await asyncio.to_thread(
             _send_message_sync,
             content=outbound,
-            to_number=allow,
+            to_number=caller,
         )
     except Exception:
         logger.exception("sendblue outbound send failed (reply was saved)")

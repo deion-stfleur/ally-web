@@ -19,6 +19,8 @@ security = HTTPBearer(auto_error=False)
 
 def _refresh_google_if_needed(session: UserSession) -> None:
     c = session.credentials
+    if c is None:
+        return
     if not c.expired:
         return
     if c.refresh_token:
@@ -67,6 +69,30 @@ async def get_current_session(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session not found",
         )
+    _refresh_google_if_needed(session)
+    return session
+
+
+async def get_current_session_optional(
+    creds: HTTPAuthorizationCredentials | None = Depends(security),
+) -> UserSession | None:
+    """Like get_current_session, but returns None when no bearer token is present."""
+    if creds is None or creds.scheme.lower() != "bearer":
+        return None
+    try:
+        payload = jwt.decode(
+            creds.credentials,
+            settings.jwt_secret,
+            algorithms=[settings.jwt_algorithm],
+        )
+    except JWTError:
+        return None
+    session_id = payload.get("sub")
+    if not session_id or not isinstance(session_id, str):
+        return None
+    session = get_session(session_id)
+    if session is None:
+        return None
     _refresh_google_if_needed(session)
     return session
 

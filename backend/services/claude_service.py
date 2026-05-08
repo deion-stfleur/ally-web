@@ -16,6 +16,7 @@ from services import (
     gmail_service,
     sheets_service,
     slides_service,
+    web_search_service,
 )
 
 ACTION_BLOCK = re.compile(r"<action>\s*([\s\S]*?)\s*</action>", re.IGNORECASE)
@@ -458,7 +459,7 @@ CALENDAR_TOOLS: list[dict[str, Any]] = [
     },
 ]
 
-ALL_TOOLS: list[dict[str, Any]] = (
+WORKSPACE_TOOLS: list[dict[str, Any]] = (
     GMAIL_TOOLS
     + DRIVE_TOOLS
     + DOCS_TOOLS
@@ -467,8 +468,37 @@ ALL_TOOLS: list[dict[str, Any]] = (
     + CALENDAR_TOOLS
 )
 
-SYSTEM = """You are Ally, a concise assistant for the user's Google Workspace:
-Gmail, Google Drive, Google Docs, Google Sheets, Google Slides, and Google Calendar.
+WEB_TOOLS: list[dict[str, Any]] = [
+    {
+        "name": "web_search",
+        "description": (
+            "Search the public web for up-to-date information and sources. "
+            "Use this when the user asks for current events, recent changes, prices, or anything time-sensitive."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Search query (required)"},
+                "max_results": {
+                    "type": "integer",
+                    "description": "Number of results (1-8). Default 5.",
+                },
+            },
+            "required": ["query"],
+        },
+    }
+]
+
+
+def _tools_for_request(*, enable_google_tools: bool) -> list[dict[str, Any]]:
+    return (WORKSPACE_TOOLS if enable_google_tools else []) + WEB_TOOLS
+
+SYSTEM = """You are Ally, a concise assistant.
+
+You can help with:
+- Google Workspace tasks (Gmail/Drive/Docs/Sheets/Slides/Calendar).
+- Web questions (use web search when you need current facts).
+- Finance questions (general educational guidance and calculations; not financial advice).
 
 You have tools to:
 - **Gmail**: list threads, search, read a thread as plain text. Never invent emails—use tools.
@@ -477,9 +507,15 @@ You have tools to:
 - **Google Sheets**: create spreadsheets, read/update/append ranges (A1 notation, 2D values arrays).
 - **Google Slides**: create a presentation, add slides with title + body text.
 - **Google Calendar**: list calendars, list events, create / update / delete events (event ids from list events).
+- **Web search**: use `web_search` for up-to-date facts. When you use it, cite sources by including URLs in your answer.
 
 Use the right tools whenever the user asks about data in their account or wants to create/edit content.
 For Slides with multiple bullets, put them in slide_body as lines or a short list converted to text.
+
+Finance guidance rules:
+- Be clear you’re not a financial advisor.
+- If giving strategy suggestions, ask for time horizon + risk tolerance if missing.
+- For numbers, show assumptions and do simple math checks.
 
 When the user clearly wants you to **send** an email through Gmail **now** (immediate, after they confirm in the app), end your reply with EXACTLY one block in this form (JSON only inside the tags, no markdown fences):
 <action>
@@ -544,8 +580,10 @@ def _assistant_api_content(content: list[Any]) -> list[dict[str, Any]]:
 def _execute_workspace_tool(
     name: str,
     tool_input: dict[str, Any],
-    credentials: Credentials,
+    credentials: Credentials | None,
 ) -> str:
+    if credentials is None:
+        return json.dumps({"error": "google_not_connected", "tool": name})
     if name in GMAIL_TOOL_NAMES:
         return gmail_service.execute_gmail_tool(name, tool_input, credentials)
     if name in drive_service.DRIVE_TOOL_NAMES:
@@ -564,10 +602,11 @@ def _execute_workspace_tool(
 async def run_chat(
     user_message: str,
     history: list[dict[str, str]],
-    google_credentials: Credentials,
+    google_credentials: Credentials | None,
     *,
     receipt_defaults: ReceiptDefaults | None = None,
     image_parts: list[tuple[str, str]] | None = None,
+    enable_google_tools: bool = True,
 ) -> tuple[str, dict[str, Any] | None]:
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     system = SYSTEM
@@ -589,12 +628,15 @@ async def run_chat(
 
     max_rounds = 24
     for _ in range(max_rounds):
+        tools = _tools_for_request(
+            enable_google_tools=bool(enable_google_tools and google_credentials is not None)
+        )
         resp = await client.messages.create(
             model=settings.anthropic_model,
             max_tokens=8192,
             system=system,
             messages=messages,
-            tools=ALL_TOOLS,
+            tools=tools,
         )
 
         if resp.stop_reason == "tool_use":
@@ -605,7 +647,18 @@ async def run_chat(
             for block in resp.content:
                 if block.type == "tool_use":
                     inp = block.input if isinstance(block.input, dict) else {}
-                    out = _execute_workspace_tool(block.name, inp, google_credentials)
+                    if block.name == "web_search":
+                        q = str(inp.get("query") or "").strip()
+                        mr = inp.get("max_results")
+                        try:
+                            max_results = int(mr) if mr is not None else 5
+                        except Exception:
+                            max_results = 5
+                        out = await web_search_service.web_search(
+                            query=q, max_results=max_results
+                        )
+                    else:
+                        out = _execute_workspace_tool(block.name, inp, google_credentials)
                     tool_results.append(
                         {
                             "type": "tool_result",

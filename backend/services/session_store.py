@@ -9,7 +9,7 @@ from google.oauth2.credentials import Credentials
 @dataclass
 class UserSession:
     id: str
-    credentials: Credentials
+    credentials: Credentials | None
     email: str | None = None
     name: str | None = None
     picture: str | None = None

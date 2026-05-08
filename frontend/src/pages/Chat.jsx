@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
 import ChatLanding from "../components/ChatLanding";
 import ChatMessage from "../components/ChatMessage";
@@ -25,6 +25,7 @@ function localCalendarDateKey() {
 
 export default function Chat() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, sessionToken, logout, refreshUser } = useAuth();
   const [contextOpen, setContextOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -51,6 +52,18 @@ export default function Chat() {
     sendError,
     loadConversation,
   } = useChat({ sessionToken });
+
+  useEffect(() => {
+    const sms = searchParams.get("sms_sub");
+    if (!sms || !sessionToken) return;
+    if (sms === "success") {
+      refreshUser().finally(() => {
+        setSearchParams({}, { replace: true });
+      });
+    } else if (sms === "cancel") {
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, sessionToken, refreshUser, setSearchParams]);
 
   useEffect(() => {
     if (!sessionToken || !user) return;

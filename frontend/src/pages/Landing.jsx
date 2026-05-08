@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import FadeInSection from "../components/FadeInSection";
 import LandingAutomations from "../components/LandingAutomations";
+import LandingCompareTable from "../components/LandingCompareTable";
+import LandingFaq from "../components/LandingFaq";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import SmsPhoneShowcase from "../components/SmsPhoneShowcase";
@@ -227,6 +230,11 @@ const INTEGRATIONS = [
 
 const PROGRESS_TARGET = 99;
 
+const HERO_TYPE_PREFIX = "Meet Ally. ";
+const HERO_TYPE_BODY =
+  "Text her for mail, calendar, and the Google apps you already use every day.";
+const HERO_TYPE_FULL = `${HERO_TYPE_PREFIX}${HERO_TYPE_BODY}`;
+
 export default function Landing() {
   const [activeTab, setActiveTab] = useState(0);
   const [progressNonce, setProgressNonce] = useState(0);
@@ -234,8 +242,32 @@ export default function Landing() {
   const [progressPct, setProgressPct] = useState(0);
   const [progressArmed, setProgressArmed] = useState(false);
   const [showAllyMark, setShowAllyMark] = useState(false);
+  const [heroTypedLen, setHeroTypedLen] = useState(0);
   const rafRef = useRef(0);
   const panel = SHOWCASE_TABS[activeTab];
+
+  useEffect(() => {
+    const full = HERO_TYPE_FULL;
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setHeroTypedLen(full.length);
+      return undefined;
+    }
+    let i = 0;
+    const msPerChar = 58;
+    const id = window.setInterval(() => {
+      i += 1;
+      if (i >= full.length) {
+        setHeroTypedLen(full.length);
+        window.clearInterval(id);
+        return;
+      }
+      setHeroTypedLen(i);
+    }, msPerChar);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const el = showcaseRef.current;
@@ -285,27 +317,43 @@ export default function Landing() {
     setProgressNonce((n) => n + 1);
   }
 
+  const heroVisible = HERO_TYPE_FULL.slice(0, heroTypedLen);
+  const heroPrefixLen = HERO_TYPE_PREFIX.length;
+  const heroStrongText = heroVisible.length <= heroPrefixLen ? heroVisible : HERO_TYPE_PREFIX;
+  const heroRestText = heroVisible.length <= heroPrefixLen ? "" : heroVisible.slice(heroPrefixLen);
+  const heroTypingDone = heroTypedLen >= HERO_TYPE_FULL.length;
+
   return (
     <div className="alm">
-      <MarketingNav />
+      <FadeInSection className="alm-reveal-nav">
+        <MarketingNav />
+      </FadeInSection>
 
       <main className="alm-main">
+        <FadeInSection as="div" className="alm-reveal-block">
         <section className="alm-hero">
           <div className="alm-badge">
             <IconStar />
-            Works with the tools you already use
+            Text assistant for Google
           </div>
           <h1 className="alm-hero__title">
-            <strong>Say hello to Ally. Your AI native assistant.</strong>{" "}
+            <span className="alm-hero__type-line" aria-hidden="true">
+              <strong className="alm-hero__type-strong">{heroStrongText}</strong>
+              {heroRestText ? <span className="alm-hero__type-rest">{heroRestText}</span> : null}
+              {!heroTypingDone ? <span className="alm-hero__type-cursor" /> : null}
+            </span>
+            <span className="sr-only">{HERO_TYPE_FULL}</span>
           </h1>
           <p className="alm-hero__lead">
-           Get things done or find answers—right from your texts.
+            Big words are gone. You send a text. Ally reads it and writes back in small, clear steps.
           </p>
           <Link to="/login" className="alm-hero__cta">
             Start free trial
           </Link>
         </section>
+        </FadeInSection>
 
+        <FadeInSection as="div" className="alm-reveal-block">
         <div className="alm-tabs" style={{ "--tab-accent": panel.accent }}>
           <div className="alm-tabs__track" role="tablist" aria-label="How you use Ally">
             {SHOWCASE_TABS.map((tab, i) => {
@@ -326,7 +374,9 @@ export default function Landing() {
             })}
           </div>
         </div>
+        </FadeInSection>
 
+        <FadeInSection as="div" className="alm-reveal-block">
         <section
           ref={showcaseRef}
           className="alm-showcase"
@@ -409,7 +459,9 @@ export default function Landing() {
             {panel.floating}
           </div>
         </section>
+        </FadeInSection>
 
+        <FadeInSection as="div" className="alm-reveal-block">
         <footer className="alm-integ" id="integrations">
           <p className="alm-integ__label">Integrates with</p>
           <div className="alm-integ__row">
@@ -423,12 +475,27 @@ export default function Landing() {
             ))}
           </div>
         </footer>
+        </FadeInSection>
 
-        <LandingAutomations />
+        <FadeInSection as="div" className="alm-reveal-block">
+          <LandingAutomations />
+        </FadeInSection>
 
-        <SmsPhoneShowcase />
+        <FadeInSection as="div" className="alm-reveal-block">
+          <LandingCompareTable />
+        </FadeInSection>
+
+        <FadeInSection as="div" className="alm-reveal-block">
+          <SmsPhoneShowcase />
+        </FadeInSection>
+
+        <FadeInSection as="div" className="alm-reveal-block">
+          <LandingFaq />
+        </FadeInSection>
       </main>
-      <MarketingFooter />
+      <FadeInSection as="div" className="alm-reveal-footer">
+        <MarketingFooter />
+      </FadeInSection>
     </div>
   );
 }

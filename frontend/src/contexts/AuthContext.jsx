@@ -100,6 +100,32 @@ export function AuthProvider({ children }) {
     return data;
   }, [sessionToken]);
 
+  const loginWithPhone = useCallback(
+    async ({ phone, code }) => {
+      setAuthError(null);
+      const p = (phone || "").trim();
+      if (!p) {
+        const msg = "Enter a phone number.";
+        setAuthError(msg);
+        throw new Error(msg);
+      }
+      if (!code) {
+        // Request OTP
+        await api.post("/api/auth/phone/request", { phone: p });
+        return { requested: true };
+      }
+      // Verify OTP -> session token
+      const { data } = await api.post("/api/auth/phone/verify", { phone: p, code });
+      const token = data.access_token;
+      setAuthHeader(token);
+      window.localStorage.setItem(SESSION_TOKEN_KEY, token);
+      setSessionToken(token);
+      await refreshUser();
+      return { requested: false };
+    },
+    [refreshUser]
+  );
+
   const login = useCallback(async () => {
     setAuthError(null);
     const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID?.trim();
@@ -246,6 +272,7 @@ export function AuthProvider({ children }) {
       clearAuthError,
       refreshUser,
       login,
+      loginWithPhone,
       logout,
       deleteAccount,
     }),
@@ -256,6 +283,7 @@ export function AuthProvider({ children }) {
       clearAuthError,
       refreshUser,
       login,
+      loginWithPhone,
       logout,
       deleteAccount,
     ]

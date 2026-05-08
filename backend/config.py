@@ -43,6 +43,10 @@ class Settings:
     sendblue_allowed_e164: str | None
     sendblue_owner_email: str | None
     sendblue_webhook_secret: str | None
+    # Stripe (optional). When STRIPE_PRICE_SMS_MONTHLY is set, SMS inbound is gated on subscription.
+    stripe_secret_key: str | None
+    stripe_webhook_secret: str | None
+    stripe_price_sms_monthly: str | None
 
 
 def load_settings() -> Settings:
@@ -69,6 +73,9 @@ def load_settings() -> Settings:
         sendblue_allowed_e164=_optional("SENDBLUE_ALLOWED_E164"),
         sendblue_owner_email=_optional("SENDBLUE_OWNER_EMAIL"),
         sendblue_webhook_secret=_optional("SENDBLUE_WEBHOOK_SECRET"),
+        stripe_secret_key=_optional("STRIPE_SECRET_KEY"),
+        stripe_webhook_secret=_optional("STRIPE_WEBHOOK_SECRET"),
+        stripe_price_sms_monthly=_optional("STRIPE_PRICE_SMS_MONTHLY"),
     )
 
 

@@ -209,6 +209,7 @@ async def chat_endpoint(
             session.credentials,
             receipt_defaults=rd,
             image_parts=image_parts,
+            enable_google_tools=session.credentials is not None,
         )
     except Exception as exc:
         raise HTTPException(

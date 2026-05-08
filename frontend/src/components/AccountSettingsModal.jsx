@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
+import { api } from "../api/client";
 
 function formatApiError(err) {
   const d = err.response?.data?.detail;
@@ -133,6 +135,51 @@ export default function AccountSettingsModal({
                 Signed in as{" "}
                 <span className="font-medium text-slate-800">{user?.email || "your Google account"}</span>
               </p>
+
+              <div className="mt-8 border-t border-slate-100 pt-6">
+                <p className="text-sm font-medium text-slate-800">SMS plan</p>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                  Web chat is free. SMS is $12.99/month so Ally can text you from the same Google-connected
+                  account.
+                </p>
+                {user?.sms_plan_active ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                      Active
+                    </span>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        setError(null);
+                        try {
+                          const { data } = await api.post("/api/billing/portal-session");
+                          if (data?.url) window.location.assign(data.url);
+                          else setError("No portal URL returned.");
+                        } catch (e) {
+                          setError(formatApiError(e));
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Manage billing
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      to="/pricing"
+                      onClick={() => onClose()}
+                      className="inline-flex items-center rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+                    >
+                      View pricing and subscribe
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {!confirming ? (
                 <div className="mt-8 border-t border-slate-100 pt-6">

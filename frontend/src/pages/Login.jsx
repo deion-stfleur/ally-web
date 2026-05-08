@@ -15,8 +15,13 @@ function IconStar() {
 
 export default function Login() {
   const navigate = useNavigate();
-  const { isAuthenticated, login, authError, clearAuthError } = useAuth();
+  const { isAuthenticated, login, loginWithPhone, authError, clearAuthError } =
+    useAuth();
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState("phone");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [otpRequested, setOtpRequested] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -37,6 +42,25 @@ export default function Login() {
     }
   }
 
+  async function handlePhoneContinue(e) {
+    e?.preventDefault?.();
+    clearAuthError();
+    setBusy(true);
+    try {
+      const res = await loginWithPhone({
+        phone,
+        code: otpRequested ? code : null,
+      });
+      if (res?.requested) {
+        setOtpRequested(true);
+      } else {
+        navigate("/chat", { replace: true });
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="alm">
       <MarketingNav />
@@ -50,32 +74,81 @@ export default function Login() {
             </div>
             <h1 className="alm-login__title">
               <strong>Welcome to Ally</strong>
-              <span>Sign in with Google to continue</span>
+              <span>Sign in with your phone or Google</span>
             </h1>
             <p className="alm-login__lead">
-              Connect Gmail, Calendar, and Drive so Ally can draft, summarize, and answer
-              in one conversation—without jumping between tabs.
+              Start with phone sign-in for texting. Connect Google anytime to unlock Gmail,
+              Calendar, and Drive actions.
             </p>
-            <button
-              type="button"
-              onClick={handleSignIn}
-              disabled={busy}
-              className="alm-login__cta"
-            >
-              {busy ? "Signing in…" : "Continue with Google"}
-            </button>
+
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <button
+                type="button"
+                disabled={busy}
+                className="alm-login__cta"
+                onClick={() => setMode("phone")}
+                style={{ opacity: mode === "phone" ? 1 : 0.7 }}
+              >
+                Phone
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                className="alm-login__cta"
+                onClick={() => setMode("google")}
+                style={{ opacity: mode === "google" ? 1 : 0.7 }}
+              >
+                Google
+              </button>
+            </div>
+
+            {mode === "phone" ? (
+              <form onSubmit={handlePhoneContinue}>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+15551234567"
+                  className="alm-login__input"
+                  disabled={busy}
+                />
+                {otpRequested && (
+                  <input
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="6-digit code"
+                    className="alm-login__input"
+                    disabled={busy}
+                  />
+                )}
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="alm-login__cta"
+                  style={{ width: "100%", marginTop: 10 }}
+                >
+                  {busy
+                    ? "Working…"
+                    : otpRequested
+                      ? "Verify code"
+                      : "Send code"}
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSignIn}
+                disabled={busy}
+                className="alm-login__cta"
+              >
+                {busy ? "Signing in…" : "Continue with Google"}
+              </button>
+            )}
+
             {authError && (
               <p className="alm-login-error" role="alert">
                 {authError}
               </p>
             )}
-            <p className="alm-login-hint">
-              In Google Cloud Console, add this app&apos;s origin under{" "}
-              <strong>Authorized JavaScript origins</strong> and the same{" "}
-              <strong>origin</strong> (no path) under <strong>Authorized redirect URIs</strong>{" "}
-              for the OAuth web client—e.g. your Netlify URL and{" "}
-              <code className="text-[11px]">http://localhost:3000</code>.
-            </p>
           </div>
         </div>
       </main>

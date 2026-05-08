@@ -4,6 +4,7 @@ import Chat from "./pages/Chat";
 import Features from "./pages/Features";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import Pricing from "./pages/Pricing";
 import UseCases from "./pages/UseCases";
 
 function ProtectedRoute({ children }) {
@@ -26,6 +27,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Chat />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pricing"
+        element={
+          <ProtectedRoute>
+            <Pricing />
           </ProtectedRoute>
         }
       />

@@ -15,14 +15,17 @@ if TYPE_CHECKING:
 
 
 class User(Base):
-    """App user keyed by Google OIDC `sub` (stable per Google account)."""
+    """App user.
+
+    Phone-first auth supports accounts without Google connected (google_sub NULL).
+    """
 
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    google_sub: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    google_sub: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     email: Mapped[str | None] = mapped_column(String(512), nullable=True)
     name: Mapped[str | None] = mapped_column(String(512), nullable=True)
     picture: Mapped[str | None] = mapped_column(String(2048), nullable=True)
@@ -31,6 +34,9 @@ class User(Base):
     )
     google_scopes: Mapped[str | None] = mapped_column(Text, nullable=True)
     phone_e164: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    phone_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -74,6 +80,9 @@ class User(Base):
         foreign_keys=[sendblue_conversation_id],
         uselist=False,
     )
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    stripe_subscription_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 
 class SendblueInboundDedupe(Base):
@@ -82,6 +91,23 @@ class SendblueInboundDedupe(Base):
     __tablename__ = "sendblue_inbound_dedupe"
 
     message_handle: Mapped[str] = mapped_column(String(160), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class PhoneOtpChallenge(Base):
+    __tablename__ = "phone_otp_challenges"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    phone_e164: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    code_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="0", default=0
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

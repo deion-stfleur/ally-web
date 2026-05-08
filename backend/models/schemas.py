@@ -33,6 +33,16 @@ class UserMeResponse(BaseModel):
     default_receipts_spreadsheet_id: str | None = None
     default_receipts_sheet_range: str | None = None
     receipts_confirm_before_append: bool = True
+    sms_plan_active: bool = False
+    stripe_subscription_status: str | None = None
+
+
+class CheckoutSessionResponse(BaseModel):
+    url: str
+
+
+class BillingPortalResponse(BaseModel):
+    url: str
 
 
 class ReceiptSettingsPatch(BaseModel):
@@ -58,6 +68,15 @@ class UpdatePhoneRequest(BaseModel):
     """Digits or +E.164; server normalizes to E.164."""
 
     phone: str = Field(..., min_length=7, max_length=32)
+
+
+class PhoneAuthRequest(BaseModel):
+    phone: str = Field(..., min_length=7, max_length=32)
+
+
+class PhoneAuthVerifyRequest(BaseModel):
+    phone: str = Field(..., min_length=7, max_length=32)
+    code: str = Field(..., min_length=4, max_length=12)
 
 
 class ChatMessageItem(BaseModel):
