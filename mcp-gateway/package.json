@@ -5,10 +5,10 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "postinstall": "npx playwright install chromium"
   },
   "dependencies": {
-    "@striderlabs/mcp-opentable": "^0.1.5",
     "playwright": "^1.53.1",
     "express": "^4.19.2",
     "zod": "^3.24.1",
