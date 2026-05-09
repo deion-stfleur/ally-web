@@ -18,7 +18,7 @@ from services import (
     slides_service,
     web_search_service,
 )
-from services import mcp_gateway_service
+from services import apify_restaurant_mcp_service, mcp_gateway_service
 
 ACTION_BLOCK = re.compile(r"<action>\s*([\s\S]*?)\s*</action>", re.IGNORECASE)
 
@@ -495,20 +495,22 @@ MCP_TOOLS: list[dict[str, Any]] = [
     {
         "name": "mcp_call",
         "description": (
-            "Call the HTTP MCP gateway (server `opentable`) for OpenTable. Tools: "
-            "`opentable_capabilities` / `opentable_help` (what’s supported), "
-            "`opentable_official_links` (OpenTable + help URLs for cancel/manage in the user’s logged-in browser), "
-            "`opentable_search` (find restaurants + `profileUrl`), "
-            "`opentable_availability` / `opentable_check_availability` (read shown times from the live widget; needs `profileUrl`, `date`, `partySize`), "
-            "`opentable_booking_link` (build reserve URL). "
-            "For **book**: send `booking_url` and walk them through Confirm in the browser—do not claim the table is booked until they finish on OpenTable. "
-            "For **cancel**: use `opentable_official_links` + explain they cancel in their OpenTable account/app; you cannot cancel for them without their session. "
-            "Report tool JSON honestly (`scrape_status`, errors)."
+            "Call an MCP-style HTTP tool server. **Preferred for restaurants:** `server` **`apify-opentable`** "
+            "(ClearPath OpenTable Booker on Apify) or **`apify-resy`** (Resy Booker). "
+            "Set `APIFY_TOKEN` on the backend. OpenTable tools include `search_restaurants`, `check_availability`, "
+            "`book_reservation` (paid per Apify—warn the user before calling), `my_reservations`, `cancel_reservation`, "
+            "`login`, `verify_otp` — use snake_case args from the actor README (e.g. `party_size`, `query`, `city`). "
+            "**Legacy self-hosted:** `server` **`opentable`** hits `MCP_GATEWAY_URL` (Railway Playwright) with tools like "
+            "`opentable_search`, `opentable_availability`, `opentable_booking_link`. "
+            "Always pass tool JSON the actor expects; summarize errors honestly."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "server": {"type": "string", "description": "MCP server name, e.g. opentable"},
+                "server": {
+                    "type": "string",
+                    "description": "apify-opentable | apify-resy | opentable (self-hosted gateway)",
+                },
                 "tool": {"type": "string", "description": "Tool name to call"},
                 "input": {"type": "object", "description": "Tool input JSON"},
             },
@@ -525,7 +527,7 @@ SYSTEM = """You are Ally — helpful, fast, and text-first. Sound like a smart f
 
 You can help with:
 - Google Workspace tasks (Gmail/Drive/Docs/Sheets/Slides/Calendar).
-- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” **before** you have called `web_search` at least once. After `web_search`, summarize with real titles and URLs from the tool output. For **OpenTable times**, use `opentable_search` then **`opentable_availability`** with `profileUrl`, `date` (YYYY-MM-DD), and `partySize`. If results are empty, try ONE tighter query; if still empty, say honestly results were thin and suggest what they could Google.
+- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” **before** you have called `web_search` at least once. After `web_search`, summarize with real titles and URLs from the tool output. For **OpenTable / Resy reservations**, prefer **`mcp_call`** with **`server` `apify-opentable`** or **`apify-resy`**: `search_restaurants`, `check_availability`, then `book_reservation` / `my_reservations` / `cancel_reservation` as needed (warn before paid `book_reservation`). If Apify is not configured, you may try legacy `server` `opentable` (self-hosted) or fall back to `web_search` + links. If results are empty, try ONE tighter query; if still empty, say honestly results were thin.
 - Finance questions (general educational guidance and calculations; not financial advice).
 
 You have tools to:
@@ -548,7 +550,7 @@ Finance guidance rules:
 Style rules:
 - No long intros or “As an AI language model…”. Get to the point.
 - One emoji max per message (optional); don’t stack emojis.
-- **OpenTable / reservations** (HTTP MCP gateway, `mcp_call` server `opentable`): Call `opentable_capabilities` if unsure what’s supported. Use `opentable_search` → `profileUrl`, then **`opentable_availability`** with **`date`** (YYYY-MM-DD) + **`partySize`**. For **cancel / change**: call **`opentable_official_links`** and tell them to use their OpenTable account in the browser—you cannot cancel for them without their login. For **book**: give `booking_url` and the times you saw; they tap Confirm on OpenTable. If `mcp_call_failed` or `mcp_unavailable`, fall back to `web_search` + links. **Never** claim a reservation is confirmed until they finish on OpenTable.
+- **OpenTable / Resy (Apify MCP):** Use `mcp_call` with **`server` `apify-opentable`** or **`apify-resy`**. Typical flow: `search_restaurants` → `check_availability` → optional `login` + `verify_otp` before `book_reservation`. **`book_reservation` costs money on Apify**—confirm with the user first. **`cancel_reservation`** needs a confirmation number (often from `my_reservations`). If tools error, explain and fall back to `web_search`. **Legacy `server` `opentable`:** only if the self-hosted gateway is deployed; otherwise use Apify.
 
 When the user clearly wants you to **send** an email through Gmail **now** (immediate, after they confirm in the app), end your reply with EXACTLY one block in this form (JSON only inside the tags, no markdown fences):
 <action>
@@ -692,33 +694,44 @@ async def run_chat(
                             query=q, max_results=max_results
                         )
                     elif block.name == "mcp_call":
-                        gw = (settings.mcp_gateway_url or "").strip()
-                        effective_user = (mcp_user_id or "").strip() or (
-                            "ally-web-anon" if gw else ""
-                        )
-                        if not effective_user:
-                            out = json.dumps(
-                                {
-                                    "error": "mcp_unavailable",
-                                    "detail": "MCP_GATEWAY_URL is not set on the server.",
-                                }
-                            )
-                        else:
-                            server = str(inp.get("server") or "").strip()
-                            tool = str(inp.get("tool") or "").strip()
-                            tool_input = inp.get("input")
-                            if not isinstance(tool_input, dict):
-                                tool_input = {}
-                            try:
-                                out_obj = await mcp_gateway_service.mcp_call(
-                                    user_id=effective_user,
+                        server = str(inp.get("server") or "").strip()
+                        tool = str(inp.get("tool") or "").strip()
+                        tool_input = inp.get("input")
+                        if not isinstance(tool_input, dict):
+                            tool_input = {}
+                        try:
+                            if server.lower() in ("apify-opentable", "apify-resy"):
+                                out_obj = await apify_restaurant_mcp_service.call_actor_tool(
                                     server=server,
                                     tool=tool,
-                                    input_json=tool_input,
+                                    arguments=tool_input,
                                 )
                                 out = json.dumps(out_obj)
-                            except Exception as e:
-                                out = json.dumps({"error": "mcp_call_failed", "detail": str(e)})
+                            else:
+                                gw = (settings.mcp_gateway_url or "").strip()
+                                if not gw:
+                                    out = json.dumps(
+                                        {
+                                            "error": "mcp_unavailable",
+                                            "detail": (
+                                                "MCP_GATEWAY_URL is not set for self-hosted opentable, "
+                                                "or use server apify-opentable / apify-resy with APIFY_TOKEN."
+                                            ),
+                                        }
+                                    )
+                                else:
+                                    effective_user = (mcp_user_id or "").strip() or "ally-web-anon"
+                                    out_obj = await mcp_gateway_service.mcp_call(
+                                        user_id=effective_user,
+                                        server=server,
+                                        tool=tool,
+                                        input_json=tool_input,
+                                    )
+                                    out = json.dumps(out_obj)
+                        except apify_restaurant_mcp_service.ApifyRestaurantMcpError as e:
+                            out = json.dumps({"error": "apify_mcp_failed", "detail": str(e)})
+                        except Exception as e:
+                            out = json.dumps({"error": "mcp_call_failed", "detail": str(e)})
                     else:
                         out = _execute_workspace_tool(block.name, inp, google_credentials)
                     tool_results.append(

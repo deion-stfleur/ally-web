@@ -47,9 +47,13 @@ class Settings:
     stripe_secret_key: str | None
     stripe_webhook_secret: str | None
     stripe_price_sms_monthly: str | None
-    # MCP gateway (optional): HTTP service that can call MCP tools.
+    # MCP gateway (optional): self-hosted HTTP service (Playwright) — optional if using Apify.
     mcp_gateway_url: str | None
     mcp_gateway_secret: str | None
+    # Apify: hosted MCP actors (OpenTable Booker, Resy Booker). https://console.apify.com/account/integrations
+    apify_token: str | None
+    apify_opentable_mcp_url: str | None
+    apify_resy_mcp_url: str | None
 
 
 def load_settings() -> Settings:
@@ -81,6 +85,9 @@ def load_settings() -> Settings:
         stripe_price_sms_monthly=_optional("STRIPE_PRICE_SMS_MONTHLY"),
         mcp_gateway_url=_optional("MCP_GATEWAY_URL"),
         mcp_gateway_secret=_optional("MCP_GATEWAY_SECRET"),
+        apify_token=_optional("APIFY_TOKEN"),
+        apify_opentable_mcp_url=_optional("APIFY_OPENTABLE_MCP_URL"),
+        apify_resy_mcp_url=_optional("APIFY_RESY_MCP_URL"),
     )
 
 
