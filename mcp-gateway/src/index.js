@@ -17,7 +17,7 @@ const GATEWAY_SECRET = (process.env.MCP_GATEWAY_SECRET || "").trim();
 
 async function fetchSessionBlob(userId) {
   if (!BACKEND_URL || !GATEWAY_SECRET) return "";
-  const url = `${BACKEND_URL.replace(/\\/$/, "")}/api/opentable/session?user_id=${encodeURIComponent(
+  const url = `${BACKEND_URL.replace(/\/$/, "")}/api/opentable/session?user_id=${encodeURIComponent(
     userId
   )}`;
   const resp = await fetch(url, {
