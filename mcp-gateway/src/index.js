@@ -21,12 +21,61 @@ const OPENTABLE_PASSWORD = (process.env.OPENTABLE_PASSWORD || "").trim();
 let sharedCookies = null; // array of cookies from Playwright
 let pendingMfa = null; // { browser, context, page } when MFA is required
 
-async function withOpenTablePage(userId, fn) {
-  const browser = await chromium.launch({
+// OpenTable / Akamai often choke on HTTP/2 + default headless TLS; match a normal desktop Chrome.
+const CHROMIUM_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-http2",
+  "--disable-quic",
+  "--disable-blink-features=AutomationControlled",
+];
+
+const DESKTOP_CHROME_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+async function launchChromium() {
+  return chromium.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    args: CHROMIUM_ARGS,
   });
-  const context = await browser.newContext();
+}
+
+async function newBrowserContext(browser) {
+  return browser.newContext({
+    userAgent: DESKTOP_CHROME_UA,
+    locale: "en-US",
+    timezoneId: "America/New_York",
+    viewport: { width: 1365, height: 900 },
+    extraHTTPHeaders: {
+      "Accept-Language": "en-US,en;q=0.9",
+    },
+  });
+}
+
+/** Best-effort navigation; OpenTable sometimes returns net::ERR_HTTP2_PROTOCOL_ERROR on first try. */
+async function gotoResilient(page, url, { timeout = 45000 } = {}) {
+  const attempts = [
+    { waitUntil: "domcontentloaded", timeout },
+    { waitUntil: "commit", timeout },
+    { waitUntil: "load", timeout: timeout + 15000 },
+  ];
+  let lastErr;
+  for (const opts of attempts) {
+    try {
+      await page.goto(url, opts);
+      return;
+    } catch (e) {
+      lastErr = e;
+      await page.waitForTimeout(800).catch(() => {});
+    }
+  }
+  throw lastErr;
+}
+
+async function withOpenTablePage(userId, fn) {
+  const browser = await launchChromium();
+  const context = await newBrowserContext(browser);
   if (Array.isArray(sharedCookies) && sharedCookies.length) {
     try {
       await context.addCookies(sharedCookies);
@@ -49,16 +98,10 @@ async function sharedLoginOrThrow() {
   // If we already have cookies, assume logged in; tools will fail and we fallback to links.
   if (Array.isArray(sharedCookies) && sharedCookies.length) return { mfa_required: false };
 
-  const browser = await chromium.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-  });
-  const context = await browser.newContext();
+  const browser = await launchChromium();
+  const context = await newBrowserContext(browser);
   const page = await context.newPage();
-  await page.goto("https://www.opentable.com/login", {
-    waitUntil: "domcontentloaded",
-    timeout: 30000,
-  });
+  await gotoResilient(page, "https://www.opentable.com/login", { timeout: 30000 });
 
   await page
     .locator('input[type="email"], input[name*="email"], input[autocomplete="email"]')
@@ -151,7 +194,7 @@ async function scrapeOpenTableAvailability({ page, profileUrl, restaurantId, dat
   u.searchParams.set("dateTime", `${d}T19:00:00`);
   const url = u.toString();
 
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+  await gotoResilient(page, url, { timeout: 45000 });
   await page.waitForTimeout(1500);
   await page
     .locator('main button, main [role="button"], [data-testid*="time"], [data-test*="Time"]')
@@ -366,7 +409,7 @@ app.post("/tools/call", async (req, res) => {
         if (cuisine) params.set("cuisine", cuisine);
         if (date) params.set("dateTime", `${date}T${time || "19:00"}:00`);
         const url = `https://www.opentable.com/s?${params.toString()}`;
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+        await gotoResilient(page, url, { timeout: 45000 });
         await page.waitForTimeout(2500);
         const cards = page.locator(
           '[data-test="search-result"], [data-testid="restaurant-card"], article[data-restaurant-id]'
