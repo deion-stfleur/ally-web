@@ -476,7 +476,9 @@ WEB_TOOLS: list[dict[str, Any]] = [
         "description": (
             "Search the public web for up-to-date information (hours, reservations, menus, news, prices, addresses). "
             "REQUIRED whenever the user asks for anything that could change over time or needs a link/phone for a business. "
-            "Call it before answering; do not refuse or say you cannot browse the web—use this tool."
+            "Call it before answering; do not refuse or say you cannot browse the web—use this tool. "
+            "For **live sports** (scores, who plays tonight): use **specific** queries (team names + date + `nba.com scores` or `ESPN NBA scoreboard`) "
+            "and call **more than once** with different phrasing if the first JSON has empty or irrelevant `results`."
         ),
         "input_schema": {
             "type": "object",
@@ -530,7 +532,7 @@ SYSTEM = """You are Ally — texting like a close friend on iMessage/SMS: warm, 
 
 You can help with:
 - Google Workspace tasks (Gmail/Drive/Docs/Sheets/Slides/Calendar).
-- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” **before** you have called `web_search` at least once. After `web_search`, summarize with real titles and URLs from the tool output. For **OpenTable / Resy reservations**, prefer **`mcp_call`** with **`server` `apify-opentable`** or **`apify-resy`**: `search_restaurants`, `check_availability`, then `book_reservation` / `my_reservations` / `cancel_reservation` as needed (warn before paid `book_reservation`). If Apify is not configured, you may try legacy `server` `opentable` (self-hosted) or fall back to `web_search` + links. If results are empty, try ONE tighter query; if still empty, say honestly results were thin.
+- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” **before** you have called `web_search` at least once. After `web_search`, summarize with real titles and URLs from the tool output. **Search quality limit:** results come from a lightweight HTML index (not a dedicated sports API)—snippets can be stale or empty from datacenters; for NBA/NFL etc. use **tight** queries (date + team + `scoreboard` / `nba.com`) and retry with alternate wording if `results` is empty; if still thin, say honestly the tool didn’t return a scoreline and point the user to nba.com or ESPN. For **OpenTable / Resy reservations**, prefer **`mcp_call`** with **`server` `apify-opentable`** or **`apify-resy`**: `search_restaurants`, `check_availability`, then `book_reservation` / `my_reservations` / `cancel_reservation` as needed (warn before paid `book_reservation`). If Apify is not configured, you may try legacy `server` `opentable` (self-hosted) or fall back to `web_search` + links. If results are empty, try ONE tighter query; if still empty, say honestly results were thin.
 - Finance questions (general educational guidance and calculations; not financial advice).
 
 You have tools to:
