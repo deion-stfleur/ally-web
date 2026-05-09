@@ -319,6 +319,7 @@ async def process_sendblue_inbound(
             history,
             creds,
             enable_google_tools=creds is not None,
+            mcp_user_id=str(user.id),
         )
     except Exception:
         logger.exception("sendblue Claude failed")

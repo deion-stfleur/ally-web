@@ -18,6 +18,7 @@ from services import (
     slides_service,
     web_search_service,
 )
+from services import mcp_gateway_service
 
 ACTION_BLOCK = re.compile(r"<action>\s*([\s\S]*?)\s*</action>", re.IGNORECASE)
 
@@ -472,8 +473,9 @@ WEB_TOOLS: list[dict[str, Any]] = [
     {
         "name": "web_search",
         "description": (
-            "Search the public web for up-to-date information and sources. "
-            "Use this when the user asks for current events, recent changes, prices, or anything time-sensitive."
+            "Search the public web for up-to-date information (hours, reservations, menus, news, prices, addresses). "
+            "REQUIRED whenever the user asks for anything that could change over time or needs a link/phone for a business. "
+            "Call it before answering; do not refuse or say you cannot browse the web—use this tool."
         ),
         "input_schema": {
             "type": "object",
@@ -489,15 +491,35 @@ WEB_TOOLS: list[dict[str, Any]] = [
     }
 ]
 
+MCP_TOOLS: list[dict[str, Any]] = [
+    {
+        "name": "mcp_call",
+        "description": (
+            "Call a tool hosted in the MCP gateway service (e.g. OpenTable booking). "
+            "Use this to execute actions outside Google and web_search. "
+            "Only call after the user has connected the relevant service."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "server": {"type": "string", "description": "MCP server name, e.g. opentable"},
+                "tool": {"type": "string", "description": "Tool name to call"},
+                "input": {"type": "object", "description": "Tool input JSON"},
+            },
+            "required": ["server", "tool", "input"],
+        },
+    }
+]
+
 
 def _tools_for_request(*, enable_google_tools: bool) -> list[dict[str, Any]]:
-    return (WORKSPACE_TOOLS if enable_google_tools else []) + WEB_TOOLS
+    return (WORKSPACE_TOOLS if enable_google_tools else []) + WEB_TOOLS + MCP_TOOLS
 
-SYSTEM = """You are Ally, a concise assistant.
+SYSTEM = """You are Ally — helpful, fast, and text-first. Sound like a smart friend in their early 20s: natural, casual, not corporate. Keep replies SHORT (most answers under ~120 words unless they ask for detail). Use bullets or numbered steps when it helps skim.
 
 You can help with:
 - Google Workspace tasks (Gmail/Drive/Docs/Sheets/Slides/Calendar).
-- Web questions (use web search when you need current facts).
+- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” — use `web_search`, then summarize what you found. If results are empty, try ONE tighter query; if still empty, say honestly results were thin and suggest what they could Google.
 - Finance questions (general educational guidance and calculations; not financial advice).
 
 You have tools to:
@@ -516,6 +538,11 @@ Finance guidance rules:
 - Be clear you’re not a financial advisor.
 - If giving strategy suggestions, ask for time horizon + risk tolerance if missing.
 - For numbers, show assumptions and do simple math checks.
+
+Style rules:
+- No long intros or “As an AI language model…”. Get to the point.
+- One emoji max per message (optional); don’t stack emojis.
+- For restaurants/booking: lead with booking link or phone if you have it from search results.
 
 When the user clearly wants you to **send** an email through Gmail **now** (immediate, after they confirm in the app), end your reply with EXACTLY one block in this form (JSON only inside the tags, no markdown fences):
 <action>
@@ -607,6 +634,7 @@ async def run_chat(
     receipt_defaults: ReceiptDefaults | None = None,
     image_parts: list[tuple[str, str]] | None = None,
     enable_google_tools: bool = True,
+    mcp_user_id: str | None = None,
 ) -> tuple[str, dict[str, Any] | None]:
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     system = SYSTEM
@@ -657,6 +685,25 @@ async def run_chat(
                         out = await web_search_service.web_search(
                             query=q, max_results=max_results
                         )
+                    elif block.name == "mcp_call":
+                        if not mcp_user_id:
+                            out = json.dumps({"error": "missing_mcp_user_id"})
+                        else:
+                            server = str(inp.get("server") or "").strip()
+                            tool = str(inp.get("tool") or "").strip()
+                            tool_input = inp.get("input")
+                            if not isinstance(tool_input, dict):
+                                tool_input = {}
+                            try:
+                                out_obj = await mcp_gateway_service.mcp_call(
+                                    user_id=mcp_user_id,
+                                    server=server,
+                                    tool=tool,
+                                    input_json=tool_input,
+                                )
+                                out = json.dumps(out_obj)
+                            except Exception as e:
+                                out = json.dumps({"error": "mcp_call_failed", "detail": str(e)})
                     else:
                         out = _execute_workspace_tool(block.name, inp, google_credentials)
                     tool_results.append(

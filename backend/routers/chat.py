@@ -210,6 +210,7 @@ async def chat_endpoint(
             receipt_defaults=rd,
             image_parts=image_parts,
             enable_google_tools=session.credentials is not None,
+            mcp_user_id=str(session.db_user_id) if session.db_user_id is not None else None,
         )
     except Exception as exc:
         raise HTTPException(

@@ -1,0 +1,18 @@
+{
+  "name": "ally-mcp-gateway",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@striderlabs/mcp-opentable": "^0.1.5",
+    "playwright": "^1.53.1",
+    "express": "^4.19.2",
+    "zod": "^3.24.1",
+    "node-fetch": "^3.3.2"
+  }
+}
+

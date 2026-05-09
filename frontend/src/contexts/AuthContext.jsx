@@ -6,6 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { api, setAuthHeader } from "../api/client";
 import { OPEN_HOME_AFTER_AUTH_KEY } from "../hooks/useChat";
 
@@ -91,7 +92,9 @@ export function AuthProvider({ children }) {
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
   const refreshUser = useCallback(async () => {
-    if (!sessionToken) {
+    // After login, `sessionToken` state may not have flushed yet; token is already in localStorage + axios header.
+    const t = readStoredSessionToken() || sessionToken;
+    if (!t) {
       setUser(null);
       return null;
     }
@@ -119,7 +122,9 @@ export function AuthProvider({ children }) {
       const token = data.access_token;
       setAuthHeader(token);
       window.localStorage.setItem(SESSION_TOKEN_KEY, token);
-      setSessionToken(token);
+      flushSync(() => {
+        setSessionToken(token);
+      });
       await refreshUser();
       return { requested: false };
     },
@@ -192,7 +197,9 @@ export function AuthProvider({ children }) {
             } catch {
               /* ignore */
             }
-            setSessionToken(token);
+            flushSync(() => {
+              setSessionToken(token);
+            });
             try {
               await refreshUser();
             } catch (meErr) {

@@ -79,6 +79,19 @@ class PhoneAuthVerifyRequest(BaseModel):
     code: str = Field(..., min_length=4, max_length=12)
 
 
+class OpenTableConnectRequest(BaseModel):
+    """Client submits OpenTable credentials for initial connect (not stored)."""
+
+    email: str = Field(..., min_length=3, max_length=320)
+    password: str = Field(..., min_length=1, max_length=320)
+
+
+class OpenTableMfaRequest(BaseModel):
+    """If connect requires MFA, client submits the code."""
+
+    code: str = Field(..., min_length=4, max_length=16)
+
+
 class ChatMessageItem(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(..., min_length=1)
