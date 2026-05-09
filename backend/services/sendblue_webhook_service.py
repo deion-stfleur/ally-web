@@ -4,6 +4,7 @@ import asyncio
 import logging
 import re
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from google.auth.exceptions import RefreshError
@@ -24,6 +25,7 @@ from services.chat_persist import (
 )
 from services.claude_service import run_chat
 from services.job_runner import _credentials_from_user
+from services.schedule_service import create_agent_task_job
 
 logger = logging.getLogger(__name__)
 
@@ -313,8 +315,9 @@ async def process_sendblue_inbound(
             history.append({"role": m.role, "content": m.content})
     history = history[-20:]
 
+    action_dict: dict[str, Any] | None = None
     try:
-        reply, _action = await run_chat(
+        reply, action_dict = await run_chat(
             content,
             history,
             creds,
@@ -324,6 +327,28 @@ async def process_sendblue_inbound(
     except Exception:
         logger.exception("sendblue Claude failed")
         reply = "Sorry, I could not complete that request. Try again in a moment."
+        action_dict = None
+
+    if isinstance(action_dict, dict) and action_dict.get("action") == "background_task":
+        instr = str(action_dict.get("instruction") or "").strip()
+        if instr:
+            try:
+                run_at = datetime.now(timezone.utc) + timedelta(seconds=15)
+                await create_agent_task_job(
+                    db,
+                    user_id=user.id,
+                    run_at=run_at,
+                    instruction=instr,
+                    conversation_id=conv_id,
+                )
+                reply = (reply or "").strip() or "queued — texting you when it's done."
+            except ValueError as exc:
+                reply = f"{(reply or '').strip()}\n\n(couldn't queue: {exc})".strip()
+            except Exception:
+                logger.exception("sendblue background job create failed")
+                reply = (
+                    f"{(reply or '').strip()}\n\n(couldn't queue background task.)".strip()
+                )
 
     text = (reply or "").strip() or " "
     conv = await get_owned_conversation(db, user_id=user.id, conversation_id=conv_id)

@@ -1,5 +1,5 @@
 """
-Poll Postgres for due scheduled jobs and run them (e.g. delayed Gmail send).
+Poll Postgres for due scheduled jobs and run them (delayed Gmail send, background agent + SMS).
 
 Run locally (separate terminal from uvicorn):
 

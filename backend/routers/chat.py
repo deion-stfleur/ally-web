@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError
@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from deps import get_current_session, get_db_optional
 from db.models import Conversation, User
 from models.schemas import (
+    BackgroundTaskActionPayload,
     ChatRequest,
     ChatResponse,
     ChatStateResponse,
@@ -33,7 +34,7 @@ from services.chat_persist import (
     load_latest_state,
     resolve_db_user_id,
 )
-from services.schedule_service import create_send_gmail_job
+from services.schedule_service import create_agent_task_job, create_send_gmail_job
 from services.session_store import UserSession
 
 logger = logging.getLogger(__name__)
@@ -59,8 +60,13 @@ def _parse_run_at_iso(s: str) -> datetime:
 
 def _job_to_chat_response(job) -> ScheduledJobResponse:
     payload = job.payload_json or {}
-    subj = payload.get("subject")
-    hint = str(subj)[:120] if subj else None
+    hint: str | None = None
+    if (job.job_type or "") == "send_gmail":
+        subj = payload.get("subject")
+        hint = str(subj)[:120] if subj else None
+    else:
+        ins = payload.get("instruction")
+        hint = str(ins)[:120] if ins else None
     return ScheduledJobResponse(
         id=job.id,
         job_type=job.job_type,
@@ -228,6 +234,7 @@ async def chat_endpoint(
 
     email_action = None
     schedule_payload: ScheduleEmailActionPayload | None = None
+    background_payload: BackgroundTaskActionPayload | None = None
     if action_dict:
         act = action_dict.get("action")
         if act == "send_email":
@@ -240,10 +247,16 @@ async def chat_endpoint(
                 schedule_payload = ScheduleEmailActionPayload.model_validate(action_dict)
             except ValidationError:
                 schedule_payload = None
+        elif act == "background_task":
+            try:
+                background_payload = BackgroundTaskActionPayload.model_validate(action_dict)
+            except ValidationError:
+                background_payload = None
 
     text = (reply or "").strip() or " "
     out_cid: str | None = None
     scheduled_job: ScheduledJobResponse | None = None
+    background_job: ScheduledJobResponse | None = None
 
     if db is not None:
         user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
@@ -294,6 +307,22 @@ async def chat_endpoint(
                     except Exception:
                         logger.exception("Scheduled email job creation failed")
                         text = f"{text}\n\n(Scheduling failed: could not create job.)"
+                if background_payload is not None:
+                    try:
+                        run_at = datetime.now(timezone.utc) + timedelta(seconds=15)
+                        job = await create_agent_task_job(
+                            db,
+                            user_id=user_id,
+                            run_at=run_at,
+                            instruction=background_payload.instruction,
+                            conversation_id=conv.id,
+                        )
+                        background_job = _job_to_chat_response(job)
+                    except (ValueError, ValidationError) as exc:
+                        text = f"{text}\n\n(Background task failed: {exc})"
+                    except Exception:
+                        logger.exception("Background agent job creation failed")
+                        text = f"{text}\n\n(Background task failed: could not create job.)"
                 await db.commit()
                 out_cid = str(conv.id)
             except HTTPException:
@@ -304,10 +333,12 @@ async def chat_endpoint(
                 logger.exception("Chat DB persist failed (reply still returned)")
                 out_cid = None
                 scheduled_job = None
+                background_job = None
 
     return ChatResponse(
         reply=text,
         email_action=email_action,
         scheduled_job=scheduled_job,
+        background_job=background_job,
         conversation_id=out_cid,
     )

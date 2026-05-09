@@ -155,12 +155,23 @@ class ScheduleEmailActionPayload(BaseModel):
     thread_id: str | None = Field(default=None, max_length=128)
 
 
+class BackgroundTaskActionPayload(BaseModel):
+    """Parsed from Claude <action> block when action is background_task."""
+
+    action: Literal["background_task"]
+    instruction: str = Field(..., min_length=1, max_length=12000)
+
+
 class ChatResponse(BaseModel):
     reply: str
     email_action: EmailActionPayload | None = None
     scheduled_job: ScheduledJobResponse | None = Field(
         default=None,
         description="Populated when Claude requests a delayed Gmail send and the job was created.",
+    )
+    background_job: ScheduledJobResponse | None = Field(
+        default=None,
+        description="Background agent run queued; worker texts when done if phone on file.",
     )
     conversation_id: str | None = Field(
         default=None,

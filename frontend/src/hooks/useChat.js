@@ -254,6 +254,12 @@ export function useChat(opts = {}) {
             : String(sj.run_at);
         assistantContent += `\n\n— Email scheduled for ${when}. Job id: ${sj.id}. Keep the worker running so it sends on time.`;
       }
+      if (data.background_job) {
+        const bj = data.background_job;
+        assistantContent +=
+          "\n\n— Background task queued; you'll get an SMS when it's done if this account has a verified phone. Keep the worker dyno running.";
+        if (bj?.id) assistantContent += ` Job id: ${bj.id}.`;
+      }
       const assistantMsg = {
         id: nextId(),
         role: "assistant",

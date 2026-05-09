@@ -578,7 +578,18 @@ Rules for <action> schedule_email:
 - Same rules as send_email for to/subject/body (single recipient, real content).
 - Optional "thread_id" if replying in-thread.
 - Do **not** tell the user that Gmail alone must schedule it—this app queues the send; a background worker must be running in production.
-- If they only asked a question without agreeing to schedule, do not output schedule_email."""
+- If they only asked a question without agreeing to schedule, do not output schedule_email.
+
+When the user wants a **multi-step research or workspace task** run in the **background** (they get an **SMS when it finishes** if they have a verified phone on file; otherwise results still appear in this chat), end with EXACTLY one block:
+<action>
+{"action":"background_task","instruction":"One string: full task for the background agent — goals, constraints, what to deliver. Include search terms, dates, or file hints if relevant."}
+</action>
+
+Rules for background_task:
+- Use when the work may need **many tool calls** (deep `web_search`, Gmail/Drive reads, etc.). **Do not** use for quick one-shot answers.
+- Keep your normal reply **before** the block very short (e.g. queued — texting you when done).
+- Do not put a `background_task` inside `instruction` that queues more background work.
+- Do not use `background_task` for **paid** Apify `book_reservation` or **sending** email unless the user already clearly confirmed in-thread."""
 
 
 def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
@@ -594,7 +605,7 @@ def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
     if not isinstance(data, dict):
         return text.strip(), None
     act = data.get("action")
-    if act in ("send_email", "schedule_email"):
+    if act in ("send_email", "schedule_email", "background_task"):
         return reply, data
     return text.strip(), None
 
