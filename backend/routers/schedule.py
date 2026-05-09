@@ -20,8 +20,13 @@ router = APIRouter(prefix="/schedule", tags=["schedule"])
 
 def _job_to_response(job) -> ScheduledJobResponse:
     payload = job.payload_json or {}
-    subj = payload.get("subject")
-    hint = str(subj)[:120] if subj else None
+    hint: str | None = None
+    if (job.job_type or "") == "send_gmail":
+        subj = payload.get("subject")
+        hint = str(subj)[:120] if subj else None
+    else:
+        ins = payload.get("instruction")
+        hint = str(ins)[:120] if ins else None
     return ScheduledJobResponse(
         id=job.id,
         job_type=job.job_type,

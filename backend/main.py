@@ -12,6 +12,7 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from routers.agent_tasks import router as agent_tasks_router
 from routers.auth import router as auth_router
 from routers.billing import router as billing_router
 from routers.chat import router as chat_router
@@ -80,6 +81,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(agent_tasks_router, prefix="/api")
 app.include_router(billing_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(drive_router, prefix="/api")

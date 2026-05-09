@@ -162,6 +162,16 @@ class BackgroundTaskActionPayload(BaseModel):
     instruction: str = Field(..., min_length=1, max_length=12000)
 
 
+class CreateAgentTaskRequest(BaseModel):
+    """Queue a background agent run (same worker as scheduled Gmail)."""
+
+    instruction: str = Field(..., min_length=1, max_length=12000)
+    conversation_id: UUID | None = Field(
+        default=None,
+        description="Optional: append result to this chat when the job finishes.",
+    )
+
+
 class ChatResponse(BaseModel):
     reply: str
     email_action: EmailActionPayload | None = None
