@@ -495,11 +495,15 @@ MCP_TOOLS: list[dict[str, Any]] = [
     {
         "name": "mcp_call",
         "description": (
-            "Call the MCP gateway for OpenTable: `opentable_search` (find restaurants + profile URLs), "
-            "`opentable_availability` or `opentable_check_availability` (read **available reservation times** for a date + party size from the live widget; pass `profileUrl` from search), "
-            "`opentable_booking_link` (deep link). "
-            "Report `available_times` and `scrape_status` to the user honestly. "
-            "Never complete a reservation on the user's behalf—Ally does not book tables."
+            "Call the HTTP MCP gateway (server `opentable`) for OpenTable. Tools: "
+            "`opentable_capabilities` / `opentable_help` (what’s supported), "
+            "`opentable_official_links` (OpenTable + help URLs for cancel/manage in the user’s logged-in browser), "
+            "`opentable_search` (find restaurants + `profileUrl`), "
+            "`opentable_availability` / `opentable_check_availability` (read shown times from the live widget; needs `profileUrl`, `date`, `partySize`), "
+            "`opentable_booking_link` (build reserve URL). "
+            "For **book**: send `booking_url` and walk them through Confirm in the browser—do not claim the table is booked until they finish on OpenTable. "
+            "For **cancel**: use `opentable_official_links` + explain they cancel in their OpenTable account/app; you cannot cancel for them without their session. "
+            "Report tool JSON honestly (`scrape_status`, errors)."
         ),
         "input_schema": {
             "type": "object",
@@ -544,7 +548,7 @@ Finance guidance rules:
 Style rules:
 - No long intros or “As an AI language model…”. Get to the point.
 - One emoji max per message (optional); don’t stack emojis.
-- **OpenTable / reservations**: You **do** have `mcp_call` (server `opentable`). Do **not** tell the user you lack OpenTable tools before you have tried `mcp_call`. Use `opentable_search` to find `profileUrl`, then **`opentable_availability`** (or `opentable_check_availability`) with that URL, **`date`** (YYYY-MM-DD), and **`partySize`** to read **live `available_times`**. Tell the user which times showed up; if `scrape_status` is not ok or `available_times` is empty, share `booking_url` and say slots may still load in the browser. If the tool returns `mcp_call_failed` or `mcp_unavailable`, say the server may need configuration and fall back to `web_search` + links. **Never** claim you booked a table. **Never** treat `opentable_make_reservation` as completed—only share links. Use `opentable_booking_link` when you only need a URL.
+- **OpenTable / reservations** (HTTP MCP gateway, `mcp_call` server `opentable`): Call `opentable_capabilities` if unsure what’s supported. Use `opentable_search` → `profileUrl`, then **`opentable_availability`** with **`date`** (YYYY-MM-DD) + **`partySize`**. For **cancel / change**: call **`opentable_official_links`** and tell them to use their OpenTable account in the browser—you cannot cancel for them without their login. For **book**: give `booking_url` and the times you saw; they tap Confirm on OpenTable. If `mcp_call_failed` or `mcp_unavailable`, fall back to `web_search` + links. **Never** claim a reservation is confirmed until they finish on OpenTable.
 
 When the user clearly wants you to **send** an email through Gmail **now** (immediate, after they confirm in the app), end your reply with EXACTLY one block in this form (JSON only inside the tags, no markdown fences):
 <action>

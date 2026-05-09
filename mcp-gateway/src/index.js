@@ -247,6 +247,55 @@ app.post("/tools/call", async (req, res) => {
       });
     }
 
+    if (tool === "opentable_capabilities" || tool === "opentable_help") {
+      return res.json({
+        success: true,
+        protocol: "http_json",
+        description:
+          "Closest thing to MCP here: POST JSON to this service’s /tools/call with server=opentable and a tool name.",
+        tools: [
+          {
+            name: "opentable_search",
+            does: "Find restaurants on OpenTable (Playwright)",
+            input: ["location", "partySize?", "date?", "time?", "cuisine?"],
+          },
+          {
+            name: "opentable_availability",
+            does: "Read time slots shown on the restaurant booking widget (Playwright)",
+            input: ["profileUrl or restaurantId", "date YYYY-MM-DD", "partySize?"],
+          },
+          {
+            name: "opentable_booking_link",
+            does: "Build a reserve URL (no Playwright)",
+            input: ["restaurantId or profile URL", "date?", "time?", "partySize?"],
+          },
+          {
+            name: "opentable_official_links",
+            does: "OpenTable URLs for the user to confirm/cancel in their own logged-in browser",
+            input: [],
+          },
+        ],
+        policies: {
+          book:
+            "Final Confirm / payment happens in the user’s browser. Ally does not silently complete a booking.",
+          cancel:
+            "Cancellations use the diner’s OpenTable account in the app/site; there is no partner cancel API in this gateway.",
+        },
+      });
+    }
+
+    if (tool === "opentable_official_links") {
+      return res.json({
+        success: true,
+        note: "User opens these while signed into OpenTable to view, change, or cancel reservations.",
+        links: {
+          home: "https://www.opentable.com/",
+          diner_faq_manage: "https://help.opentable.com/s/article/How-do-I-cancel-a-reservation",
+          account: "https://www.opentable.com/account",
+        },
+      });
+    }
+
     if (tool === "opentable_booking_link") {
       const restaurantId = input.restaurantId ? String(input.restaurantId).trim() : "";
       if (!restaurantId) {
