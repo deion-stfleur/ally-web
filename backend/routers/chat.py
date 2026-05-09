@@ -202,6 +202,14 @@ async def chat_endpoint(
 
     rd = _receipt_defaults_from_user(receipt_row)
 
+    mcp_user_id: str | None = None
+    if db is not None:
+        chat_user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
+        if chat_user_id is not None:
+            mcp_user_id = str(chat_user_id)
+    if mcp_user_id is None and session.db_user_id is not None:
+        mcp_user_id = str(session.db_user_id)
+
     try:
         reply, action_dict = await run_chat(
             body.message,
@@ -210,7 +218,7 @@ async def chat_endpoint(
             receipt_defaults=rd,
             image_parts=image_parts,
             enable_google_tools=session.credentials is not None,
-            mcp_user_id=str(session.db_user_id) if session.db_user_id is not None else None,
+            mcp_user_id=mcp_user_id,
         )
     except Exception as exc:
         raise HTTPException(

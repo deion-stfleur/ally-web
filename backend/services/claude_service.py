@@ -495,9 +495,11 @@ MCP_TOOLS: list[dict[str, Any]] = [
     {
         "name": "mcp_call",
         "description": (
-            "Call a tool hosted in the MCP gateway service (e.g. OpenTable booking). "
-            "Use this to execute actions outside Google and web_search. "
-            "Only call after the user has connected the relevant service."
+            "Call the MCP gateway for OpenTable: `opentable_search` (find restaurants + profile URLs), "
+            "`opentable_availability` or `opentable_check_availability` (read **available reservation times** for a date + party size from the live widget; pass `profileUrl` from search), "
+            "`opentable_booking_link` (deep link). "
+            "Report `available_times` and `scrape_status` to the user honestly. "
+            "Never complete a reservation on the user's behalf—Ally does not book tables."
         ),
         "input_schema": {
             "type": "object",
@@ -519,7 +521,7 @@ SYSTEM = """You are Ally — helpful, fast, and text-first. Sound like a smart f
 
 You can help with:
 - Google Workspace tasks (Gmail/Drive/Docs/Sheets/Slides/Calendar).
-- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” — use `web_search`, then summarize what you found. If results are empty, try ONE tighter query; if still empty, say honestly results were thin and suggest what they could Google.
+- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” **before** you have called `web_search` at least once. After `web_search`, summarize with real titles and URLs from the tool output. For **OpenTable times**, use `opentable_search` then **`opentable_availability`** with `profileUrl`, `date` (YYYY-MM-DD), and `partySize`. If results are empty, try ONE tighter query; if still empty, say honestly results were thin and suggest what they could Google.
 - Finance questions (general educational guidance and calculations; not financial advice).
 
 You have tools to:
@@ -542,7 +544,7 @@ Finance guidance rules:
 Style rules:
 - No long intros or “As an AI language model…”. Get to the point.
 - One emoji max per message (optional); don’t stack emojis.
-- For restaurants/booking: lead with booking link or phone if you have it from search results.
+- **OpenTable / reservations**: You **do** have `mcp_call` (server `opentable`). Do **not** tell the user you lack OpenTable tools before you have tried `mcp_call`. Use `opentable_search` to find `profileUrl`, then **`opentable_availability`** (or `opentable_check_availability`) with that URL, **`date`** (YYYY-MM-DD), and **`partySize`** to read **live `available_times`**. Tell the user which times showed up; if `scrape_status` is not ok or `available_times` is empty, share `booking_url` and say slots may still load in the browser. If the tool returns `mcp_call_failed` or `mcp_unavailable`, say the server may need configuration and fall back to `web_search` + links. **Never** claim you booked a table. **Never** treat `opentable_make_reservation` as completed—only share links. Use `opentable_booking_link` when you only need a URL.
 
 When the user clearly wants you to **send** an email through Gmail **now** (immediate, after they confirm in the app), end your reply with EXACTLY one block in this form (JSON only inside the tags, no markdown fences):
 <action>
@@ -686,8 +688,17 @@ async def run_chat(
                             query=q, max_results=max_results
                         )
                     elif block.name == "mcp_call":
-                        if not mcp_user_id:
-                            out = json.dumps({"error": "missing_mcp_user_id"})
+                        gw = (settings.mcp_gateway_url or "").strip()
+                        effective_user = (mcp_user_id or "").strip() or (
+                            "ally-web-anon" if gw else ""
+                        )
+                        if not effective_user:
+                            out = json.dumps(
+                                {
+                                    "error": "mcp_unavailable",
+                                    "detail": "MCP_GATEWAY_URL is not set on the server.",
+                                }
+                            )
                         else:
                             server = str(inp.get("server") or "").strip()
                             tool = str(inp.get("tool") or "").strip()
@@ -696,7 +707,7 @@ async def run_chat(
                                 tool_input = {}
                             try:
                                 out_obj = await mcp_gateway_service.mcp_call(
-                                    user_id=mcp_user_id,
+                                    user_id=effective_user,
                                     server=server,
                                     tool=tool,
                                     input_json=tool_input,

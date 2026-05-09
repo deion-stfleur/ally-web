@@ -27,7 +27,8 @@ async def mcp_call(
         "tool": tool,
         "input": input_json,
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    # OpenTable availability uses Playwright and can exceed 30s on cold start.
+    async with httpx.AsyncClient(timeout=httpx.Timeout(90.0, connect=15.0)) as client:
         resp = await client.post(f"{url.rstrip('/')}/tools/call", json=payload)
     if resp.status_code != 200:
         raise McpGatewayError(f"Gateway error {resp.status_code}: {resp.text[:4000]}")
