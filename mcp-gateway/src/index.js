@@ -1,6 +1,6 @@
 import express from "express";
 import { z } from "zod";
-import { chromium } from "playwright";
+import { chromium, firefox } from "playwright";
 
 // Minimal gateway skeleton.
 // For now, it provides stub endpoints so the backend can be wired.
@@ -34,6 +34,14 @@ const CHROMIUM_ARGS = [
 const DESKTOP_CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
+const DESKTOP_FIREFOX_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0";
+
+/** `firefox` (default) avoids many Chromium↔OpenTable HTTP/2 TLS failures on cloud hosts. */
+function openTableBrowserPreference() {
+  return (process.env.OPENTABLE_BROWSER || "firefox").toLowerCase();
+}
+
 async function launchChromium() {
   return chromium.launch({
     headless: true,
@@ -41,9 +49,31 @@ async function launchChromium() {
   });
 }
 
-async function newBrowserContext(browser) {
+async function launchFirefoxForOpenTable() {
+  return firefox.launch({
+    headless: true,
+    firefoxUserPrefs: {
+      "network.http.http2.enabled": false,
+      "network.http.http3.enable": false,
+    },
+  });
+}
+
+async function launchOpenTableBrowser() {
+  const pref = openTableBrowserPreference();
+  if (pref === "chromium" || pref === "chrome") {
+    return { browser: await launchChromium(), userAgent: DESKTOP_CHROME_UA, engine: "chromium" };
+  }
+  return {
+    browser: await launchFirefoxForOpenTable(),
+    userAgent: DESKTOP_FIREFOX_UA,
+    engine: "firefox",
+  };
+}
+
+async function newBrowserContext(browser, userAgent) {
   return browser.newContext({
-    userAgent: DESKTOP_CHROME_UA,
+    userAgent,
     locale: "en-US",
     timezoneId: "America/New_York",
     viewport: { width: 1365, height: 900 },
@@ -74,8 +104,8 @@ async function gotoResilient(page, url, { timeout = 45000 } = {}) {
 }
 
 async function withOpenTablePage(userId, fn) {
-  const browser = await launchChromium();
-  const context = await newBrowserContext(browser);
+  const { browser, userAgent } = await launchOpenTableBrowser();
+  const context = await newBrowserContext(browser, userAgent);
   if (Array.isArray(sharedCookies) && sharedCookies.length) {
     try {
       await context.addCookies(sharedCookies);
@@ -98,8 +128,8 @@ async function sharedLoginOrThrow() {
   // If we already have cookies, assume logged in; tools will fail and we fallback to links.
   if (Array.isArray(sharedCookies) && sharedCookies.length) return { mfa_required: false };
 
-  const browser = await launchChromium();
-  const context = await newBrowserContext(browser);
+  const { browser, userAgent } = await launchOpenTableBrowser();
+  const context = await newBrowserContext(browser, userAgent);
   const page = await context.newPage();
   await gotoResilient(page, "https://www.opentable.com/login", { timeout: 30000 });
 
