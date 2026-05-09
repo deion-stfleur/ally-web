@@ -37,6 +37,7 @@ async def main() -> None:
     from db import session as db_session
     from db.session import create_engine_if_configured, dispose_engine
     from services.job_runner import run_due_jobs_once
+    from services.watch_rules_service import enqueue_due_watch_rules
 
     create_engine_if_configured()
     if db_session.async_session_maker is None:
@@ -48,6 +49,11 @@ async def main() -> None:
             did_work = False
             async with db_session.async_session_maker() as session:
                 if await run_due_jobs_once(session):
+                    did_work = True
+            async with db_session.async_session_maker() as session:
+                async with session.begin():
+                    n = await enqueue_due_watch_rules(session)
+                if n:
                     did_work = True
             await asyncio.sleep(1.5 if did_work else 10.0)
     finally:

@@ -21,8 +21,10 @@ from models.schemas import (
     ConversationListResponse,
     ConversationSummary,
     EmailActionPayload,
+    RegisterWatchActionPayload,
     ScheduleEmailActionPayload,
     ScheduledJobResponse,
+    WatchRuleOut,
 )
 from services.claude_service import ReceiptDefaults, run_chat
 from services.chat_persist import (
@@ -35,6 +37,7 @@ from services.chat_persist import (
     resolve_db_user_id,
 )
 from services.schedule_service import create_agent_task_job, create_send_gmail_job
+from services.watch_rules_service import create_watch_rule as create_watch_rule_row
 from services.session_store import UserSession
 
 logger = logging.getLogger(__name__)
@@ -56,6 +59,17 @@ def _parse_run_at_iso(s: str) -> datetime:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
+
+
+def _watch_rule_out(row) -> WatchRuleOut:
+    return WatchRuleOut(
+        id=row.id,
+        spec_text=row.spec_text,
+        time_local=row.time_local,
+        timezone=row.timezone,
+        status=row.status,
+        next_run_at=row.next_run_at,
+    )
 
 
 def _job_to_chat_response(job) -> ScheduledJobResponse:
@@ -235,6 +249,7 @@ async def chat_endpoint(
     email_action = None
     schedule_payload: ScheduleEmailActionPayload | None = None
     background_payload: BackgroundTaskActionPayload | None = None
+    register_watch_payload: RegisterWatchActionPayload | None = None
     if action_dict:
         act = action_dict.get("action")
         if act == "send_email":
@@ -252,11 +267,17 @@ async def chat_endpoint(
                 background_payload = BackgroundTaskActionPayload.model_validate(action_dict)
             except ValidationError:
                 background_payload = None
+        elif act == "register_watch":
+            try:
+                register_watch_payload = RegisterWatchActionPayload.model_validate(action_dict)
+            except ValidationError:
+                register_watch_payload = None
 
     text = (reply or "").strip() or " "
     out_cid: str | None = None
     scheduled_job: ScheduledJobResponse | None = None
     background_job: ScheduledJobResponse | None = None
+    watch_rule: WatchRuleOut | None = None
 
     if db is not None:
         user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
@@ -323,6 +344,21 @@ async def chat_endpoint(
                     except Exception:
                         logger.exception("Background agent job creation failed")
                         text = f"{text}\n\n(Background task failed: could not create job.)"
+                if register_watch_payload is not None:
+                    try:
+                        wr = await create_watch_rule_row(
+                            db,
+                            user_id=user_id,
+                            spec_text=register_watch_payload.spec,
+                            time_local=register_watch_payload.time_local,
+                            tz_name=register_watch_payload.timezone,
+                        )
+                        watch_rule = _watch_rule_out(wr)
+                    except (ValueError, ValidationError) as exc:
+                        text = f"{text}\n\n(Watch rule failed: {exc})"
+                    except Exception:
+                        logger.exception("Watch rule creation failed")
+                        text = f"{text}\n\n(Watch rule failed: could not save.)"
                 await db.commit()
                 out_cid = str(conv.id)
             except HTTPException:
@@ -334,11 +370,13 @@ async def chat_endpoint(
                 out_cid = None
                 scheduled_job = None
                 background_job = None
+                watch_rule = None
 
     return ChatResponse(
         reply=text,
         email_action=email_action,
         scheduled_job=scheduled_job,
         background_job=background_job,
+        watch_rule=watch_rule,
         conversation_id=out_cid,
     )

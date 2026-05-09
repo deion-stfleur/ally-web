@@ -172,6 +172,44 @@ class CreateAgentTaskRequest(BaseModel):
     )
 
 
+class CreateWatchRuleRequest(BaseModel):
+    """Daily SMS check on a topic (worker enqueues agent_task at next_run)."""
+
+    spec_text: str = Field(..., min_length=1, max_length=8000)
+    time_local: str | None = Field(
+        default=None,
+        max_length=5,
+        description="HH:MM 24h in timezone; default 09:00 if omitted.",
+    )
+    timezone: str | None = Field(
+        default=None,
+        max_length=64,
+        description="IANA zone, e.g. America/Los_Angeles; default America/New_York if omitted.",
+    )
+
+
+class WatchRuleOut(BaseModel):
+    id: UUID
+    spec_text: str
+    time_local: str
+    timezone: str
+    status: str
+    next_run_at: datetime
+
+
+class WatchRuleStatusPatch(BaseModel):
+    status: Literal["active", "paused"]
+
+
+class RegisterWatchActionPayload(BaseModel):
+    """Parsed from Claude <action> when user sets a daily SMS watch."""
+
+    action: Literal["register_watch"]
+    spec: str = Field(..., min_length=1, max_length=8000)
+    time_local: str | None = Field(default=None, max_length=5)
+    timezone: str | None = Field(default=None, max_length=64)
+
+
 class ChatResponse(BaseModel):
     reply: str
     email_action: EmailActionPayload | None = None
@@ -182,6 +220,10 @@ class ChatResponse(BaseModel):
     background_job: ScheduledJobResponse | None = Field(
         default=None,
         description="Background agent run queued; worker texts when done if phone on file.",
+    )
+    watch_rule: WatchRuleOut | None = Field(
+        default=None,
+        description="Populated when Claude registers a daily SMS watch.",
     )
     conversation_id: str | None = Field(
         default=None,

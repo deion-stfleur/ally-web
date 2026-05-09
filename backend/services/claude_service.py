@@ -591,7 +591,16 @@ Rules for background_task:
 - Use when the work may need **many tool calls** (deep `web_search`, Gmail/Drive reads, etc.). **Do not** use for quick one-shot answers.
 - Keep your normal reply **before** the block very short (e.g. queued — texting you when done).
 - Do not put a `background_task` inside `instruction` that queues more background work.
-- Do not use `background_task` for **paid** Apify `book_reservation` or **sending** email unless the user already clearly confirmed in-thread."""
+- Do not use `background_task` for **paid** Apify `book_reservation` or **sending** email unless the user already clearly confirmed in-thread.
+
+**Daily SMS “tell me when / keep me posted” (MVP):** Ally can store **one recurring daily check** per saved rule (not instant push the second something happens). If the user wants to be **texted updates** about a topic:
+1. Confirm **what** to track (one short `spec` string).
+2. Ask **what time of day** they want the text (local). If they never give a time, use **09:00** and **America/New_York** and say that plainly so they can correct you.
+3. When they agree, end with EXACTLY one block:
+<action>
+{"action":"register_watch","spec":"Plain-language watch description","time_local":"09:00","timezone":"America/New_York"}
+</action>
+`time_local` and `timezone` may be omitted to use those defaults. They need a **verified phone** on the account for SMS; if missing, say they should add a phone in the app."""
 
 
 def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
@@ -607,7 +616,7 @@ def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
     if not isinstance(data, dict):
         return text.strip(), None
     act = data.get("action")
-    if act in ("send_email", "schedule_email", "background_task"):
+    if act in ("send_email", "schedule_email", "background_task", "register_watch"):
         return reply, data
     return text.strip(), None
 

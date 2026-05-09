@@ -25,7 +25,9 @@ from services.chat_persist import (
 )
 from services.claude_service import run_chat
 from services.job_runner import _credentials_from_user
+from models.schemas import RegisterWatchActionPayload
 from services.schedule_service import create_agent_task_job
+from services.watch_rules_service import create_watch_rule as create_watch_rule_row
 
 logger = logging.getLogger(__name__)
 
@@ -349,6 +351,23 @@ async def process_sendblue_inbound(
                 reply = (
                     f"{(reply or '').strip()}\n\n(couldn't queue background task.)".strip()
                 )
+
+    if isinstance(action_dict, dict) and action_dict.get("action") == "register_watch":
+        try:
+            rw = RegisterWatchActionPayload.model_validate(action_dict)
+            await create_watch_rule_row(
+                db,
+                user_id=user.id,
+                spec_text=rw.spec,
+                time_local=rw.time_local,
+                tz_name=rw.timezone,
+            )
+            reply = ((reply or "").strip() + "\n\n(saved your daily SMS watch.)").strip()
+        except ValueError as exc:
+            reply = f"{(reply or '').strip()}\n\n(watch save failed: {exc})".strip()
+        except Exception:
+            logger.exception("sendblue register_watch failed")
+            reply = f"{(reply or '').strip()}\n\n(watch save failed.)".strip()
 
     text = (reply or "").strip() or " "
     conv = await get_owned_conversation(db, user_id=user.id, conversation_id=conv_id)

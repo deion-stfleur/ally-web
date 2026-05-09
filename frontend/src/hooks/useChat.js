@@ -260,6 +260,10 @@ export function useChat(opts = {}) {
           "\n\n— Background task queued; you'll get an SMS when it's done if this account has a verified phone. Keep the worker dyno running.";
         if (bj?.id) assistantContent += ` Job id: ${bj.id}.`;
       }
+      if (data.watch_rule?.id) {
+        const wr = data.watch_rule;
+        assistantContent += `\n\n— Daily SMS watch saved (${wr.time_local} ${wr.timezone}). Next run: ${wr.next_run_at ? new Date(wr.next_run_at).toLocaleString() : "—"}. Worker must be running.`;
+      }
       const assistantMsg = {
         id: nextId(),
         role: "assistant",

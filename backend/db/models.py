@@ -57,6 +57,11 @@ class User(Base):
     scheduled_jobs: Mapped[list["ScheduledJob"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    watch_rules: Mapped[list["UserWatchRule"]] = relationship(
+        "UserWatchRule",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     user_todos: Mapped[list["UserTodo"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
@@ -174,6 +179,42 @@ class ScheduledJob(Base):
     )
 
     user: Mapped[User] = relationship(back_populates="scheduled_jobs")
+
+
+class UserWatchRule(Base):
+    """Daily check: worker enqueues an agent SMS job with the spec (MVP)."""
+
+    __tablename__ = "user_watch_rules"
+    __table_args__ = (Index("ix_user_watch_rules_status_next_run", "status", "next_run_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    spec_text: Mapped[str] = mapped_column(Text, nullable=False)
+    time_local: Mapped[str] = mapped_column(
+        String(5), nullable=False, server_default="09:00", default="09:00"
+    )
+    timezone: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        server_default="America/New_York",
+        default="America/New_York",
+    )
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default="active", default="active"
+    )
+    next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped[User] = relationship(back_populates="watch_rules")
 
 
 class Conversation(Base):
