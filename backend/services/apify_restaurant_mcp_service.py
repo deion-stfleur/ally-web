@@ -24,6 +24,15 @@ class ApifyRestaurantMcpError(RuntimeError):
     pass
 
 
+def _flatten_exceptions(exc: BaseException) -> list[BaseException]:
+    if isinstance(exc, BaseExceptionGroup):
+        out: list[BaseException] = []
+        for sub in exc.exceptions:
+            out.extend(_flatten_exceptions(sub))
+        return out
+    return [exc]
+
+
 def _mcp_url_for_server(server: str) -> str:
     s = server.strip().lower()
     if s == "apify-opentable":
@@ -75,22 +84,41 @@ async def call_actor_tool(*, server: str, tool: str, arguments: dict[str, Any]) 
     headers = {"Authorization": f"Bearer {token}"}
     timeout = httpx.Timeout(60.0, read=300.0)
 
-    async with create_mcp_http_client(headers, timeout) as http_client:
-        async with streamable_http_client(url, http_client=http_client) as streams:
-            read_stream, write_stream = streams
-            async with ClientSession(
-                read_stream,
-                write_stream,
-                client_info=mcp_types.Implementation(name="ally-backend", version="1.0.0"),
-            ) as session:
-                await session.initialize()
-                try:
+    try:
+        async with create_mcp_http_client(headers, timeout) as http_client:
+            async with streamable_http_client(url, http_client=http_client) as streams:
+                # mcp>=1.9 yields (read_stream, write_stream, get_session_id_callback)
+                read_stream, write_stream, _session_id_fn = streams
+                async with ClientSession(
+                    read_stream,
+                    write_stream,
+                    client_info=mcp_types.Implementation(name="ally-backend", version="1.0.0"),
+                ) as session:
+                    await session.initialize()
                     result = await session.call_tool(
                         tool,
                         arguments or {},
                         read_timeout_seconds=240.0,
                     )
-                except Exception as e:
-                    logger.exception("Apify MCP tool %s failed", tool)
-                    raise ApifyRestaurantMcpError(str(e)) from e
-                return _serialize_call_tool_result(result)
+                    return _serialize_call_tool_result(result)
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            raise ApifyRestaurantMcpError(
+                "Apify returned 401 — verify APIFY_TOKEN in Heroku matches "
+                "https://console.apify.com/settings/integrations (no extra quotes or spaces)."
+            ) from e
+        raise ApifyRestaurantMcpError(
+            f"Apify HTTP {e.response.status_code}: {(e.response.text or '')[:500]}"
+        ) from e
+    except BaseException as e:
+        for sub in _flatten_exceptions(e):
+            if isinstance(sub, httpx.HTTPStatusError):
+                if sub.response.status_code == 401:
+                    raise ApifyRestaurantMcpError(
+                        "Apify returned 401 — verify APIFY_TOKEN (Console → Integrations)."
+                    ) from sub
+                raise ApifyRestaurantMcpError(
+                    f"Apify HTTP {sub.response.status_code}: {(sub.response.text or '')[:500]}"
+                ) from sub
+        logger.exception("Apify MCP failure server=%s tool=%s", server, tool)
+        raise ApifyRestaurantMcpError("; ".join(str(s) for s in _flatten_exceptions(e))[:2000]) from e
