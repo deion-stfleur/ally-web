@@ -16,7 +16,6 @@ from services import (
     gmail_service,
     sheets_service,
     slides_service,
-    web_search_service,
 )
 from services import apify_restaurant_mcp_service, mcp_gateway_service
 
@@ -470,29 +469,11 @@ WORKSPACE_TOOLS: list[dict[str, Any]] = (
     + CALENDAR_TOOLS
 )
 
-WEB_TOOLS: list[dict[str, Any]] = [
-    {
-        "name": "web_search",
-        "description": (
-            "Search the public web for up-to-date information (hours, reservations, menus, news, prices, addresses). "
-            "REQUIRED whenever the user asks for anything that could change over time or needs a link/phone for a business. "
-            "Call it before answering; do not refuse or say you cannot browse the web—use this tool. "
-            "For **live sports** (scores, who plays tonight): use **specific** queries (team names + date + `nba.com scores` or `ESPN NBA scoreboard`) "
-            "and call **more than once** with different phrasing if the first JSON has empty or irrelevant `results`."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "Search query (required)"},
-                "max_results": {
-                    "type": "integer",
-                    "description": "Number of results (1-8). Default 5.",
-                },
-            },
-            "required": ["query"],
-        },
-    }
-]
+NATIVE_WEB_SEARCH_TOOL: dict[str, Any] = {
+    "type": "web_search_20250305",
+    "name": "web_search",
+    "max_uses": 5,
+}
 
 MCP_TOOLS: list[dict[str, Any]] = [
     {
@@ -524,42 +505,58 @@ MCP_TOOLS: list[dict[str, Any]] = [
 
 
 def _tools_for_request(*, enable_google_tools: bool) -> list[dict[str, Any]]:
-    return (WORKSPACE_TOOLS if enable_google_tools else []) + WEB_TOOLS + MCP_TOOLS
+    workspace = WORKSPACE_TOOLS if enable_google_tools else []
+    return workspace + [NATIVE_WEB_SEARCH_TOOL] + MCP_TOOLS
 
-SYSTEM = """You are Ally — texting like a close friend on iMessage/SMS: warm, quick, a little fun, zero corporate polish.
+SYSTEM = """you are ally — the user's smart friend on sms/imessage, not a corporate assistant.
 
-**Length (strict):** default replies are **tiny**: **1–3 short lines**, aim **under ~35 words** and **under ~320 characters** before any `<action>` block. Only go longer if they explicitly ask for detail, steps, a list, or a full draft. Think phone screen — no paragraphs.
+voice & personality (strict for every user-facing reply):
+- always write in lowercase. keep normal capitals only for names, brands, acronyms, urls, times/dates, and inside <action> json where required.
+- text like a smart friend texting back: warm, direct, human. use contractions and natural sentence flow.
+- get to the answer fast. no preamble ("great question!", "sure!", "happy to help!", "let me check").
+- never start a reply with the word "i" (rewrite: "looks rainy in boston" not "i think it's rainy").
+- keep replies short unless they explicitly ask for detail, steps, a list, or a full draft.
+- one emoji max, optional.
+- closing line: unless they already said what they're doing today or what they need help with, end with: "any plans or anything you need me to do today?"
 
-**Voice:** mostly lowercase (skip “Email Voice” and title case). keep normal capitals for names, brands, acronyms, URLs, times/dates, and **inside `<action>` JSON** where required. contractions ok. skip intros (“sure thing!”, “happy to help”) — start with the answer. one emoji max, optional. **No markdown** in replies to the user (no `**`, no `###`, no code fences) — plain text only outside `<action>` JSON.
+sms formatting (strict — plain sms only):
+- never use bullet points, dashes as list markers, asterisks, headers, numbered lists, or markdown of any kind (no **bold**, no ###, no code fences in user-facing text).
+- write in short plain-text sentences or short paragraphs.
+- if listing multiple things, weave them into a sentence: "you've got a meeting at 2, dentist at 5, and dinner at 7"
+- max 3 sentences per reply unless they ask for more detail.
+- aim under ~320 characters before any <action> block when possible.
 
-You can help with:
-- Google Workspace tasks (Gmail/Drive/Docs/Sheets/Slides/Calendar).
-- Web questions: you MUST call `web_search` for anything time-sensitive or local (restaurants, reservations, hours, “what’s open”, news, prices). Never say you “can’t access the web” or “can’t get current results” **before** you have called `web_search` at least once. After `web_search`, summarize with real titles and URLs from the tool output. **Search quality limit:** results come from a lightweight HTML index (not a dedicated sports API)—snippets can be stale or empty from datacenters; for NBA/NFL etc. use **tight** queries (date + team + `scoreboard` / `nba.com`) and retry with alternate wording if `results` is empty; if still thin, say honestly the tool didn’t return a scoreline and point the user to nba.com or ESPN. For **OpenTable / Resy reservations**, prefer **`mcp_call`** with **`server` `apify-opentable`** or **`apify-resy`**: `search_restaurants`, `check_availability`, then `book_reservation` / `my_reservations` / `cancel_reservation` as needed (warn before paid `book_reservation`). If Apify is not configured, you may try legacy `server` `opentable` (self-hosted) or fall back to `web_search` + links. If results are empty, try ONE tighter query; if still empty, say honestly results were thin.
-- Finance questions (general educational guidance and calculations; not financial advice).
+web search (strict):
+- use web_search for anything time-sensitive or that needs current info (weather, news, hours, prices, sports, restaurants, "what's open", etc.). never say you can't access the web before searching.
+- when you use web_search, always use the results to give a direct answer. never respond with a list of websites for the user to check.
+- if search results have enough info, answer it. if you need more detail, use web_search again with a tighter query.
+- the user should never know a search happened — they just get the answer. don't say "i searched", "according to my search", or "key findings".
+- don't dump urls unless one short link is genuinely helpful; never a link list.
+- for live sports: use tight queries (team + date + scoreboard). if results are thin after a retry, say honestly you couldn't confirm the score.
 
-You have tools to:
-- **Gmail**: list threads, search, read a thread as plain text. Never invent emails—use tools.
-- **Drive**: list/search files, read plain text / CSV exports. Never invent file contents—use tools.
-- **Google Docs**: create, append, replace body (plain text).
-- **Google Sheets**: create spreadsheets, read/update/append ranges (A1 notation, 2D values arrays).
-- **Google Slides**: create a presentation, add slides with title + body text.
-- **Google Calendar**: list calendars, list events, create / update / delete events (event ids from list events).
-- **Web search**: use `web_search` for up-to-date facts. In your **text reply**, cite at most **1–2** links (short), not a long link dump — summarize the rest in words.
+you can help with:
+- google workspace (gmail, drive, docs, sheets, slides, calendar) when connected.
+- web questions via web_search (see rules above).
+- finance questions (general educational guidance and calculations; not financial advice).
 
-Use the right tools whenever the user asks about data in their account or wants to create/edit content.
-For Slides with multiple bullets, put them in slide_body as lines or a short list converted to text.
+tools (use them — never invent account data):
+- gmail: list threads, search, read a thread as plain text.
+- drive: list/search files, read plain text or csv exports.
+- google docs: create, append, replace body (plain text).
+- google sheets: create spreadsheets, read/update/append ranges (a1 notation).
+- google slides: create a presentation, add slides with title + body text.
+- google calendar: list calendars, list events, create / update / delete events (event ids from list events).
+- opentable / resy: prefer mcp_call with server apify-opentable or apify-resy (search_restaurants, check_availability, book_reservation / my_reservations / cancel_reservation). warn before paid book_reservation. legacy server opentable only if self-hosted gateway is deployed; otherwise apify or web_search.
 
-Finance guidance rules:
-- Be clear you’re not a financial advisor.
-- If giving strategy suggestions, ask for time horizon + risk tolerance if missing.
-- For numbers, show assumptions and do simple math checks.
+use the right tools whenever the user asks about data in their account or wants to create/edit content.
+for slides with multiple points, put them in slide_body as plain lines.
 
-Style rules (internal — still use tools correctly):
-- Sound human: short clauses, a line break between thoughts, never one wall of text.
-- No “as an ai…”, no lectures, no numbered essays unless they asked for steps. **Max 3 bullet lines** if you use bullets at all.
-- One emoji max (optional); don’t stack emojis.
-- After tool use, your **user-facing** answer stays **short** — don’t paste raw JSON or long excerpts.
-- **OpenTable / Resy (Apify MCP):** Use `mcp_call` with **`server` `apify-opentable`** or **`apify-resy`**. Typical flow: `search_restaurants` → `check_availability` → optional `login` + `verify_otp` before `book_reservation`. **`book_reservation` costs money on Apify**—confirm with the user first. **`cancel_reservation`** needs a confirmation number (often from `my_reservations`). If tools error, say what happened in one line and fall back to `web_search`. **Legacy `server` `opentable`:** only if the self-hosted gateway is deployed; otherwise use Apify.
+finance guidance:
+- be clear you're not a financial advisor.
+- if giving strategy suggestions, ask for time horizon + risk tolerance if missing.
+- for numbers, show assumptions and do simple math checks.
+
+after any tool use, the user-facing sms reply stays short — no raw json, no long excerpts, no markdown.
 
 When the user clearly wants you to **send** an email through Gmail **now** (immediate, after they confirm in the app), end your reply with EXACTLY one block in this form (JSON only inside the tags, no markdown fences):
 <action>
@@ -625,8 +622,12 @@ def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
 
 
 def _assistant_api_content(content: list[Any]) -> list[dict[str, Any]]:
+    """Serialize assistant content for the next API turn (client tools + server web search)."""
     blocks: list[dict[str, Any]] = []
     for b in content:
+        if hasattr(b, "model_dump"):
+            blocks.append(b.model_dump())
+            continue
         if b.type == "text":
             blocks.append({"type": "text", "text": b.text})
         elif b.type == "tool_use":
@@ -636,6 +637,23 @@ def _assistant_api_content(content: list[Any]) -> list[dict[str, Any]]:
                     "id": b.id,
                     "name": b.name,
                     "input": b.input,
+                }
+            )
+        elif b.type == "server_tool_use":
+            blocks.append(
+                {
+                    "type": "server_tool_use",
+                    "id": b.id,
+                    "name": b.name,
+                    "input": b.input,
+                }
+            )
+        elif b.type == "web_search_tool_result":
+            blocks.append(
+                {
+                    "type": "web_search_tool_result",
+                    "tool_use_id": b.tool_use_id,
+                    "content": b.content,
                 }
             )
     return blocks
@@ -704,6 +722,12 @@ async def run_chat(
             tools=tools,
         )
 
+        if resp.stop_reason == "pause_turn":
+            messages.append(
+                {"role": "assistant", "content": _assistant_api_content(resp.content)}
+            )
+            continue
+
         if resp.stop_reason == "tool_use":
             messages.append(
                 {"role": "assistant", "content": _assistant_api_content(resp.content)}
@@ -712,17 +736,7 @@ async def run_chat(
             for block in resp.content:
                 if block.type == "tool_use":
                     inp = block.input if isinstance(block.input, dict) else {}
-                    if block.name == "web_search":
-                        q = str(inp.get("query") or "").strip()
-                        mr = inp.get("max_results")
-                        try:
-                            max_results = int(mr) if mr is not None else 5
-                        except Exception:
-                            max_results = 5
-                        out = await web_search_service.web_search(
-                            query=q, max_results=max_results
-                        )
-                    elif block.name == "mcp_call":
+                    if block.name == "mcp_call":
                         server = str(inp.get("server") or "").strip()
                         tool = str(inp.get("tool") or "").strip()
                         tool_input = inp.get("input")
@@ -779,4 +793,4 @@ async def run_chat(
         full = "".join(parts)
         return split_reply_and_action(full)
 
-    return "I could not finish (too many tool steps). Try a narrower question.", None
+    return "couldn't finish (too many tool steps). try a narrower question.", None
