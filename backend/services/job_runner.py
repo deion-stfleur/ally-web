@@ -17,7 +17,12 @@ from services.chat_persist import append_pair, get_owned_conversation, load_conv
 from services.claude_service import ReceiptDefaults, run_chat, split_reply_and_action
 from services.google_auth import GOOGLE_TOKEN_URL
 from services.google_token_crypto import decrypt_refresh_token
-from services.schedule_service import JOB_AGENT_TASK_SMS, JOB_SEND_GMAIL
+from services.profile_memory_service import extract_profile_from_conversation
+from services.schedule_service import (
+    JOB_AGENT_TASK_SMS,
+    JOB_EXTRACT_USER_PROFILE,
+    JOB_SEND_GMAIL,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +153,23 @@ async def _run_agent_task_sms(session: AsyncSession, job: ScheduledJob) -> None:
         )
 
 
+async def _run_extract_user_profile(session: AsyncSession, job: ScheduledJob) -> None:
+    user = await session.get(User, job.user_id)
+    if user is None:
+        raise RuntimeError("user missing")
+    p = job.payload_json or {}
+    raw_cid = p.get("conversation_id")
+    if not raw_cid:
+        raise RuntimeError("missing conversation_id")
+    try:
+        conv_id = uuid.UUID(str(raw_cid))
+    except (ValueError, TypeError) as exc:
+        raise RuntimeError("invalid conversation_id") from exc
+    await extract_profile_from_conversation(
+        session, user=user, conversation_id=conv_id
+    )
+
+
 async def _run_send_gmail(session: AsyncSession, job: ScheduledJob) -> None:
     user = await session.get(User, job.user_id)
     if user is None:
@@ -179,6 +201,8 @@ async def process_one_job(session: AsyncSession, job_id: uuid.UUID) -> None:
             await _run_send_gmail(session, job)
         elif job.job_type == JOB_AGENT_TASK_SMS:
             await _run_agent_task_sms(session, job)
+        elif job.job_type == JOB_EXTRACT_USER_PROFILE:
+            await _run_extract_user_profile(session, job)
         else:
             raise RuntimeError(f"unknown job_type: {job.job_type}")
         job.status = "completed"

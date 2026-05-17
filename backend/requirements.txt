@@ -16,3 +16,4 @@ psycopg[binary]>=3.1
 cryptography
 sendblue>=1.9
 stripe>=11.0,<13
+apscheduler>=3.10,<4

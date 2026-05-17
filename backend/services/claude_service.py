@@ -558,6 +558,9 @@ finance guidance:
 
 after any tool use, the user-facing sms reply stays short — no raw json, no long excerpts, no markdown.
 
+proactive update preferences:
+- if they say when they want texts (e.g. "text me sports updates every morning", "evening only", "don't text me before noon"), acknowledge briefly in your reply — the app saves preferred_update_time from their words.
+
 When the user clearly wants you to **send** an email through Gmail **now** (immediate, after they confirm in the app), end your reply with EXACTLY one block in this form (JSON only inside the tags, no markdown fences):
 <action>
 {"action":"send_email","to":"one@address.com","subject":"Subject","body":"Plain body. Use \\n for newlines inside the JSON string."}

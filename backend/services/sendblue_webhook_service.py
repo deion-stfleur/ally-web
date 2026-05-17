@@ -27,6 +27,12 @@ from services.claude_service import run_chat
 from services.job_runner import _credentials_from_user
 from models.schemas import RegisterWatchActionPayload
 from services.schedule_service import create_agent_task_job
+from services.user_profile_service import (
+    ONBOARDING_QUESTION,
+    get_or_create_profile,
+    maybe_capture_update_preference,
+    schedule_memory_extraction,
+)
 from services.watch_rules_service import create_watch_rule as create_watch_rule_row
 
 logger = logging.getLogger(__name__)
@@ -311,6 +317,9 @@ async def process_sendblue_inbound(
     _conv, prior_msgs = await load_conversation_messages(
         db, user_id=user.id, conversation_id=conv_id
     )
+    is_first_user_message = sum(1 for m in prior_msgs if m.role == "user") == 0
+    await get_or_create_profile(db, user=user)
+    await maybe_capture_update_preference(db, user=user, message=content)
     history: list[dict[str, str]] = []
     for m in prior_msgs:
         if m.role in ("user", "assistant"):
@@ -370,6 +379,10 @@ async def process_sendblue_inbound(
             reply = f"{(reply or '').strip()}\n\n(watch save failed.)".strip()
 
     text = (reply or "").strip() or " "
+    profile = await get_or_create_profile(db, user=user)
+    if is_first_user_message and not profile.onboarding_updates_asked:
+        text = f"{text}\n\n{ONBOARDING_QUESTION}".strip()
+        profile.onboarding_updates_asked = True
     conv = await get_owned_conversation(db, user_id=user.id, conversation_id=conv_id)
     if conv is None:
         await db.rollback()
@@ -380,6 +393,7 @@ async def process_sendblue_inbound(
         user_text=content,
         assistant_text=text,
     )
+    await schedule_memory_extraction(db, user_id=user.id, conversation_id=conv_id)
     await db.commit()
 
     outbound = _sms_plain(text)

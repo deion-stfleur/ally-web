@@ -59,9 +59,18 @@ async def lifespan(_app: FastAPI):
             "DATABASE_URL is missing in this process; /api/todos returns 503. "
             "Fix backend/.env or remove an empty DATABASE_URL from your IDE/shell env."
         )
+    scheduler = None
     try:
+        from services.proactive_scheduler import start_proactive_scheduler
+
+        if db_session.async_session_maker is not None:
+            scheduler = start_proactive_scheduler()
         yield
     finally:
+        if scheduler is not None:
+            from services.proactive_scheduler import stop_proactive_scheduler
+
+            stop_proactive_scheduler()
         await dispose_engine()
 
 

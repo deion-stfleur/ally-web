@@ -10,6 +10,7 @@ from db.models import ScheduledJob
 
 JOB_SEND_GMAIL = "send_gmail"
 JOB_AGENT_TASK_SMS = "agent_task_sms"
+JOB_EXTRACT_USER_PROFILE = "extract_user_profile"
 MAX_LEAD = timedelta(days=90)
 _MAX_INSTRUCTION = 12_000
 

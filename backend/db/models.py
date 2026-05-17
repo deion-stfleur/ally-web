@@ -89,6 +89,54 @@ class User(Base):
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stripe_subscription_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    profile: Mapped["UserProfile | None"] = relationship(
+        "UserProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+
+class UserProfile(Base):
+    """Interests and proactive-SMS preferences learned from conversations."""
+
+    __tablename__ = "user_profiles"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    phone_e164: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    interests: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    active_hours: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    preferred_update_time: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    recent_topics_sent: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    timezone: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        server_default="America/New_York",
+        default="America/New_York",
+    )
+    last_updated: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    last_proactive_sent: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_memory_extract_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    onboarding_updates_asked: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", default=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped[User] = relationship(back_populates="profile")
 
 
 class SendblueInboundDedupe(Base):

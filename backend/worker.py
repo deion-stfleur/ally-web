@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -43,7 +44,11 @@ async def main() -> None:
     if db_session.async_session_maker is None:
         raise SystemExit("Could not initialize the database engine.")
 
+    from services.proactive_messaging_service import run_proactive_tick
+
     logger.info("Worker started; polling for due jobs.")
+    last_proactive_at = 0.0
+    proactive_interval_s = 30 * 60
     try:
         while True:
             did_work = False
@@ -55,6 +60,15 @@ async def main() -> None:
                     n = await enqueue_due_watch_rules(session)
                 if n:
                     did_work = True
+            now = time.monotonic()
+            if now - last_proactive_at >= proactive_interval_s:
+                last_proactive_at = now
+                async with db_session.async_session_maker() as session:
+                    async with session.begin():
+                        sent = await run_proactive_tick(session)
+                    if sent:
+                        did_work = True
+                        logger.info("Worker proactive tick sent %s message(s)", sent)
             await asyncio.sleep(1.5 if did_work else 10.0)
     finally:
         await dispose_engine()
