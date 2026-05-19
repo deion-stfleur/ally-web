@@ -29,6 +29,9 @@ export default function MarketingFooter() {
                 <a href="/#integrations">Integrations</a>
               </li>
               <li>
+                <Link to="/pricing">Pricing</Link>
+              </li>
+              <li>
                 <Link to="/login">Get started</Link>
               </li>
             </ul>

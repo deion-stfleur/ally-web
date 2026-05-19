@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import "./ally-lp.css";
 
@@ -16,30 +17,38 @@ function formatApiError(err) {
 const PLANS = [
   {
     id: "starter",
+    tier: "Starter",
     name: "Ally",
     price: 10,
     tagline: "Text Ally when you need a hand.",
     features: [
-      "Web chat + Google (Gmail, Calendar, Drive)",
-      "SMS with Ally on your phone",
-      "Summaries, drafts, and quick errands",
-      "You text first — Ally replies",
+      "Web chat with thread memory so follow-ups stay in context",
+      "Google: Gmail, Calendar, and Drive (summaries, drafts, file lookups)",
+      "SMS on your phone — you text first, Ally replies",
+      "Learns basics from chat: how you like updates, recurring asks, your tone",
     ],
   },
   {
     id: "pro",
+    tier: "Pro",
     name: "Ally Pro",
     price: 30,
     tagline: "Ally stays on it and texts you first.",
     featured: true,
     features: [
-      "Everything in Ally",
-      "Proactive texts when something moves",
-      "Multi-step errands in one thread",
-      "Morning recaps and scheduled briefs",
+      "Everything in Starter, plus a profile Ally builds over time",
+      "Memory for interests, schedule, and what you want tracked (not just one thread)",
+      "Proactive texts when something moves — no need to ping Ally first",
+      "Multi-step errands in one thread until they are done",
+      "Scheduled briefs: morning recap, check-ins, nudges you set",
     ],
   },
 ];
+
+function subscribeLabel(plan, busy) {
+  if (busy) return "Redirecting…";
+  return `Subscribe to ${plan.tier}`;
+}
 
 export default function Pricing() {
   const navigate = useNavigate();
@@ -135,11 +144,7 @@ export default function Pricing() {
                     disabled={Boolean(busyPlan) || (isSignedIn && isOther)}
                     onClick={() => startCheckout(plan.id)}
                   >
-                    {busyPlan === plan.id
-                      ? "Redirecting…"
-                      : isSignedIn
-                        ? `Get ${plan.name}`
-                        : `Sign in to get ${plan.name}`}
+                    {subscribeLabel(plan, busyPlan === plan.id)}
                   </button>
                 )}
               </article>
@@ -166,14 +171,8 @@ export default function Pricing() {
           </p>
         ) : null}
 
-        <p className="alm-pricing__back">
-          {isSignedIn ? (
-            <Link to="/chat">Back to chat</Link>
-          ) : (
-            <Link to="/">Back to home</Link>
-          )}
-        </p>
       </main>
+      <MarketingFooter />
     </div>
   );
 }
