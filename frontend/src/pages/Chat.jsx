@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
+import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
 import ChatLanding from "../components/ChatLanding";
@@ -54,13 +55,16 @@ export default function Chat() {
   } = useChat({ sessionToken });
 
   useEffect(() => {
+    const sub = searchParams.get("sub");
     const sms = searchParams.get("sms_sub");
-    if (!sms || !sessionToken) return;
-    if (sms === "success") {
-      refreshUser().finally(() => {
+    const status = sub || sms;
+    if (!status || !sessionToken) return;
+    if (status === "success") {
+      refreshUser().then((me) => {
         setSearchParams({}, { replace: true });
+        if (me && !me.phone_e164) setPhonePromptOpen(true);
       });
-    } else if (sms === "cancel") {
+    } else if (status === "cancel" || sms === "cancel") {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, sessionToken, refreshUser, setSearchParams]);
@@ -121,6 +125,7 @@ export default function Chat() {
         open={phonePromptOpen}
         onDismiss={dismissPhonePrompt}
         refreshUser={refreshUser}
+        smsPlanActive={Boolean(user?.sms_plan_active)}
       />
       <ChatRail
         user={user}
@@ -129,6 +134,9 @@ export default function Chat() {
         onToggleContext={() => setContextOpen((o) => !o)}
       />
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        {!user?.sms_plan_active ? (
+          <SmsSubscribeBanner phoneE164={user?.phone_e164} />
+        ) : null}
         <ContextFilesPanel
           open={contextOpen}
           onClose={() => setContextOpen(false)}

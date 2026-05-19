@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 
 function formatApiError(err) {
@@ -24,15 +25,16 @@ function IconCheckCircle() {
 }
 
 /**
- * Prompt for SMS-capable phone; dismiss is handled by parent (e.g. per-day localStorage).
- * After a successful save, shows a short success screen before closing.
+ * Prompt to link a phone for SMS. Requires an active plan before saving (enforced on API too).
  */
-export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
+export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlanActive }) {
   const inputRef = useRef(null);
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const canSavePhone = Boolean(smsPlanActive);
 
   useEffect(() => {
     if (!open) {
@@ -42,9 +44,12 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
     setError(null);
     setPhone("");
     setShowSuccess(false);
-    const t = window.setTimeout(() => inputRef.current?.focus(), 50);
-    return () => window.clearTimeout(t);
-  }, [open]);
+    if (canSavePhone) {
+      const t = window.setTimeout(() => inputRef.current?.focus(), 50);
+      return () => window.clearTimeout(t);
+    }
+    return undefined;
+  }, [open, canSavePhone]);
 
   const finishAfterSuccess = useCallback(() => {
     setShowSuccess(false);
@@ -57,6 +62,7 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
   }, [onDismiss, saving]);
 
   const handleSave = useCallback(async () => {
+    if (!canSavePhone) return;
     const raw = phone.trim();
     if (!raw) {
       setError("Enter your phone number.");
@@ -73,7 +79,7 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
     } finally {
       setSaving(false);
     }
-  }, [phone, refreshUser]);
+  }, [canSavePhone, phone, refreshUser]);
 
   useEffect(() => {
     if (!open) return;
@@ -122,21 +128,15 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
             <div className="pt-2 text-center">
               <IconCheckCircle />
               <h2 id="phone-success-title" className="mt-5 text-lg font-semibold text-slate-900">
-                Number saved
+                Number saved — SMS is on
               </h2>
               <p className="mt-3 text-left text-sm leading-relaxed text-slate-600">
-                Ally is your assistant for Google Workspace: Gmail, Calendar, Sheets, and Drive stay
-                connected to the same Ally session you use in the browser, so answers can pull from
-                the tools you already signed in with.
+                Your plan is active. Text Ally from this number anytime; it stays linked to the same
+                account as web chat.
               </p>
               <p className="mt-3 text-left text-sm leading-relaxed text-slate-600">
-                With SMS turned on, you can text Ally from this number for quick questions, follow-ups,
-                and errands when you are away from your desk. You should receive a welcome text on
-                that line shortly so you know texting is live.
-              </p>
-              <p className="mt-3 text-left text-sm leading-relaxed text-slate-600">
-                Nothing replaces your Google connection: Ally only uses the access you granted at
-                sign-in. Reply in SMS or keep chatting on the web, same account.
+                You should get a welcome text shortly. If you signed in with Google, Gmail, Calendar,
+                and Drive stay connected for SMS answers too.
               </p>
             </div>
 
@@ -148,6 +148,46 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
               >
                 Got it
               </button>
+            </div>
+          </>
+        ) : !canSavePhone ? (
+          <>
+            <button
+              type="button"
+              onClick={handleDismissForm}
+              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Close"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 id="phone-prompt-title" className="pr-10 text-lg font-semibold text-slate-900">
+              Subscribe before linking your phone
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Web chat is free. To text Ally from your phone, you need{" "}
+              <strong className="font-medium text-slate-800">Ally Standard ($10/mo)</strong> or{" "}
+              <strong className="font-medium text-slate-800">Ally Pro ($30/mo)</strong>. After you
+              subscribe, come back here to save your number.
+            </p>
+
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={handleDismissForm}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Not now
+              </button>
+              <Link
+                to="/pricing"
+                onClick={() => onDismiss()}
+                className="inline-flex items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
+              >
+                View plans
+              </Link>
             </div>
           </>
         ) : (
@@ -168,8 +208,11 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
               Text Ally from your phone
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Enter your mobile number to text Ally and get errands and follow-ups done faster when
-              you are not at your computer. (Totally optional—you can add it another time.)
+              Enter your mobile number to text Ally when you are away from your computer. SMS is
+              included with your active plan.
+            </p>
+            <p className="mt-2 rounded-lg border border-violet-100 bg-violet-50/80 px-3 py-2 text-xs leading-relaxed text-violet-950">
+              SMS requires a plan from $10/mo. You are subscribed — save your number to start texting.
             </p>
 
             <label htmlFor="phone-prompt-input" className="mt-5 block text-xs font-medium text-slate-500">
@@ -191,13 +234,13 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser }) {
               }}
               placeholder="+1 555 123 4567"
               disabled={saving}
-              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-slate-400/30 placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 disabled:opacity-60"
+              className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-900 outline-none ring-slate-400/30 placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 disabled:opacity-60"
             />
-            {error && (
+            {error ? (
               <p className="mt-2 text-xs text-red-600" role="alert">
                 {error}
               </p>
-            )}
+            ) : null}
 
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button

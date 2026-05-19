@@ -28,6 +28,7 @@ from services.chat_persist import (
     upsert_app_user,
 )
 from services.google_token_crypto import encrypt_refresh_token
+from services.billing_plans import stripe_billing_configured, subscription_is_active
 from services.phone_e164 import normalize_e164
 from services.phone_otp_service import request_phone_otp, verify_phone_otp
 from services.sendblue_webhook_service import send_phone_saved_welcome_sms
@@ -243,8 +244,17 @@ async def auth_update_phone(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found.",
         )
+    if stripe_billing_configured() and not subscription_is_active(row.stripe_subscription_status):
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=(
+                "An active Ally Standard or Pro plan is required before linking a phone for SMS. "
+                "Subscribe at /pricing, then save your number again."
+            ),
+        )
     previous_phone = row.phone_e164
     row.phone_e164 = normalized
+    row.phone_verified_at = datetime.now(timezone.utc)
     row.updated_at = datetime.now(timezone.utc)
     try:
         await db.commit()
@@ -255,7 +265,7 @@ async def auth_update_phone(
             detail="That phone number is already linked to another account.",
         ) from None
     await db.refresh(row)
-    if previous_phone != normalized:
+    if previous_phone != normalized and subscription_is_active(row.stripe_subscription_status):
         background_tasks.add_task(send_phone_saved_welcome_sms, to_e164=normalized)
     return _user_me_response(session, row)
 
