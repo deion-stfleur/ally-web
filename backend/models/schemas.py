@@ -35,6 +35,14 @@ class UserMeResponse(BaseModel):
     receipts_confirm_before_append: bool = True
     sms_plan_active: bool = False
     stripe_subscription_status: str | None = None
+    subscription_plan: Literal["starter", "pro"] | None = None
+
+
+class CheckoutSessionRequest(BaseModel):
+    plan: Literal["starter", "pro"] = Field(
+        ...,
+        description="starter ($10/mo) or pro ($30/mo)",
+    )
 
 
 class CheckoutSessionResponse(BaseModel):

@@ -11,11 +11,9 @@ export default function MarketingNav() {
           <Link to="/features">Features</Link>
           <Link to="/use-cases">Use cases</Link>
           <a href="/#integrations">Integrations</a>
+          <Link to="/pricing">Pricing</Link>
         </nav>
         <div className="alm-nav__actions">
-          <Link to="/login" className="alm-nav__login">
-            Login
-          </Link>
           <Link to="/login" className="alm-nav__cta">
             Get started free
           </Link>

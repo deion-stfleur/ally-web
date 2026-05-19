@@ -36,14 +36,17 @@ from services.session_store import UserSession, delete_session, save_session
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _sms_plan_fields(row: User | None) -> tuple[bool, str | None]:
+def _subscription_fields(row: User | None) -> tuple[bool, str | None, str | None]:
     if row is None:
-        return False, None
+        return False, None, None
     st = row.stripe_subscription_status
+    plan = (row.stripe_plan or "").strip().lower() or None
+    if plan not in ("starter", "pro"):
+        plan = None
     if not st:
-        return False, st
+        return False, st, plan
     s = st.strip().lower()
-    return s in ("active", "trialing"), st
+    return s in ("active", "trialing"), st, plan
 
 
 def _user_me_response(session: UserSession, row: User | None) -> UserMeResponse:
@@ -51,7 +54,7 @@ def _user_me_response(session: UserSession, row: User | None) -> UserMeResponse:
     default_receipts_spreadsheet_id = row.default_receipts_spreadsheet_id if row else None
     default_receipts_sheet_range = row.default_receipts_sheet_range if row else None
     receipts_confirm_before_append = bool(row.receipts_confirm_before_append) if row else True
-    sms_active, stripe_st = _sms_plan_fields(row)
+    sms_active, stripe_st, sub_plan = _subscription_fields(row)
     return UserMeResponse(
         email=session.email,
         name=session.name,
@@ -62,6 +65,7 @@ def _user_me_response(session: UserSession, row: User | None) -> UserMeResponse:
         receipts_confirm_before_append=receipts_confirm_before_append,
         sms_plan_active=sms_active,
         stripe_subscription_status=stripe_st,
+        subscription_plan=sub_plan,
     )
 
 

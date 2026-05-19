@@ -14,20 +14,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from db.models import User
 from deps import get_current_session, get_db
-from models.schemas import BillingPortalResponse, CheckoutSessionResponse
+from models.schemas import (
+    BillingPortalResponse,
+    CheckoutSessionRequest,
+    CheckoutSessionResponse,
+)
+from services.billing_plans import (
+    PLAN_PRO,
+    PLAN_STARTER,
+    plan_from_subscription_object,
+    price_id_for_plan,
+    stripe_billing_configured,
+)
 from services.chat_persist import resolve_db_user_id
 from services.session_store import UserSession
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/billing", tags=["billing"])
-
-
-def _stripe_checkout_ready() -> bool:
-    return bool(
-        (settings.stripe_secret_key or "").strip()
-        and (settings.stripe_price_sms_monthly or "").strip()
-    )
 
 
 def _set_stripe_key() -> None:
@@ -63,8 +67,9 @@ async def _sync_subscription_on_user(
     customer_id: str | None,
     subscription_id: str | None,
     status: str | None,
+    plan: str | None = None,
 ) -> None:
-    """Attach Stripe IDs and status to the app user (idempotent)."""
+    """Attach Stripe IDs, status, and plan tier to the app user (idempotent)."""
     row: User | None = None
     if user_id is not None:
         r = await db.execute(select(User).where(User.id == user_id))
@@ -89,30 +94,70 @@ async def _sync_subscription_on_user(
         row.stripe_subscription_id = subscription_id
     if status is not None and str(status).strip():
         row.stripe_subscription_status = str(status).strip()[:64]
+    if plan in (PLAN_STARTER, PLAN_PRO):
+        row.stripe_plan = plan
+    elif status and str(status).strip().lower() in ("canceled", "unpaid", "incomplete_expired"):
+        row.stripe_plan = None
     await db.commit()
+
+
+async def _sync_from_subscription_id(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID | None,
+    subscription_id: str | None,
+    customer_id: str | None,
+    plan_hint: str | None = None,
+) -> None:
+    if not subscription_id:
+        await _sync_subscription_on_user(
+            db,
+            user_id=user_id,
+            customer_id=customer_id,
+            subscription_id=None,
+            status=None,
+            plan=None,
+        )
+        return
+    sub = await asyncio.to_thread(stripe.Subscription.retrieve, subscription_id)
+    plan, _price_id = plan_from_subscription_object(sub)
+    if plan is None and plan_hint in (PLAN_STARTER, PLAN_PRO):
+        plan = plan_hint
+    await _sync_subscription_on_user(
+        db,
+        user_id=user_id,
+        customer_id=str(customer_id or sub.get("customer") or "") or None,
+        subscription_id=str(subscription_id),
+        status=sub.get("status"),
+        plan=plan,
+    )
 
 
 @router.post("/checkout-session", response_model=CheckoutSessionResponse)
 async def create_checkout_session(
+    body: CheckoutSessionRequest,
     session: UserSession = Depends(get_current_session),
     db: AsyncSession = Depends(get_db),
 ) -> CheckoutSessionResponse:
-    if not _stripe_checkout_ready():
+    plan = body.plan.strip().lower()
+    price_id = price_id_for_plan(plan)
+    if not stripe_billing_configured() or not price_id:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Checkout is not configured. Set STRIPE_SECRET_KEY and STRIPE_PRICE_SMS_MONTHLY.",
+            detail="Checkout is not configured. Set STRIPE_SECRET_KEY and STRIPE_PRICE_STARTER_MONTHLY / STRIPE_PRICE_PRO_MONTHLY.",
         )
     _set_stripe_key()
     user_id, user = await _load_billing_user(db, session)
     base = settings.frontend_url.rstrip("/")
-    success_url = f"{base}/chat?sms_sub=success"
-    cancel_url = f"{base}/chat?sms_sub=cancel"
+    success_url = f"{base}/chat?sub=success&plan={plan}"
+    cancel_url = f"{base}/pricing?canceled=1"
     params: dict[str, Any] = {
         "mode": "subscription",
-        "line_items": [{"price": settings.stripe_price_sms_monthly, "quantity": 1}],
+        "line_items": [{"price": price_id, "quantity": 1}],
         "success_url": success_url,
         "cancel_url": cancel_url,
-        "metadata": {"user_id": str(user_id)},
+        "metadata": {"user_id": str(user_id), "plan": plan},
+        "subscription_data": {"metadata": {"user_id": str(user_id), "plan": plan}},
         "client_reference_id": str(user_id),
         "allow_promotion_codes": True,
     }
@@ -148,7 +193,7 @@ async def create_portal_session(
     portal = await asyncio.to_thread(
         stripe.billing_portal.Session.create,
         customer=cust,
-        return_url=f"{base}/chat",
+        return_url=f"{base}/pricing",
     )
     url = portal.get("url")
     if not url:
@@ -196,6 +241,7 @@ async def stripe_webhook(
                 return {"received": True}
             md = sess.get("metadata") or {}
             uid_raw = md.get("user_id")
+            plan_hint = (md.get("plan") or "").strip().lower() or None
             user_uuid: uuid.UUID | None = None
             if uid_raw:
                 try:
@@ -206,30 +252,25 @@ async def stripe_webhook(
             cust_id = sess.get("customer")
             if isinstance(sub_id, dict):
                 sub_id = sub_id.get("id")
-            status_str = None
-            if sub_id:
-                sub = await asyncio.to_thread(stripe.Subscription.retrieve, sub_id)
-                status_str = sub.get("status")
-            elif not cust_id:
-                logger.warning("stripe checkout.session.completed missing subscription and customer")
-            await _sync_subscription_on_user(
+            await _sync_from_subscription_id(
                 db,
                 user_id=user_uuid,
-                customer_id=str(cust_id) if cust_id else None,
                 subscription_id=str(sub_id) if sub_id else None,
-                status=status_str,
+                customer_id=str(cust_id) if cust_id else None,
+                plan_hint=plan_hint if plan_hint in (PLAN_STARTER, PLAN_PRO) else None,
             )
 
         elif etype in ("customer.subscription.updated", "customer.subscription.deleted"):
             sub_id = obj.get("id")
             cust_id = obj.get("customer")
-            status_str = obj.get("status")
+            plan, _ = plan_from_subscription_object(obj)
             await _sync_subscription_on_user(
                 db,
                 user_id=None,
                 customer_id=str(cust_id) if cust_id else None,
                 subscription_id=str(sub_id) if sub_id else None,
-                status=status_str,
+                status=obj.get("status"),
+                plan=plan,
             )
     except Exception:
         logger.exception("stripe webhook handler failed event=%s", etype)

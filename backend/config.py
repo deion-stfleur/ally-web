@@ -43,10 +43,12 @@ class Settings:
     sendblue_allowed_e164: str | None
     sendblue_owner_email: str | None
     sendblue_webhook_secret: str | None
-    # Stripe (optional). When STRIPE_PRICE_SMS_MONTHLY is set, SMS inbound is gated on subscription.
+    # Stripe (optional). When prices + secret are set, SMS is gated on active subscription.
     stripe_secret_key: str | None
     stripe_webhook_secret: str | None
-    stripe_price_sms_monthly: str | None
+    stripe_price_starter_monthly: str | None
+    stripe_price_pro_monthly: str | None
+    stripe_price_sms_monthly: str | None  # legacy alias for Pro price id
     # MCP gateway (optional): self-hosted HTTP service (Playwright) — optional if using Apify.
     mcp_gateway_url: str | None
     mcp_gateway_secret: str | None
@@ -82,6 +84,8 @@ def load_settings() -> Settings:
         sendblue_webhook_secret=_optional("SENDBLUE_WEBHOOK_SECRET"),
         stripe_secret_key=_optional("STRIPE_SECRET_KEY"),
         stripe_webhook_secret=_optional("STRIPE_WEBHOOK_SECRET"),
+        stripe_price_starter_monthly=_optional("STRIPE_PRICE_STARTER_MONTHLY"),
+        stripe_price_pro_monthly=_optional("STRIPE_PRICE_PRO_MONTHLY"),
         stripe_price_sms_monthly=_optional("STRIPE_PRICE_SMS_MONTHLY"),
         mcp_gateway_url=_optional("MCP_GATEWAY_URL"),
         mcp_gateway_secret=_optional("MCP_GATEWAY_SECRET"),

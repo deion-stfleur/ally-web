@@ -39,16 +39,16 @@ logger = logging.getLogger(__name__)
 
 
 def _stripe_sms_gating_enabled() -> bool:
-    """When price + secret are set, inbound SMS requires an active Stripe subscription."""
-    return bool(
-        (settings.stripe_price_sms_monthly or "").strip()
-        and (settings.stripe_secret_key or "").strip()
-    )
+    """When Stripe billing is configured, inbound SMS requires an active subscription."""
+    from services.billing_plans import stripe_billing_configured
+
+    return stripe_billing_configured()
 
 
 def _user_sms_plan_active(user: User) -> bool:
-    st = (user.stripe_subscription_status or "").strip().lower()
-    return st in ("active", "trialing")
+    from services.billing_plans import subscription_is_active
+
+    return subscription_is_active(user.stripe_subscription_status)
 
 
 def _sendblue_message_type_normalized(v: object) -> str:

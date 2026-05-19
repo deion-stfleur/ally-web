@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import settings
 from db.models import User, UserProfile
 from services.sendblue_webhook_service import send_sendblue_text_async
+from services.billing_plans import PLAN_PRO, stripe_billing_configured
 from services.user_profile_service import (
     can_send_proactive,
     is_in_proactive_window,
@@ -154,6 +155,8 @@ async def try_proactive_message_for_profile(
     profile: UserProfile,
     user: User,
 ) -> bool:
+    if stripe_billing_configured() and (user.stripe_plan or "").strip().lower() != PLAN_PRO:
+        return False
     if not can_send_proactive(profile):
         return False
     if not is_in_proactive_window(profile):

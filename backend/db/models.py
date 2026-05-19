@@ -89,6 +89,7 @@ class User(Base):
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stripe_subscription_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    stripe_plan: Mapped[str | None] = mapped_column(String(16), nullable=True)
     profile: Mapped["UserProfile | None"] = relationship(
         "UserProfile",
         back_populates="user",
