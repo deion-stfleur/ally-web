@@ -19,6 +19,14 @@ function wait(ms) {
   });
 }
 
+function prefersTouchInterface() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(hover: none)").matches
+  );
+}
+
 const IOS_KEYBOARD_ROWS = [
   ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
   ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
@@ -210,7 +218,9 @@ export default function HeroInteractivePhone() {
   const [done, setDone] = useState(false);
   const [introComplete, setIntroComplete] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [useFakeKeyboard, setUseFakeKeyboard] = useState(true);
+  const [useFakeKeyboard, setUseFakeKeyboard] = useState(
+    () => typeof window !== "undefined" && !prefersTouchInterface()
+  );
   const threadRef = useRef(null);
   const inputRef = useRef(null);
   const innerRef = useRef(null);
@@ -228,9 +238,7 @@ export default function HeroInteractivePhone() {
   }, [messages, typing, keyboardOpen, scrollThread]);
 
   useEffect(() => {
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const noHover = window.matchMedia("(hover: none)").matches;
-    setUseFakeKeyboard(!(coarse || noHover));
+    setUseFakeKeyboard(!prefersTouchInterface());
   }, []);
 
   const dismissKeyboard = useCallback(() => {
@@ -266,6 +274,7 @@ export default function HeroInteractivePhone() {
           return;
         }
         if (done || userTurns >= MAX_USER_TURNS) return;
+        if (prefersTouchInterface()) return;
 
         clearScrollTimer();
         const delay = reduce ? 0 : 280;
@@ -299,7 +308,7 @@ export default function HeroInteractivePhone() {
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     async function runIntro() {
-      if (reduce) {
+      if (reduce || prefersTouchInterface()) {
         setMessages([...INTRO]);
         setIntroComplete(true);
         return;
@@ -483,17 +492,27 @@ export default function HeroInteractivePhone() {
                         ref={inputRef}
                         id="hero-phone-input"
                         type="text"
+                        inputMode="text"
                         className="alm-hero-phone__input"
                         placeholder={done ? "sign in to keep going" : "iMessage"}
                         value={draft}
                         onChange={(e) => setDraft(e.target.value)}
-                        onFocus={() => setKeyboardOpen(true)}
+                        onFocus={() => {
+                          setKeyboardOpen(true);
+                          if (!introComplete && prefersTouchInterface()) {
+                            setMessages([...INTRO]);
+                            setIntroComplete(true);
+                            introPlayedRef.current = true;
+                          }
+                        }}
                         onBlur={() => {
-                          window.setTimeout(() => {
-                            if (!innerRef.current?.contains(document.activeElement)) {
-                              setKeyboardOpen(false);
-                            }
-                          }, 120);
+                          if (useFakeKeyboard) {
+                            window.setTimeout(() => {
+                              if (!innerRef.current?.contains(document.activeElement)) {
+                                setKeyboardOpen(false);
+                              }
+                            }, 120);
+                          }
                         }}
                         disabled={inputDisabled}
                         autoComplete="off"

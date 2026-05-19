@@ -117,7 +117,10 @@ export default function Login() {
                   placeholder="+15551234567"
                   className="alm-login__input"
                   disabled={busy}
+                  type="tel"
+                  inputMode="tel"
                   autoComplete="tel"
+                  autoCorrect="off"
                 />
                 {otpRequested ? (
                   <input
@@ -126,7 +129,10 @@ export default function Login() {
                     placeholder="6-digit code"
                     className="alm-login__input"
                     disabled={busy}
+                    type="text"
+                    inputMode="numeric"
                     autoComplete="one-time-code"
+                    pattern="[0-9]*"
                   />
                 ) : null}
                 <button

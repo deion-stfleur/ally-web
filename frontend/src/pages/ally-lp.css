@@ -24,7 +24,9 @@
   width: 100%;
   max-width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
+  overflow-y: visible;
   font-family: Inter, system-ui, -apple-system, sans-serif;
   color: var(--alm-black);
   background-color: #fbfdff;
@@ -176,6 +178,7 @@
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  overflow-y: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -194,6 +197,7 @@
   margin: 0 auto;
   padding: 0 24px 80px;
   overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .alm-hero {
@@ -728,7 +732,7 @@
   border-radius: 20px;
   background: #fff;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.25;
   letter-spacing: -0.022em;
   color: #000;
@@ -1351,6 +1355,7 @@
   margin: 0 auto;
   padding: 128px 24px 144px;
   overflow-x: hidden;
+  overflow-y: visible;
   box-sizing: border-box;
 }
 
@@ -2596,7 +2601,16 @@
   align-items: center;
   justify-content: center;
   min-height: min(560px, calc(100vh - 220px));
+  min-height: min(560px, calc(100dvh - 220px));
   padding: 32px 0 56px;
+}
+
+@media (max-width: 899px) {
+  .alm-login-main {
+    justify-content: flex-start;
+    min-height: 0;
+    padding-top: 24px;
+  }
 }
 
 .alm-login-card.alm-card {
@@ -2745,8 +2759,10 @@ button.alm-login__cta:disabled {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.9);
   color: #0f172a;
-  font-size: 0.95rem;
+  font-size: 16px;
   outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .alm-login__input:focus {
