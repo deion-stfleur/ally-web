@@ -30,14 +30,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route
-        path="/pricing"
-        element={
-          <ProtectedRoute>
-            <Pricing />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/pricing" element={<Pricing />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

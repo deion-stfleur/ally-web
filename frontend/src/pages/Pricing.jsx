@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import MarketingNav from "../components/MarketingNav";
@@ -42,11 +42,17 @@ const PLANS = [
 ];
 
 export default function Pricing() {
+  const navigate = useNavigate();
   const { sessionToken, user } = useAuth();
+  const isSignedIn = Boolean(sessionToken);
   const [busyPlan, setBusyPlan] = useState(null);
   const [error, setError] = useState(null);
 
   const startCheckout = useCallback(async (plan) => {
+    if (!sessionToken) {
+      navigate("/login", { state: { from: "/pricing" } });
+      return;
+    }
     setBusyPlan(plan);
     setError(null);
     try {
@@ -61,9 +67,13 @@ export default function Pricing() {
     } finally {
       setBusyPlan(null);
     }
-  }, []);
+  }, [navigate, sessionToken]);
 
   const openPortal = useCallback(async () => {
+    if (!sessionToken) {
+      navigate("/login", { state: { from: "/pricing" } });
+      return;
+    }
     setBusyPlan("portal");
     setError(null);
     try {
@@ -78,11 +88,7 @@ export default function Pricing() {
     } finally {
       setBusyPlan(null);
     }
-  }, []);
-
-  if (!sessionToken) {
-    return <Navigate to="/login" replace state={{ from: "/pricing" }} />;
-  }
+  }, [navigate, sessionToken]);
 
   const activePlan = user?.subscription_plan;
   const hasSub = user?.sms_plan_active;
@@ -120,16 +126,20 @@ export default function Pricing() {
                     <li key={f}>{f}</li>
                   ))}
                 </ul>
-                {isCurrent ? (
+                {isSignedIn && isCurrent ? (
                   <p className="alm-pricing__current">Your current plan</p>
                 ) : (
                   <button
                     type="button"
                     className="alm-pricing__cta"
-                    disabled={Boolean(busyPlan) || isOther}
+                    disabled={Boolean(busyPlan) || (isSignedIn && isOther)}
                     onClick={() => startCheckout(plan.id)}
                   >
-                    {busyPlan === plan.id ? "Redirecting…" : `Get ${plan.name}`}
+                    {busyPlan === plan.id
+                      ? "Redirecting…"
+                      : isSignedIn
+                        ? `Get ${plan.name}`
+                        : `Sign in to get ${plan.name}`}
                   </button>
                 )}
               </article>
@@ -157,7 +167,11 @@ export default function Pricing() {
         ) : null}
 
         <p className="alm-pricing__back">
-          <Link to="/chat">Back to chat</Link>
+          {isSignedIn ? (
+            <Link to="/chat">Back to chat</Link>
+          ) : (
+            <Link to="/">Back to home</Link>
+          )}
         </p>
       </main>
     </div>

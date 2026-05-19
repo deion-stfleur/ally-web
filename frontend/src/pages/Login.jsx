@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import { useAuth } from "../hooks/useAuth";
@@ -15,6 +15,11 @@ function IconStar() {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo =
+    typeof location.state?.from === "string" && location.state.from.startsWith("/")
+      ? location.state.from
+      : "/chat";
   const { isAuthenticated, login, loginWithPhone, authError, clearAuthError } =
     useAuth();
   const [busy, setBusy] = useState(false);
@@ -25,16 +30,16 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/chat", { replace: true });
+      navigate(returnTo, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, returnTo]);
 
   async function handleSignIn() {
     clearAuthError();
     setBusy(true);
     try {
       await login();
-      navigate("/chat", { replace: true });
+      navigate(returnTo, { replace: true });
     } catch {
       // Error message is in authError
     } finally {
@@ -54,7 +59,7 @@ export default function Login() {
       if (res?.requested) {
         setOtpRequested(true);
       } else {
-        navigate("/chat", { replace: true });
+        navigate(returnTo, { replace: true });
       }
     } finally {
       setBusy(false);
