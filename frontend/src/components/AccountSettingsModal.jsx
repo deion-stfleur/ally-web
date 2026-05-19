@@ -137,15 +137,22 @@ export default function AccountSettingsModal({
               </p>
 
               <div className="mt-8 border-t border-slate-100 pt-6">
-                <p className="text-sm font-medium text-slate-800">SMS plan</p>
+                <p className="text-sm font-medium text-slate-800">Subscription</p>
                 <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                  Web chat is free. SMS is $12.99/month so Ally can text you from the same Google-connected
-                  account.
+                  Text Ally from your phone on the same Google-connected account.{" "}
+                  <strong className="font-medium text-slate-800">Ally Standard ($10/mo)</strong> includes
+                  web chat, Google (Gmail, Calendar, Drive), and SMS when you text first.{" "}
+                  <strong className="font-medium text-slate-800">Ally Pro ($30/mo)</strong> adds proactive
+                  texts, profile memory, and deeper follow-through.
                 </p>
                 {user?.sms_plan_active ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
-                      Active
+                      {user.subscription_plan === "pro"
+                        ? "Ally Pro active"
+                        : user.subscription_plan === "starter"
+                          ? "Ally Standard active"
+                          : "Active"}
                     </span>
                     <button
                       type="button"

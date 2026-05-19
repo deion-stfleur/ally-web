@@ -284,8 +284,8 @@ async def process_sendblue_inbound(
         await db.commit()
         pay_url = f"{settings.frontend_url.rstrip('/')}/pricing"
         msg = (
-            "Ally SMS needs an active plan ($12.99/mo). Subscribe here, then text again: "
-            f"{pay_url}"
+            "Ally SMS needs an active plan (Standard $10/mo or Pro $30/mo). "
+            f"Subscribe here, then text again: {pay_url}"
         )
         try:
             await asyncio.to_thread(
