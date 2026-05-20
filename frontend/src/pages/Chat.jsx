@@ -117,6 +117,11 @@ export default function Chat() {
 
   const showChatChrome = messages.length > 0;
 
+  useEffect(() => {
+    document.documentElement.classList.add("ally-route-chat");
+    return () => document.documentElement.classList.remove("ally-route-chat");
+  }, []);
+
   return (
     <div
       className={`flex h-full min-h-0 text-slate-900 ${showChatChrome ? "bg-[#F9FAFB]" : "bg-sky-100/40"}`}

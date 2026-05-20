@@ -25,9 +25,8 @@
   max-width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: clip;
+  overflow-x: hidden;
   overflow-y: visible;
-  touch-action: pan-y;
   font-family: Inter, system-ui, -apple-system, sans-serif;
   color: var(--alm-black);
   background-color: #fbfdff;
@@ -43,13 +42,6 @@
       #e8f3ff 76%,
       #ffffff 100%
     );
-  background-attachment: fixed;
-}
-
-@media (max-width: 899px) {
-  .alm {
-    background-attachment: scroll;
-  }
 }
 
 /* ----- nav ----- */
@@ -160,16 +152,11 @@
 /* ----- scroll reveal (landing sections) ----- */
 .alm-reveal {
   opacity: 0;
-  transform: translateY(22px);
-  transition:
-    opacity 0.68s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .alm-reveal.is-visible {
   opacity: 1;
-  transform: translateY(0);
-  will-change: auto;
 }
 
 .alm-reveal-nav,
@@ -177,8 +164,7 @@
 .alm-reveal-block {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -196,8 +182,7 @@
   max-width: 1120px;
   margin: 0 auto;
   padding: 0 24px 80px;
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: visible;
 }
 
 .alm-hero {
@@ -316,7 +301,6 @@
   margin: 40px auto 0;
   max-width: min(420px, 100%);
   width: 100%;
-  touch-action: pan-y;
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -365,11 +349,16 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 580px;
+  min-height: 400px;
   border-radius: 36px;
-  overflow: hidden;
+  overflow: visible;
   background: #fff;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.alm-hero-phone__inner.is-keyboard-open {
+  height: 580px;
+  overflow: hidden;
 }
 
 .alm-hero-phone__status {
@@ -444,6 +433,11 @@
   transform: translateX(-50%);
   border-radius: 999px;
   background: #0a0a0a;
+}
+
+.alm-hero-phone__header,
+.alm-hero-phone__bottom {
+  pointer-events: auto;
 }
 
 .alm-hero-phone__header {
@@ -560,23 +554,26 @@
 }
 
 .alm-hero-phone__thread {
-  flex: 1;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior-y: none;
+  flex: 0 1 auto;
+  min-height: 100px;
+  overflow: visible;
   padding: 8px 14px 10px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 6px;
   background: #fff;
-  transition: flex 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-  -webkit-overflow-scrolling: touch;
+  pointer-events: none;
 }
 
 .alm-hero-phone__inner.is-keyboard-open .alm-hero-phone__thread {
   flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  pointer-events: auto;
+  -webkit-overflow-scrolling: touch;
+  transition: flex 0.32s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .alm-hero-phone__bubble {
@@ -1359,8 +1356,7 @@
   max-width: 1120px;
   margin: 0 auto;
   padding: 128px 24px 144px;
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow: visible;
   box-sizing: border-box;
 }
 
