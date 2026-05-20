@@ -22,13 +22,13 @@ const PLANS = [
     price: 10,
     tagline: "Text Ally when you need a hand.",
     features: [
-      "Web chat with thread memory so follow-ups stay in context",
-      "Google: Gmail, Calendar, and Drive (summaries, drafts, file lookups)",
-      "Runs tasks for you over time and searches the web when it helps",
-      "Keeps working the thread until the errand is done, then texts you back",
-      "SMS on your phone: you text first, Ally replies",
-      "Learns basics from chat: how you like updates, recurring asks, your tone",
+      "Works with Gmail, Calendar, Drive, Sheets and more",
+      "Handles tasks and searches web for you",
+      "Keeps going until the job's done, then texts you",
+      "Available on web and iMessage",
+      "Learns your habits and preferences from chat",
     ],
+    footnote: "$10/mo. cancel anytime.",
   },
   {
     id: "pro",
@@ -37,12 +37,14 @@ const PLANS = [
     price: 30,
     tagline: "Ally stays on it and texts you first.",
     featured: true,
+    footnote: "cancel anytime. switch plans from your dashboard.",
     features: [
-      "Everything in Starter, plus a profile Ally builds over time",
-      "Memory for interests, schedule, and what you want tracked (not just one thread)",
-      "Proactive texts when something moves, no need to ping Ally first",
-      "Multi-step errands in one thread until they are done",
-      "Scheduled briefs: morning recap, check-ins, nudges you set",
+      "Everything in Starter",
+      "Remembers your interests, schedule, and tasks across all chats",
+      "Texts you automatically when there's an update",
+      "Handles complex tasks until they're done, all in one thread",
+      "Sends scheduled recaps, check-ins, and reminders",
+      "Run 24/7 background tasks for you",
     ],
   },
 ];
@@ -138,16 +140,22 @@ export default function Pricing() {
                   ))}
                 </ul>
                 {isSignedIn && isCurrent ? (
-                  <p className="alm-pricing__current">Your current plan</p>
+                  <div className="alm-pricing__cta-wrap">
+                    <p className="alm-pricing__current">Your current plan</p>
+                    <p className="alm-pricing__footnote">{plan.footnote}</p>
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="alm-pricing__cta"
-                    disabled={Boolean(busyPlan) || (isSignedIn && isOther)}
-                    onClick={() => startCheckout(plan.id)}
-                  >
-                    {subscribeLabel(plan, busyPlan === plan.id)}
-                  </button>
+                  <div className="alm-pricing__cta-wrap">
+                    <button
+                      type="button"
+                      className={`alm-pricing__cta${plan.featured ? " alm-pricing__cta--featured" : ""}`}
+                      disabled={Boolean(busyPlan) || (isSignedIn && isOther)}
+                      onClick={() => startCheckout(plan.id)}
+                    >
+                      {subscribeLabel(plan, busyPlan === plan.id)}
+                    </button>
+                    <p className="alm-pricing__footnote">{plan.footnote}</p>
+                  </div>
                 )}
               </article>
             );

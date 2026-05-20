@@ -2911,25 +2911,34 @@ button.alm-login__cta:disabled {
   font-weight: 700;
 }
 
+.alm-pricing__cta-wrap {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
 .alm-pricing__cta {
+  display: block;
   width: 100%;
   padding: 14px 18px;
   border: none;
-  border-radius: 999px;
-  background: var(--alm-brand);
-  color: var(--alm-white);
+  border-radius: 24px;
+  background: var(--alm-soft);
+  color: var(--alm-black);
   font-size: 0.9375rem;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
+.alm-pricing__cta--featured,
 .alm-pricing__card--featured .alm-pricing__cta {
-  background: var(--alm-brand-deep);
+  background: var(--alm-black);
+  color: var(--alm-white);
 }
 
 .alm-pricing__cta:hover:not(:disabled) {
-  opacity: 0.92;
+  opacity: 0.9;
 }
 
 .alm-pricing__cta:disabled {
@@ -2937,11 +2946,20 @@ button.alm-login__cta:disabled {
   cursor: not-allowed;
 }
 
+.alm-pricing__footnote {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--alm-muted);
+  font-weight: 400;
+}
+
 .alm-pricing__current {
   margin: 0;
   padding: 14px;
   text-align: center;
-  border-radius: 999px;
+  border-radius: 24px;
   background: var(--alm-soft);
   font-size: 0.875rem;
   font-weight: 600;
@@ -2956,7 +2974,7 @@ button.alm-login__cta:disabled {
 .alm-pricing__portal {
   padding: 12px 20px;
   border: 1px solid var(--alm-border);
-  border-radius: 999px;
+  border-radius: 24px;
   background: var(--alm-white);
   font-size: 0.875rem;
   font-weight: 600;
