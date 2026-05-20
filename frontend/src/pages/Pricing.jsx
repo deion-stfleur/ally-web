@@ -24,7 +24,9 @@ const PLANS = [
     features: [
       "Web chat with thread memory so follow-ups stay in context",
       "Google: Gmail, Calendar, and Drive (summaries, drafts, file lookups)",
-      "SMS on your phone — you text first, Ally replies",
+      "Runs tasks for you over time and searches the web when it helps",
+      "Keeps working the thread until the errand is done, then texts you back",
+      "SMS on your phone: you text first, Ally replies",
       "Learns basics from chat: how you like updates, recurring asks, your tone",
     ],
   },
@@ -38,7 +40,7 @@ const PLANS = [
     features: [
       "Everything in Starter, plus a profile Ally builds over time",
       "Memory for interests, schedule, and what you want tracked (not just one thread)",
-      "Proactive texts when something moves — no need to ping Ally first",
+      "Proactive texts when something moves, no need to ping Ally first",
       "Multi-step errands in one thread until they are done",
       "Scheduled briefs: morning recap, check-ins, nudges you set",
     ],

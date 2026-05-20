@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import allyAvatar from "../assets/nav-brand.png";
 
 const INTRO = [
-  { id: "i1", who: "ally", text: "hey, it's ally" },
-  { id: "i2", who: "ally", text: "wanna see what i can do?" },
+  { id: "i1", who: "ally", text: "text me an errand. calendar, inbox, or something to look up online." },
+  { id: "i2", who: "ally", text: "i'll keep working it and text you when something moves." },
 ];
 
 const INTRO_KEYBOARD_SETTLE_MS = 340;
@@ -38,22 +38,22 @@ function safeAllyReply(userText, turnIndex) {
   if (turnIndex >= MAX_USER_TURNS - 1) {
     return {
       cta: true,
-      text: "ok that's the demo — sign in and text me for real. i'll pull your actual calendar + inbox.",
+      text: "that's the demo. sign in and text me for real. i'll use your actual calendar and inbox.",
     };
   }
   if (/what.*(on|today|tomorrow)|calendar|meeting|schedule|free|busy/.test(t)) {
     return {
-      text: "checking your calendar — i'd text back something like: standup 9:30, 1:1 w/ jordan 11, focus block 2–4.",
+      text: "checking your calendar. i'd text back: standup 9:30, 1:1 w/ jordan 11, focus block 2-4.",
     };
   }
   if (/email|gmail|inbox|thread|summar|draft|reply|alex/.test(t)) {
     return {
-      text: "on it — i'd skim that thread and send you 3 bullets plus a reply you can paste into gmail.",
+      text: "on it. i'd skim that thread and send you 3 bullets plus a reply you can paste into gmail.",
     };
   }
   if (/doc|sheet|drive|slide|folder|file/.test(t)) {
     return {
-      text: "yep — i can spin up a doc or drop notes in a sheet from here. want a blank doc or a template?",
+      text: "yep. i can spin up a doc or drop notes in a sheet from here. want a blank doc or a template?",
     };
   }
   if (/remind|follow|track|todo|task/.test(t)) {
@@ -63,22 +63,22 @@ function safeAllyReply(userText, turnIndex) {
   }
   if (/book|reserv|dinner|lunch|table/.test(t)) {
     return {
-      text: "looking at times — i'd text you back 2–3 options that fit, then hold the one you pick.",
+      text: "looking at times. i'd text you back 2-3 options that fit, then hold the one you pick.",
     };
   }
   if (/hi|hey|hello|sup|yo/.test(t)) {
     return {
-      text: "hey — i'm ally. try \"what's on my calendar tomorrow\" or \"summarize my last email from alex.\"",
+      text: 'try "what\'s on my calendar tomorrow" or "summarize my last email from alex."',
     };
   }
   if (/thank|thx|cool|nice|ok|okay/.test(t)) {
-    return { text: "anytime — what should i tackle next?" };
+    return { text: "anytime. what should i tackle next?" };
   }
   if (t.length < 4) {
-    return { text: "say a little more — like a meeting name, thread, or what you want drafted." };
+    return { text: "say a little more, like a meeting name, thread, or what you want drafted." };
   }
   const contextual = [
-    "i'm listening — mail, calendar, or drive. what's the errand?",
+    "i'm listening. mail, calendar, drive, or the web. what's the errand?",
     "throw me a real one: inbox thread, meeting prep, or a doc you need started.",
   ];
   return { text: contextual[turnIndex % contextual.length] };
@@ -453,7 +453,6 @@ export default function HeroInteractivePhone() {
                 <div
                   ref={threadRef}
                   className="alm-hero-phone__thread"
-                  onClick={openKeyboard}
                   role="log"
                   aria-live="polite"
                 >
@@ -465,7 +464,7 @@ export default function HeroInteractivePhone() {
                       {m.text}
                       {m.cta ? (
                         <Link to="/login" className="alm-hero-phone__cta-link">
-                          text ally → sign in
+                          sign in to keep going
                         </Link>
                       ) : null}
                     </div>
