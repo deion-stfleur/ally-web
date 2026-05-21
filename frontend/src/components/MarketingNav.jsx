@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 
-export default function MarketingNav() {
+export default function MarketingNav({ overlay = false }) {
   return (
-    <header className="alm-nav">
+    <header className={`alm-nav${overlay ? " alm-nav--overlay" : ""}`}>
       <div className="alm-nav__inner">
         <Link to="/" className="alm-nav__logo">
           <span aria-hidden>✳</span> ally
@@ -10,7 +10,6 @@ export default function MarketingNav() {
         <nav className="alm-nav__links" aria-label="Marketing">
           <Link to="/features">Features</Link>
           <Link to="/use-cases">Use cases</Link>
-          <a href="/#integrations">Integrations</a>
           <Link to="/pricing">Pricing</Link>
         </nav>
         <div className="alm-nav__actions">

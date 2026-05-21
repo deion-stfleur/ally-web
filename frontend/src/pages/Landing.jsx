@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FadeInSection from "../components/FadeInSection";
 import LandingTextLoop from "../components/LandingTextLoop";
+import LandingTestimonials from "../components/LandingTestimonials";
 import LandingCompareTable from "../components/LandingCompareTable";
 import LandingFaq from "../components/LandingFaq";
+import LandingPricing from "../components/LandingPricing";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import HeroInteractivePhone from "../components/HeroInteractivePhone";
@@ -15,6 +17,7 @@ import {
   IconGoogleCalendar,
   IconGoogleSheets,
 } from "./IntegrationIcons";
+import heroMountains from "../assets/hero-mountains.png";
 import "./ally-lp.css";
 
 const INTEGRATIONS = [
@@ -26,68 +29,56 @@ const INTEGRATIONS = [
   { label: "Android", Icon: IconAndroid },
 ];
 
-const HERO_TYPE_PREFIX = "Meet Ally. ";
-const HERO_TYPE_BODY = "Like texting a friend who actually follows through.";
-const HERO_TYPE_FULL = `${HERO_TYPE_PREFIX}${HERO_TYPE_BODY}`;
+const HERO_TITLE_PREFIX = "Meet Ally. ";
+const HERO_TITLE_BODY = "Like texting a friend who actually follows through.";
 
 export default function Landing() {
-  const [heroTypedLen, setHeroTypedLen] = useState(0);
+  const [heroMotion, setHeroMotion] = useState(true);
 
   useEffect(() => {
-    const full = HERO_TYPE_FULL;
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) {
-      setHeroTypedLen(full.length);
-      return undefined;
-    }
-    let i = 0;
-    const msPerChar = 58;
-    const id = window.setInterval(() => {
-      i += 1;
-      if (i >= full.length) {
-        setHeroTypedLen(full.length);
-        window.clearInterval(id);
-        return;
-      }
-      setHeroTypedLen(i);
-    }, msPerChar);
-    return () => window.clearInterval(id);
+    if (reduce) setHeroMotion(false);
   }, []);
 
-  const heroVisible = HERO_TYPE_FULL.slice(0, heroTypedLen);
-  const heroPrefixLen = HERO_TYPE_PREFIX.length;
-  const heroStrongText = heroVisible.length <= heroPrefixLen ? heroVisible : HERO_TYPE_PREFIX;
-  const heroRestText = heroVisible.length <= heroPrefixLen ? "" : heroVisible.slice(heroPrefixLen);
-  const heroTypingDone = heroTypedLen >= HERO_TYPE_FULL.length;
+  const fadeClass = (step) =>
+    ["alm-hero-fade-up", heroMotion ? `alm-hero-fade-up--${step}` : "alm-hero-fade-up--static"]
+      .filter(Boolean)
+      .join(" ");
 
   return (
-    <div className="alm">
-      <FadeInSection className="alm-reveal-nav">
-        <MarketingNav />
-      </FadeInSection>
-
+    <div className="alm alm--landing">
       <main className="alm-main">
-        <FadeInSection as="div" className="alm-reveal-block">
         <section className="alm-hero">
-          <h1 className="alm-hero__title" aria-label={heroTypingDone ? HERO_TYPE_FULL : undefined}>
-            <span className="alm-hero__type-line">
-              <strong className="alm-hero__type-strong">{heroStrongText}</strong>
-              {heroRestText ? <span className="alm-hero__type-rest">{heroRestText}</span> : null}
-              {!heroTypingDone ? <span className="alm-hero__type-cursor" aria-hidden /> : null}
-            </span>
-          </h1>
-          <p className="alm-hero__lead">
-            You text once. Ally stays on it and pings you when something moves.
-          </p>
-          <Link to="/login" className="alm-hero__cta">
-            Start free trial
-          </Link>
-          <HeroInteractivePhone />
+          <div
+            className="alm-hero__stage"
+            style={{ "--alm-hero-bg-image": `url(${heroMountains})` }}
+          >
+            <MarketingNav overlay />
+            <div className="alm-hero__copy">
+              <h1 className="alm-hero__title">
+                <strong className={`alm-hero__title-strong ${fadeClass(1)}`}>
+                  {HERO_TITLE_PREFIX}
+                </strong>
+                <span className={`alm-hero__title-body ${fadeClass(1)}`}>
+                  {HERO_TITLE_BODY}
+                </span>
+              </h1>
+              <p className={`alm-hero__lead ${fadeClass(2)}`}>
+                You text once. Ally stays on it and pings you when something moves.
+              </p>
+              <Link to="/login" className={`alm-hero__cta ${fadeClass(3)}`}>
+                Start free trial
+              </Link>
+              <div className="alm-hero__phone">
+                <div className={fadeClass(4)}>
+                  <HeroInteractivePhone />
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
-        </FadeInSection>
-
 
         <FadeInSection as="div" className="alm-reveal-block">
         <footer className="alm-integ" id="integrations">
@@ -110,16 +101,22 @@ export default function Landing() {
         </FadeInSection>
 
         <FadeInSection as="div" className="alm-reveal-block">
+          <LandingTestimonials />
+        </FadeInSection>
+
+        <FadeInSection as="div" className="alm-reveal-block">
           <LandingCompareTable />
         </FadeInSection>
 
         <FadeInSection as="div" className="alm-reveal-block">
           <LandingFaq />
         </FadeInSection>
+
+        <FadeInSection as="div" className="alm-reveal-block">
+          <LandingPricing />
+        </FadeInSection>
       </main>
-      <FadeInSection as="div" className="alm-reveal-footer">
-        <MarketingFooter />
-      </FadeInSection>
+      <MarketingFooter />
     </div>
   );
 }
