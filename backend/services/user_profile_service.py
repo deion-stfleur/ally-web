@@ -250,13 +250,63 @@ def merge_profile_from_extraction(
     profile.last_updated = datetime.now(timezone.utc)
 
 
+def normalize_proactive_topic(topic: str) -> str:
+    """Lowercase slug for dedup (2–8 significant tokens)."""
+    raw = re.sub(r"[^a-z0-9\s]", " ", (topic or "").lower())
+    tokens = [t for t in raw.split() if len(t) >= 2]
+    return " ".join(tokens[:8])[:120]
+
+
+def _topic_tokens(topic: str) -> set[str]:
+    return {t for t in normalize_proactive_topic(topic).split() if len(t) >= 3}
+
+
+def proactive_topic_is_repeat(new_topic: str, recent_topics: list) -> bool:
+    """True if new_topic overlaps a recently sent proactive topic."""
+    new_norm = normalize_proactive_topic(new_topic)
+    if not new_norm:
+        return False
+    new_tokens = _topic_tokens(new_topic)
+    for item in recent_topics:
+        old = str(item or "").strip()
+        if not old:
+            continue
+        old_norm = normalize_proactive_topic(old)
+        if not old_norm:
+            continue
+        if new_norm == old_norm or new_norm in old_norm or old_norm in new_norm:
+            return True
+        old_tokens = _topic_tokens(old)
+        if len(new_tokens & old_tokens) >= 2:
+            return True
+        if new_tokens and old_tokens and len(new_tokens & old_tokens) >= 1:
+            shared = new_tokens & old_tokens
+            if any(len(w) >= 5 for w in shared):
+                return True
+    return False
+
+
+def clear_proactive_awaiting_reply(profile: UserProfile) -> None:
+    if profile.proactive_awaiting_reply:
+        profile.proactive_awaiting_reply = False
+        profile.last_updated = datetime.now(timezone.utc)
+
+
+def can_send_proactive_now(profile: UserProfile) -> bool:
+    """Time cooldown + no outstanding proactive awaiting user reply."""
+    if profile.proactive_awaiting_reply:
+        return False
+    return can_send_proactive(profile)
+
+
 def record_proactive_sent(profile: UserProfile, *, topic: str, message: str) -> None:
     now = datetime.now(timezone.utc)
     profile.last_proactive_sent = now
     profile.last_updated = now
+    profile.proactive_awaiting_reply = True
     topics = _norm_topics(profile.recent_topics_sent)
-    topic_key = (topic or message)[:120].strip().lower()
+    topic_key = normalize_proactive_topic(topic or message)
     if topic_key:
-        topics = [t for t in topics if t.lower() != topic_key]
+        topics = [t for t in topics if normalize_proactive_topic(t) != topic_key]
         topics.append(topic_key[:120])
     profile.recent_topics_sent = topics[-10:]

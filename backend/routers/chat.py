@@ -37,6 +37,10 @@ from services.chat_persist import (
     resolve_db_user_id,
 )
 from services.schedule_service import create_agent_task_job, create_send_gmail_job
+from services.user_profile_service import (
+    clear_proactive_awaiting_reply,
+    get_or_create_profile,
+)
 from services.watch_rules_service import create_watch_rule as create_watch_rule_row
 from services.session_store import UserSession
 
@@ -282,6 +286,12 @@ async def chat_endpoint(
     if db is not None:
         user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
         if user_id is not None:
+            chat_user = receipt_row
+            if chat_user is None:
+                chat_user = await db.get(User, user_id)
+            if chat_user is not None:
+                chat_profile = await get_or_create_profile(db, user=chat_user)
+                clear_proactive_awaiting_reply(chat_profile)
             try:
                 conv = None
                 if body.conversation_id is not None:

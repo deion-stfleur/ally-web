@@ -133,6 +133,9 @@ class UserProfile(Base):
     onboarding_updates_asked: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false", default=False
     )
+    proactive_awaiting_reply: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", default=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

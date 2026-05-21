@@ -29,6 +29,7 @@ from models.schemas import RegisterWatchActionPayload
 from services.schedule_service import create_agent_task_job
 from services.user_profile_service import (
     ONBOARDING_QUESTION,
+    clear_proactive_awaiting_reply,
     get_or_create_profile,
     maybe_capture_update_preference,
     schedule_memory_extraction,
@@ -318,7 +319,8 @@ async def process_sendblue_inbound(
         db, user_id=user.id, conversation_id=conv_id
     )
     is_first_user_message = sum(1 for m in prior_msgs if m.role == "user") == 0
-    await get_or_create_profile(db, user=user)
+    profile = await get_or_create_profile(db, user=user)
+    clear_proactive_awaiting_reply(profile)
     await maybe_capture_update_preference(db, user=user, message=content)
     history: list[dict[str, str]] = []
     for m in prior_msgs:
@@ -379,7 +381,6 @@ async def process_sendblue_inbound(
             reply = f"{(reply or '').strip()}\n\n(watch save failed.)".strip()
 
     text = (reply or "").strip() or " "
-    profile = await get_or_create_profile(db, user=user)
     if is_first_user_message and not profile.onboarding_updates_asked:
         text = f"{text}\n\n{ONBOARDING_QUESTION}".strip()
         profile.onboarding_updates_asked = True
