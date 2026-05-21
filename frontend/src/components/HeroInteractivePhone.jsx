@@ -408,7 +408,7 @@ export default function HeroInteractivePhone() {
             <div className="alm-hero-phone__bezel-glare" />
             <div
               ref={innerRef}
-              className={`alm-hero-phone__inner${keyboardOpen ? " is-keyboard-open" : ""}`}
+              className={`alm-hero-phone__inner${keyboardOpen && useFakeKeyboard ? " is-keyboard-open" : ""}`}
             >
               <header className="alm-hero-phone__header">
                 <button
