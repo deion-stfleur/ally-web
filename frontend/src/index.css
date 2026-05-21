@@ -23,6 +23,8 @@ body {
 
 #root {
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 /* Chat uses internal panes; lock document scroll on that route only. */
