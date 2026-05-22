@@ -169,14 +169,6 @@ export default function Chat() {
         />
         {!user?.sms_plan_active ? (
           <SmsSubscribeBanner phoneE164={user?.phone_e164} />
-        ) : user?.phone_e164 && allySmsE164 ? (
-          <div className="shrink-0 border-b border-emerald-200/80 bg-emerald-50/50 px-4 py-2 sm:px-6">
-            <TextAllyHandoff
-              compact
-              allySmsE164={allySmsE164}
-              userPhoneE164={user.phone_e164}
-            />
-          </div>
         ) : null}
         <ContextFilesPanel
           open={contextOpen}

@@ -22,10 +22,7 @@ export default function ChatLanding({ user, onPickPrompt, allySmsE164 = null }) 
       </div>
 
       <h1 className="text-center text-3xl font-semibold tracking-tight text-slate-900">
-        Hi, {first}{" "}
-        <span className="inline-block" role="img" aria-label="wave">
-          👋
-        </span>
+        Hi, {first}
       </h1>
       <p className="mt-2 max-w-lg text-center text-sm text-slate-500">
         Tell us what you need — email, Drive, Calendar, and more. We&apos;ll handle the rest.
