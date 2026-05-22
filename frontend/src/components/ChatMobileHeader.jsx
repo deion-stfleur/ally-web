@@ -62,7 +62,7 @@ export default function ChatMobileHeader({
     } finally {
       setBillingBusy(false);
     }
-  }, [closeMenu, navigate]);
+  }, [closeMenu]);
 
   const menuItem = (label, onClick) => (
     <button
