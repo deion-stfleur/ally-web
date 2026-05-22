@@ -232,26 +232,6 @@
   color: #0f172a;
 }
 
-.alm-nav__drawer {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  padding: 0 24px 32px;
-  transform: translateX(100%);
-  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.alm-nav__drawer.is-open {
-  transform: translateX(0);
-  visibility: visible;
-  pointer-events: auto;
-}
-
 .alm-nav__drawer-head {
   display: flex;
   align-items: center;
@@ -280,13 +260,6 @@
   display: inline-flex;
 }
 
-.alm-nav__drawer-links {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
 .alm-nav__drawer-links a {
   display: block;
   padding: 14px 4px;
@@ -301,29 +274,6 @@
   opacity: 0.65;
 }
 
-.alm-nav__drawer-foot {
-  flex-shrink: 0;
-  padding-top: 24px;
-}
-
-.alm-nav__drawer-cta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 16px 24px;
-  border-radius: 999px;
-  background: var(--alm-black);
-  color: var(--alm-white);
-  font-size: 1rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.alm-nav__drawer-cta:hover {
-  opacity: 0.9;
-}
-
 @media (max-width: 899px) {
   .alm-nav__cta--desktop {
     display: none;
@@ -331,12 +281,6 @@
 
   .alm-nav__menu-btn {
     display: inline-flex;
-  }
-}
-
-@media (min-width: 900px) {
-  .alm-nav__drawer {
-    display: none;
   }
 }
 
@@ -669,26 +613,33 @@
     padding: 14px 18px;
   }
 
-  .alm--landing .alm-hero__stage {
-    min-height: max(480px, 68svh);
-    min-height: max(480px, 68dvh);
+  .alm--landing .alm-hero__stage,
+  .alm--landing .alm-hero__stage.alm-hero__stage--mobile-blue {
+    min-height: max(520px, 72svh);
+    min-height: max(520px, 72dvh);
     padding-left: 16px;
     padding-right: 16px;
     padding-bottom: clamp(40px, 8vh, 64px);
     overflow-x: hidden;
+    background-color: transparent !important;
     background-image: none !important;
-    background: linear-gradient(
-      180deg,
-      #3d7eb5 0%,
-      #5a9fd4 28%,
-      #7eb8e8 55%,
-      #a8d4f5 78%,
-      #d4e9f7 100%
-    );
   }
 
   .alm--landing .alm-hero__stage::before {
-    display: none;
+    display: none !important;
+    content: none !important;
+  }
+
+  .alm.alm--landing {
+    background-color: #5a9fd4;
+    background-image: linear-gradient(
+      180deg,
+      #3d7eb5 0%,
+      #5a9fd4 22%,
+      #7eb8e8 48%,
+      #a8d4f5 72%,
+      #d4e9f7 100%
+    );
   }
 
   .alm--landing .alm-hero__copy {
@@ -712,14 +663,27 @@
   }
 
   .alm--landing .alm-hero__lead {
-    color: #ffffff;
-    text-shadow: 0 1px 20px rgba(15, 23, 42, 0.4);
+    color: #0f172a;
+    text-shadow: none;
   }
 
   .alm--landing .alm-hero__title-strong,
   .alm--landing .alm-hero__title-body {
-    color: #ffffff;
-    text-shadow: 0 2px 24px rgba(15, 23, 42, 0.35);
+    color: #0f172a;
+    text-shadow: none;
+  }
+
+  .alm--landing .alm-hero__title-body.alm-hero-fade-up--1,
+  .alm--landing .alm-hero__title-strong.alm-hero-fade-up--1 {
+    animation: alm-hero-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards !important;
+    color: #0f172a !important;
+    text-shadow: none !important;
+  }
+
+  .alm--landing .alm-hero__title-body.alm-hero-fade-up--static,
+  .alm--landing .alm-hero__title-strong.alm-hero-fade-up--static {
+    color: #0f172a !important;
+    text-shadow: none !important;
   }
 
   .alm-hero__lead {
@@ -3766,6 +3730,15 @@ button.alm-login__cta:disabled {
     max-width: 100%;
     overflow-x: hidden;
     position: relative;
+    background-color: #5a9fd4;
+    background-image: linear-gradient(
+      180deg,
+      #3d7eb5 0%,
+      #5a9fd4 22%,
+      #7eb8e8 48%,
+      #a8d4f5 72%,
+      #d4e9f7 100%
+    );
   }
 
   .alm.alm--landing .alm-main,
@@ -3785,31 +3758,25 @@ button.alm-login__cta:disabled {
     padding-right: 0;
   }
 
-  .alm.alm--landing .alm-hero__stage {
-    min-height: max(480px, 68svh);
-    min-height: max(480px, 68dvh);
+  .alm.alm--landing .alm-hero__stage,
+  .alm.alm--landing .alm-hero__stage.alm-hero__stage--mobile-blue {
+    min-height: max(520px, 72svh);
+    min-height: max(520px, 72dvh);
     padding-left: 16px;
     padding-right: 16px;
     padding-bottom: clamp(40px, 8vh, 64px);
+    background-color: transparent !important;
     background-image: none !important;
-    background-color: #6eb3e8;
-    background: linear-gradient(
-      180deg,
-      #3d7eb5 0%,
-      #5a9fd4 28%,
-      #7eb8e8 55%,
-      #a8d4f5 78%,
-      #d4e9f7 100%
-    );
   }
 
   .alm.alm--landing .alm-hero__stage::before {
-    display: none;
+    display: none !important;
+    content: none !important;
   }
 
   .alm.alm--landing .alm-nav--overlay .alm-nav__logo {
-    color: #ffffff;
-    text-shadow: 0 1px 12px rgba(15, 23, 42, 0.25);
+    color: #0f172a;
+    text-shadow: none;
   }
 
   .alm.alm--landing .alm-nav--overlay .alm-nav__menu-btn {
@@ -3844,12 +3811,26 @@ button.alm-login__cta:disabled {
   .alm.alm--landing .alm-hero__title-strong,
   .alm.alm--landing .alm-hero__title-body,
   .alm.alm--landing .alm-hero__title-body.alm-hero-fade-up--1 {
-    color: #ffffff;
-    text-shadow: 0 2px 24px rgba(15, 23, 42, 0.35);
+    color: #0f172a;
+    text-shadow: none;
   }
 
-  .alm.alm--landing .alm-hero__title-body.alm-hero-fade-up--1 {
-    animation: alm-hero-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards;
+  .alm.alm--landing .alm-hero__title-body.alm-hero-fade-up--1,
+  .alm.alm--landing .alm-hero__title-strong.alm-hero-fade-up--1 {
+    animation: alm-hero-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.18s forwards !important;
+    color: #0f172a !important;
+    text-shadow: none !important;
+  }
+
+  .alm.alm--landing .alm-hero__title-body.alm-hero-fade-up--static,
+  .alm.alm--landing .alm-hero__title-strong.alm-hero-fade-up--static {
+    color: #0f172a !important;
+    text-shadow: none !important;
+  }
+
+  .alm.alm--landing .alm-hero__lead.alm-hero-fade-up--2 {
+    color: #0f172a !important;
+    text-shadow: none !important;
   }
 
   .alm.alm--landing .alm-hero__lead {
@@ -3857,10 +3838,10 @@ button.alm-login__cta:disabled {
     max-width: 100%;
     margin: 0 0 28px;
     padding: 0;
-    color: #ffffff;
+    color: #0f172a;
     font-size: 1.0625rem;
     line-height: 1.55;
-    text-shadow: 0 1px 20px rgba(15, 23, 42, 0.4);
+    text-shadow: none;
     overflow-wrap: anywhere;
     word-break: break-word;
   }

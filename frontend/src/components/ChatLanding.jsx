@@ -10,8 +10,8 @@ export default function ChatLanding({ user, onPickPrompt, allySmsE164 = null }) 
   ];
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col items-center px-4 pb-8 pt-6">
-      <div className="relative mb-6 h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-white bg-violet-50 shadow-xl shadow-violet-300/40 ring-4 ring-sky-100/90">
+    <div className="chat-landing-root mx-auto flex max-w-4xl flex-col items-center px-4 pb-8 pt-6">
+      <div className="chat-landing-llama relative mb-6 h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-white bg-violet-50 shadow-xl shadow-violet-300/40 ring-4 ring-sky-100/90">
         <img
           src="/ally-llama.png"
           alt="Ally"
@@ -32,7 +32,7 @@ export default function ChatLanding({ user, onPickPrompt, allySmsE164 = null }) 
       </p>
 
       {user?.sms_plan_active && user?.phone_e164 && allySmsE164 ? (
-        <div className="mt-8 w-full max-w-3xl">
+        <div className="chat-landing-handoff mt-8 w-full max-w-3xl">
           <TextAllyHandoff
             allySmsE164={allySmsE164}
             userPhoneE164={user.phone_e164}
@@ -45,7 +45,7 @@ export default function ChatLanding({ user, onPickPrompt, allySmsE164 = null }) 
         </p>
       ) : null}
 
-      <div className="mt-10 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
+      <div className="chat-landing-tasks mt-10 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
         <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-lg shadow-slate-900/20">
           <p className="text-xs font-medium uppercase tracking-wide text-sky-300/90">
             Workspace assistant

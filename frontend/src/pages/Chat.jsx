@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import ChatMobileHeader from "../components/ChatMobileHeader";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
@@ -156,6 +157,16 @@ export default function Chat() {
         onToggleContext={() => setContextOpen((o) => !o)}
       />
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+        <ChatMobileHeader
+          user={user}
+          onNewChat={() => {
+            setSearchOpen(false);
+            startNewChat();
+            setContextOpen(false);
+          }}
+          onOpenSearch={() => setSearchOpen(true)}
+          onLinkPhone={() => setPhonePromptOpen(true)}
+        />
         {!user?.sms_plan_active ? (
           <SmsSubscribeBanner phoneE164={user?.phone_e164} />
         ) : user?.phone_e164 && allySmsE164 ? (
@@ -175,7 +186,7 @@ export default function Chat() {
         />
 
         {showChatChrome && (
-          <header className="flex shrink-0 items-center justify-end gap-2 border-b border-slate-200/80 bg-white/90 px-5 py-3.5 backdrop-blur-md sm:px-6">
+          <header className="hidden shrink-0 items-center justify-end gap-2 border-b border-slate-200/80 bg-white/90 px-5 py-3.5 backdrop-blur-md sm:px-6 lg:flex">
             <button
               type="button"
               title="Search chats and completed tasks"
@@ -255,15 +266,21 @@ export default function Chat() {
           </div>
         )}
 
-        <ChatInput
-          onSend={sendFromComposer}
-          disabled={streaming || emailSending}
-          attachIds={attachIds}
-          onRemoveAttach={(id) =>
-            setAttachIds((prev) => prev.filter((x) => x !== id))
+        <div
+          className={
+            messages.length === 0 ? "chat-composer--empty-mobile" : ""
           }
-          onReceiptImages={addReceiptImages}
-        />
+        >
+          <ChatInput
+            onSend={sendFromComposer}
+            disabled={streaming || emailSending}
+            attachIds={attachIds}
+            onRemoveAttach={(id) =>
+              setAttachIds((prev) => prev.filter((x) => x !== id))
+            }
+            onReceiptImages={addReceiptImages}
+          />
+        </div>
       </div>
       <ChatRightRail
         user={user}

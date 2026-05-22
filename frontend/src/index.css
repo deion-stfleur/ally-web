@@ -24,7 +24,7 @@ body {
 #root {
   min-height: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 /* Chat uses internal panes; lock document scroll on that route only. */
@@ -75,4 +75,208 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 .rounded-3xl.border.border-sky-200\/60.bg-sky-100\/35.p-4.shadow-\[0_24px_50px_-20px_rgba\(15\,23\,42\,0\.2\)\].backdrop-blur-xl {
   max-width: 600px;
   margin: auto;
+}
+
+/* Full-screen mobile menus (portal — works on real iOS devices) */
+.mobile-slide-menu__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(15, 23, 42, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.28s ease, visibility 0.28s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-slide-menu__backdrop.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.mobile-slide-menu__panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  padding: max(12px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: #ffffff;
+  transform: translate3d(100%, 0, 0);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  visibility: hidden;
+  pointer-events: none;
+  overflow: hidden;
+  isolation: isolate;
+  touch-action: manipulation;
+}
+
+.mobile-slide-menu__panel.is-open {
+  transform: translate3d(0, 0, 0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.mobile-slide-menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding-bottom: 20px;
+}
+
+.mobile-slide-menu__head-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+}
+
+.mobile-slide-menu__links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  justify-content: flex-start;
+  padding-top: 8px;
+}
+
+.mobile-slide-menu__links a,
+.mobile-slide-menu__link {
+  display: block;
+  padding: 14px 4px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  text-align: left;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mobile-slide-menu__link-btn {
+  display: block;
+  width: 100%;
+  padding: 14px 4px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: left;
+  letter-spacing: -0.02em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mobile-slide-menu__foot {
+  flex-shrink: 0;
+  padding-top: 16px;
+  margin-top: auto;
+}
+
+.mobile-slide-menu__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 16px 24px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.chat-mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.95);
+  padding: max(10px, env(safe-area-inset-top)) 16px 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.chat-mobile-header__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-decoration: none;
+  letter-spacing: -0.03em;
+}
+
+.chat-mobile-header__menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #0f172a;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 1023px) {
+  .chat-composer--empty-mobile {
+    display: none !important;
+  }
+
+  .chat-landing-llama {
+    display: none !important;
+  }
+
+  .chat-landing-tasks {
+    display: none !important;
+  }
+
+  .chat-landing-root {
+    padding-top: 0.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .chat-landing-handoff {
+    margin-top: 1rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chat-mobile-header {
+    display: none !important;
+  }
 }

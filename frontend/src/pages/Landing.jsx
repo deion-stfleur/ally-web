@@ -34,12 +34,21 @@ const HERO_TITLE_BODY = "Like texting a friend who actually follows through.";
 
 export default function Landing() {
   const [heroMotion, setHeroMotion] = useState(true);
+  const [mobileHero, setMobileHero] = useState(false);
 
   useEffect(() => {
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) setHeroMotion(false);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 899px)");
+    const sync = () => setMobileHero(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
   }, []);
 
   const fadeClass = (step) =>
@@ -52,8 +61,12 @@ export default function Landing() {
       <main className="alm-main">
         <section className="alm-hero">
           <div
-            className="alm-hero__stage"
-            style={{ "--alm-hero-bg-image": `url(${heroMountains})` }}
+            className={`alm-hero__stage${mobileHero ? " alm-hero__stage--mobile-blue" : ""}`}
+            style={
+              mobileHero
+                ? undefined
+                : { "--alm-hero-bg-image": `url(${heroMountains})` }
+            }
           >
             <MarketingNav overlay />
             <div className="alm-hero__copy">

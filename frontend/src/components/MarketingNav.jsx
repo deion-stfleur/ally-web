@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
+import MobileSlideMenu from "./MobileSlideMenu";
 
 const NAV_LINKS = [
   { to: "/features", label: "Features" },
@@ -35,22 +36,7 @@ function IconClose() {
 
 export default function MarketingNav({ overlay = false }) {
   const [menuOpen, setMenuOpen] = useState(false);
-
   const closeMenu = useCallback(() => setMenuOpen(false), []);
-
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e) => {
-      if (e.key === "Escape") closeMenu();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen, closeMenu]);
 
   return (
     <header className={`alm-nav${overlay ? " alm-nav--overlay" : ""}`}>
@@ -73,7 +59,6 @@ export default function MarketingNav({ overlay = false }) {
             type="button"
             className="alm-nav__menu-btn"
             aria-expanded={menuOpen}
-            aria-controls="alm-nav-drawer"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             onClick={() => setMenuOpen((o) => !o)}
           >
@@ -82,12 +67,19 @@ export default function MarketingNav({ overlay = false }) {
         </div>
       </div>
 
-      <div
-        id="alm-nav-drawer"
-        className={`alm-nav__drawer${menuOpen ? " is-open" : ""}`}
-        aria-hidden={!menuOpen}
+      <MobileSlideMenu
+        open={menuOpen}
+        onClose={closeMenu}
+        ariaLabel="Site menu"
+        footer={
+          <div className="mobile-slide-menu__foot">
+            <Link to="/login" className="mobile-slide-menu__cta" onClick={closeMenu}>
+              Text Ally
+            </Link>
+          </div>
+        }
       >
-        <div className="alm-nav__drawer-head">
+        <div className="mobile-slide-menu__head alm-nav__drawer-head">
           <Link to="/" className="alm-nav__drawer-logo" onClick={closeMenu}>
             <span aria-hidden>✳</span> ally
           </Link>
@@ -100,19 +92,14 @@ export default function MarketingNav({ overlay = false }) {
             <IconClose />
           </button>
         </div>
-        <nav className="alm-nav__drawer-links" aria-label="Mobile">
+        <nav className="mobile-slide-menu__links alm-nav__drawer-links" aria-label="Mobile">
           {NAV_LINKS.map(({ to, label }) => (
             <Link key={to} to={to} onClick={closeMenu}>
               {label}
             </Link>
           ))}
         </nav>
-        <div className="alm-nav__drawer-foot">
-          <Link to="/login" className="alm-nav__drawer-cta" onClick={closeMenu}>
-            Text Ally
-          </Link>
-        </div>
-      </div>
+      </MobileSlideMenu>
     </header>
   );
 }
