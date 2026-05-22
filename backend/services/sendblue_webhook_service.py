@@ -39,6 +39,18 @@ from services.watch_rules_service import create_watch_rule as create_watch_rule_
 logger = logging.getLogger(__name__)
 
 
+class SendblueNotConfiguredError(RuntimeError):
+    """Outbound SMS is not configured (missing API key, secret, or from number)."""
+
+
+class SendblueDeliveryError(RuntimeError):
+    """Sendblue rejected or failed an outbound message."""
+
+    def __init__(self, message: str, *, user_message: str | None = None) -> None:
+        super().__init__(message)
+        self.user_message = user_message or message
+
+
 def _stripe_sms_gating_enabled() -> bool:
     """When Stripe billing is configured, inbound SMS requires an active subscription."""
     from services.billing_plans import stripe_billing_configured
@@ -147,15 +159,40 @@ def sendblue_outbound_configured() -> bool:
     )
 
 
-async def send_sendblue_text_async(*, to_number: str, content: str) -> None:
-    """Best-effort outbound SMS; no-ops if not configured; logs failures."""
+def _sendblue_delivery_user_message(exc: Exception) -> str:
+    raw = str(exc).lower()
+    from_num = (settings.sendblue_from_number or "").strip()
+    from_hint = f" ({from_num})" if from_num else ""
+    if "must be verified" in raw or "contact must be verified" in raw:
+        return (
+            "We could not text your verification code yet. Sendblue requires this number "
+            f"to message Ally first{from_hint}, or the number must be verified in Sendblue. "
+            "After you text Ally once, tap Send code again."
+        )
+    return (
+        "We could not send the verification text. Check your number includes country code "
+        "(e.g. +1…) and try again in a minute."
+    )
+
+
+async def send_sendblue_text_async(
+    *,
+    to_number: str,
+    content: str,
+    raise_on_failure: bool = False,
+) -> bool:
+    """Outbound SMS. Returns True on success. No-ops when not configured unless raise_on_failure."""
     to_number = (to_number or "").strip()
     content = (content or "").strip()
     if not to_number or not content:
-        return
+        if raise_on_failure:
+            raise SendblueDeliveryError("empty to_number or content")
+        return False
     if not sendblue_outbound_configured():
         logger.debug("sendblue outbound skipped: missing API key, secret, or from number")
-        return
+        if raise_on_failure:
+            raise SendblueNotConfiguredError("sendblue outbound not configured")
+        return False
     plain = _sms_plain(content, max_len=480)
     try:
         await asyncio.to_thread(
@@ -163,8 +200,15 @@ async def send_sendblue_text_async(*, to_number: str, content: str) -> None:
             content=plain,
             to_number=to_number,
         )
-    except Exception:
+        return True
+    except Exception as exc:
         logger.exception("sendblue outbound failed to=%s", to_number)
+        if raise_on_failure:
+            raise SendblueDeliveryError(
+                str(exc),
+                user_message=_sendblue_delivery_user_message(exc),
+            ) from exc
+        return False
 
 
 async def send_phone_saved_welcome_sms(*, to_e164: str) -> None:

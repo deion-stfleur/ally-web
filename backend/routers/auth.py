@@ -31,7 +31,11 @@ from services.google_token_crypto import encrypt_refresh_token
 from services.billing_plans import stripe_billing_configured, subscription_is_active
 from services.phone_e164 import normalize_e164
 from services.phone_otp_service import request_phone_otp, verify_phone_otp
-from services.sendblue_webhook_service import send_phone_saved_welcome_sms
+from services.sendblue_webhook_service import (
+    SendblueDeliveryError,
+    SendblueNotConfiguredError,
+    send_phone_saved_welcome_sms,
+)
 from services.session_store import UserSession, delete_session, save_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -164,6 +168,16 @@ async def auth_phone_request(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid phone number."
         ) from None
+    except SendblueNotConfiguredError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="SMS verification is not configured on the server. Try Sign in with Google.",
+        ) from None
+    except SendblueDeliveryError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=e.user_message,
+        ) from e
     return {"ok": True}
 
 

@@ -11,7 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import PhoneOtpChallenge
 from services.phone_e164 import normalize_e164
-from services.sendblue_webhook_service import send_sendblue_text_async
+from services.sendblue_webhook_service import (
+    SendblueDeliveryError,
+    SendblueNotConfiguredError,
+    send_sendblue_text_async,
+)
 
 
 def _otp_secret() -> bytes:
@@ -61,10 +65,13 @@ async def request_phone_otp(
     db.add(chal)
     await db.commit()
 
-    await send_sendblue_text_async(
+    sent = await send_sendblue_text_async(
         to_number=phone_e164,
         content=f"Your Ally code is {code}. It expires in 10 minutes.",
+        raise_on_failure=True,
     )
+    if not sent:
+        raise SendblueDeliveryError("sendblue returned without sending")
 
 
 async def verify_phone_otp(
