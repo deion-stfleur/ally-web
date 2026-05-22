@@ -634,23 +634,23 @@
     background-color: #5a9fd4;
     background-image: linear-gradient(
       180deg,
-      #3d7eb5 0%,
+      #bce0ff 0%,
       #5a9fd4 22%,
-      #7eb8e8 48%,
+      #002aff 48%,
       #a8d4f5 72%,
       #d4e9f7 100%
     );
   }
 
   .alm--landing .alm-hero__copy {
-    padding-top: calc(64px + 20px);
+    align-items: stretch;
+    max-width: 100%;
     padding-left: 20px;
     padding-right: 20px;
+    padding-top: 140px;
     width: 100%;
-    max-width: 100%;
     overflow-x: hidden;
     box-sizing: border-box;
-    align-items: stretch;
   }
 
   .alm--landing .alm-hero__phone {
@@ -658,7 +658,7 @@
   }
 
   .alm-hero__title {
-    font-size: clamp(1.75rem, 8vw, 2.35rem);
+    font-size: clamp(1.75rem, 7vw, 2.35rem);
     margin-bottom: 16px;
   }
 
@@ -697,8 +697,10 @@
     line-height: 1.55;
   }
 
-  .alm--landing .alm-hero__cta {
-    margin-top: 20px;
+  .alm.alm--landing .alm-hero__cta {
+    align-self: center;
+    margin-top: -5px;
+    max-width: 37%;
   }
 
   .alm-integ {
@@ -3733,9 +3735,9 @@ button.alm-login__cta:disabled {
     background-color: #5a9fd4;
     background-image: linear-gradient(
       180deg,
-      #3d7eb5 0%,
+      #bce0ff 0%,
       #5a9fd4 22%,
-      #7eb8e8 48%,
+      #002aff 48%,
       #a8d4f5 72%,
       #d4e9f7 100%
     );
@@ -3786,12 +3788,12 @@ button.alm-login__cta:disabled {
   }
 
   .alm.alm--landing .alm-hero__copy {
-    width: 100%;
+    align-items: stretch;
     max-width: 100%;
     padding-left: 20px;
     padding-right: 20px;
-    padding-top: calc(64px + 20px);
-    align-items: stretch;
+    padding-top: 140px;
+    width: 100%;
   }
 
   .alm.alm--landing .alm-hero__copy > * {
@@ -3800,12 +3802,19 @@ button.alm-login__cta:disabled {
     width: 100%;
   }
 
+  .alm-hero__title {
+    font-size: clamp(1.75rem, 7vw, 2.35rem);
+    margin-bottom: 16px;
+  }
+
   .alm.alm--landing .alm-hero__title {
     max-width: 100%;
     padding-left: 0;
     padding-right: 0;
     overflow-wrap: anywhere;
     word-break: break-word;
+    font-size: clamp(1.75rem, 7vw, 2.35rem);
+    margin-bottom: 16px;
   }
 
   .alm.alm--landing .alm-hero__title-strong,
@@ -3848,8 +3857,8 @@ button.alm-login__cta:disabled {
 
   .alm.alm--landing .alm-hero__cta {
     align-self: center;
-    max-width: 100%;
-    margin-top: 20px;
+    margin-top: -5px;
+    max-width: 37%;
   }
 
   /* Hide interactive phone on mobile */
@@ -3943,14 +3952,88 @@ button.alm-login__cta:disabled {
     padding-right: 0;
   }
 
-  .alm.alm--landing .alm-landing-pricing,
-  .alm.alm--landing .alm-landing-pricing__inner,
+  .alm.alm--landing .alm-text-loop__sub {
+    color: #ffffff;
+    font-size: clamp(1.0625rem, 2vw, 1.1875rem);
+    font-weight: 400;
+    line-height: 1.6;
+    margin: 20px 0 0;
+    max-width: 32rem;
+  }
+
+  .alm.alm--landing .alm-testimonials__sub {
+    color: #ffffff;
+    font-size: clamp(0.9375rem, 1.8vw, 1.0625rem);
+    font-weight: 400;
+    line-height: 1.55;
+    margin: 0 auto;
+    max-width: 40rem;
+  }
+
+  .alm.alm--landing .alm-compare__title {
+    color: #ffffff;
+    font-size: clamp(2.5rem, 3.5vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin: 0 auto 12px;
+    max-width: 28rem;
+  }
+
+  .alm.alm--landing .alm-compare__sub {
+    color: #ffffff;
+    font-size: clamp(0.9375rem, 1.8vw, 1.0625rem);
+    font-weight: 400;
+    line-height: 1.55;
+    margin: 0 auto;
+    max-width: 40rem;
+  }
+
   .alm.alm--landing .alm-faq {
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 56px;
+    max-width: 1120px;
+    padding: 0 0 64px;
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .alm.alm--landing .alm-landing-pricing {
+    background: transparent;
+    background-color: transparent;
     width: 100%;
     max-width: 100%;
     min-width: 0;
     overflow-x: hidden;
     box-sizing: border-box;
+  }
+
+  .alm.alm--landing .alm-landing-pricing__inner {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .alm.alm--landing .alm-landing-pricing .alm-pricing__title {
+    color: #ffffff;
+    font-size: clamp(2.25rem, 9vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+    margin: 0 0 12px;
+  }
+
+  .alm.alm--landing .alm-landing-pricing .alm-pricing__sub {
+    color: #ffffff;
+    font-size: clamp(1rem, 2.2vw, 1.125rem);
+    font-weight: 400;
+    line-height: 1.55;
+    margin: 0;
   }
 
   .alm.alm--landing .alm-site-footer__inner,
