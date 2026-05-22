@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import AutomationsGuide from "./pages/AutomationsGuide";
 import Chat from "./pages/Chat";
 import Features from "./pages/Features";
 import Landing from "./pages/Landing";
@@ -27,6 +28,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Chat />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/automations"
+        element={
+          <ProtectedRoute>
+            <AutomationsGuide />
           </ProtectedRoute>
         }
       />

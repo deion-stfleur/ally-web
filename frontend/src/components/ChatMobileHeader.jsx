@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import AccountSettingsModal from "./AccountSettingsModal";
 import MobileSlideMenu from "./MobileSlideMenu";
+import PricingModal from "./PricingModal";
 
 function IconMenu() {
   return (
@@ -44,6 +45,7 @@ export default function ChatMobileHeader({
   const { deleteAccount, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pricingOpen, setPricingOpen] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -54,9 +56,9 @@ export default function ChatMobileHeader({
     try {
       const { data } = await api.post("/api/billing/portal-session");
       if (data?.url) window.location.href = data.url;
-      else navigate("/pricing");
+      else       setPricingOpen(true);
     } catch {
-      navigate("/pricing");
+      setPricingOpen(true);
     } finally {
       setBillingBusy(false);
     }
@@ -126,11 +128,10 @@ export default function ChatMobileHeader({
           </button>
         </div>
         <nav className="mobile-slide-menu__links">
+          {menuItem("Home", () => navigate("/automations"))}
           {menuItem("Account", () => setSettingsOpen(true))}
           {menuItem(billingBusy ? "Opening billing…" : "Billing & plan", openBilling)}
-          <Link to="/pricing" className="mobile-slide-menu__link" onClick={closeMenu}>
-            Pricing
-          </Link>
+          {menuItem("Pricing", () => setPricingOpen(true))}
           {menuItem("New chat", onNewChat)}
           {menuItem("Search chats", onOpenSearch)}
           {menuItem("Sign out", async () => {
@@ -147,6 +148,8 @@ export default function ChatMobileHeader({
         onDeleteAccount={deleteAccount}
         onDeleted={() => navigate("/login", { replace: true })}
       />
+
+      <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
     </>
   );
 }
