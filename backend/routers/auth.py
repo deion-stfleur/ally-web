@@ -13,6 +13,7 @@ from config import settings
 from db.models import User
 from deps import get_current_session, get_current_session_optional, get_db, get_db_optional
 from models.schemas import (
+    AppConfigResponse,
     AuthTokenResponse,
     GoogleAuthRequest,
     PhoneAuthRequest,
@@ -36,9 +37,17 @@ from services.sendblue_webhook_service import (
     SendblueNotConfiguredError,
     send_phone_saved_welcome_sms,
 )
+from services.session_persist import delete_auth_session, upsert_auth_session
 from services.session_store import UserSession, delete_session, save_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.get("/app-config", response_model=AppConfigResponse)
+async def auth_app_config() -> AppConfigResponse:
+    """Public settings for login / phone linking UI (Ally SMS line, no secrets)."""
+    from_num = (settings.sendblue_from_number or "").strip()
+    return AppConfigResponse(ally_sms_e164=from_num or None)
 
 
 def _subscription_fields(row: User | None) -> tuple[bool, str | None, str | None]:
@@ -147,6 +156,8 @@ async def auth_google(
         db_user_id=db_user_id or (existing.db_user_id if existing is not None else None),
     )
     save_session(session_id, session)
+    if db is not None:
+        await upsert_auth_session(db, session_id, session)
 
     expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_expire_days)
     token = jwt.encode(
@@ -208,6 +219,7 @@ async def auth_phone_verify(
     session_id = str(uuid.uuid4())
     session = UserSession(id=session_id, credentials=None, db_user_id=row.id)
     save_session(session_id, session)
+    await upsert_auth_session(db, session_id, session)
 
     expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_expire_days)
     token = jwt.encode(
@@ -340,8 +352,14 @@ async def delete_me(
         await db.execute(delete(User).where(User.id == user_id))
         await db.commit()
     delete_session(session.id)
+    await delete_auth_session(db, session.id)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def auth_logout(session: UserSession = Depends(get_current_session)) -> None:
+async def auth_logout(
+    session: UserSession = Depends(get_current_session),
+    db: AsyncSession | None = Depends(get_db_optional),
+) -> None:
     delete_session(session.id)
+    if db is not None:
+        await delete_auth_session(db, session.id)

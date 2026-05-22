@@ -135,6 +135,49 @@ def _sms_plain(text: str, max_len: int = 8000) -> str:
     return t
 
 
+def _sendblue_auth_headers() -> dict[str, str]:
+    assert settings.sendblue_api_key and settings.sendblue_api_secret
+    return {
+        "sb-api-key-id": settings.sendblue_api_key,
+        "sb-api-secret-key": settings.sendblue_api_secret,
+        "Content-Type": "application/json",
+    }
+
+
+def _upsert_sendblue_contact_sync(*, phone_e164: str) -> None:
+    """Register recipient in Sendblue before OTP (required on some plans)."""
+    import httpx
+
+    body: dict[str, object] = {
+        "number": phone_e164,
+        "update_if_exists": True,
+    }
+    from_num = (settings.sendblue_from_number or "").strip()
+    if from_num:
+        body["sendblue_number"] = from_num
+    with httpx.Client(timeout=20.0) as client:
+        resp = client.post(
+            "https://api.sendblue.co/api/v2/contacts",
+            headers=_sendblue_auth_headers(),
+            json=body,
+        )
+        if resp.status_code >= 400:
+            logger.warning(
+                "sendblue contact upsert failed status=%s body=%s",
+                resp.status_code,
+                resp.text[:300],
+            )
+
+
+async def ensure_sendblue_contact_async(*, phone_e164: str) -> None:
+    if not sendblue_outbound_configured():
+        return
+    try:
+        await asyncio.to_thread(_upsert_sendblue_contact_sync, phone_e164=phone_e164)
+    except Exception:
+        logger.exception("sendblue contact upsert failed to=%s", phone_e164)
+
+
 def _send_message_sync(*, content: str, to_number: str) -> None:
     from sendblue_api import SendblueAPI
 
@@ -165,9 +208,9 @@ def _sendblue_delivery_user_message(exc: Exception) -> str:
     from_hint = f" ({from_num})" if from_num else ""
     if "must be verified" in raw or "contact must be verified" in raw:
         return (
-            "We could not text your verification code yet. Sendblue requires this number "
-            f"to message Ally first{from_hint}, or the number must be verified in Sendblue. "
-            "After you text Ally once, tap Send code again."
+            "We could not text a login code to this number yet. On our messaging plan, new numbers "
+            f"must text Ally once{from_hint} before we can message them, or use Sign in with Google "
+            "(recommended). After Google sign-in you can add your phone in the app."
         )
     return (
         "We could not send the verification text. Check your number includes country code "

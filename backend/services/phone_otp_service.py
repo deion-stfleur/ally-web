@@ -14,6 +14,7 @@ from services.phone_e164 import normalize_e164
 from services.sendblue_webhook_service import (
     SendblueDeliveryError,
     SendblueNotConfiguredError,
+    ensure_sendblue_contact_async,
     send_sendblue_text_async,
 )
 
@@ -64,6 +65,8 @@ async def request_phone_otp(
     )
     db.add(chal)
     await db.commit()
+
+    await ensure_sendblue_contact_async(phone_e164=phone_e164)
 
     sent = await send_sendblue_text_async(
         to_number=phone_e164,

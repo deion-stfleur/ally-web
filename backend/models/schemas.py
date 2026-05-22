@@ -25,6 +25,12 @@ class AuthTokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class AppConfigResponse(BaseModel):
+    """Public client config (no secrets)."""
+
+    ally_sms_e164: str | None = None
+
+
 class UserMeResponse(BaseModel):
     email: str | None = None
     name: str | None = None
