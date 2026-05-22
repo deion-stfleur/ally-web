@@ -3,7 +3,6 @@ import ChatMobileHeader from "../components/ChatMobileHeader";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
-import TextAllyHandoff from "../components/TextAllyHandoff";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
 import ChatLanding from "../components/ChatLanding";
