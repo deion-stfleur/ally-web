@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api } from "../api/client";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import { useAuth } from "../hooks/useAuth";
@@ -51,26 +50,12 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
-  const [allySmsE164, setAllySmsE164] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate(returnTo, { replace: true });
     }
   }, [isAuthenticated, navigate, returnTo]);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get("/api/auth/app-config")
-      .then((res) => {
-        if (!cancelled) setAllySmsE164(res.data?.ally_sms_e164 || null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function handleGoogleSignIn() {
     clearAuthError();
@@ -121,14 +106,7 @@ export default function Login() {
             </h1>
             <p className="alm-login__lead">
               Google sign-in unlocks Gmail, Calendar, and Drive. After you&apos;re in, add your
-              phone in the app to text Ally
-              {allySmsE164 ? (
-                <>
-                  {" "}
-                  at <strong className="font-medium text-slate-800">{allySmsE164}</strong>
-                </>
-              ) : null}
-              .
+              phone in the app — we&apos;ll give you Ally&apos;s number to text.
             </p>
 
             <div className="alm-login__panel">
@@ -183,12 +161,10 @@ export default function Login() {
                       : "Send code"}
                 </button>
               </form>
-              {allySmsE164 ? (
-                <p className="mt-3 text-center text-xs leading-relaxed text-slate-500">
-                  Phone codes require our messaging provider to recognize your number. If SMS
-                  fails, use Google sign-in, then link your phone inside the app.
-                </p>
-              ) : null}
+              <p className="mt-3 text-center text-xs leading-relaxed text-slate-500">
+                Phone codes can be unreliable for new numbers. Google sign-in is recommended — then
+                we&apos;ll show you Ally&apos;s text line in the app.
+              </p>
             </div>
 
             {authError ? (
