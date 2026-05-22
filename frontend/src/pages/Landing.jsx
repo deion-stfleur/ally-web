@@ -69,7 +69,7 @@ export default function Landing() {
                 You text once. Ally stays on it and pings you when something moves.
               </p>
               <Link to="/login" className={`alm-hero__cta ${fadeClass(3)}`}>
-                Start free trial
+                Text Ally
               </Link>
               <div className="alm-hero__phone">
                 <div className={fadeClass(4)}>
