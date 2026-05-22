@@ -700,7 +700,7 @@
   .alm.alm--landing .alm-hero__cta {
     align-self: center;
     margin-top: -5px;
-    max-width: 37%;
+    max-width: 43%;
   }
 
   .alm-integ {
@@ -3858,7 +3858,7 @@ button.alm-login__cta:disabled {
   .alm.alm--landing .alm-hero__cta {
     align-self: center;
     margin-top: -5px;
-    max-width: 37%;
+    max-width: 43%;
   }
 
   /* Hide interactive phone on mobile */
@@ -3961,6 +3961,16 @@ button.alm-login__cta:disabled {
     max-width: 32rem;
   }
 
+  .alm.alm--landing .alm-testimonials__title {
+    color: #ffffff;
+    font-size: clamp(2.25rem, 3.8vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+    margin: 0 auto 12px;
+    max-width: 22ch;
+  }
+
   .alm.alm--landing .alm-testimonials__sub {
     color: #ffffff;
     font-size: clamp(0.9375rem, 1.8vw, 1.0625rem);
@@ -4019,19 +4029,17 @@ button.alm-login__cta:disabled {
     box-sizing: border-box;
   }
 
-  .alm.alm--landing .alm-landing-pricing .alm-pricing__title {
-    color: #ffffff;
-    font-size: clamp(2.25rem, 9vw, 3rem);
+  .alm.alm--landing .alm-pricing__title {
+    font-size: clamp(2.5rem, 4vw, 2.25rem);
     font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.12;
+    letter-spacing: -0.02em;
     margin: 0 0 12px;
+    color: #ffffff;
   }
 
-  .alm.alm--landing .alm-landing-pricing .alm-pricing__sub {
+  .alm.alm--landing .alm-pricing__sub {
     color: #ffffff;
-    font-size: clamp(1rem, 2.2vw, 1.125rem);
-    font-weight: 400;
+    font-size: 1.0625rem;
     line-height: 1.55;
     margin: 0;
   }
