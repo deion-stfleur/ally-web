@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
+import TextAllyHandoff from "../components/TextAllyHandoff";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
 import ChatLanding from "../components/ChatLanding";
@@ -10,6 +11,7 @@ import ChatRail from "../components/ChatRail";
 import ChatRightRail from "../components/ChatRightRail";
 import ContextFilesPanel from "../components/ContextFilesPanel";
 import EmailDraftCard from "../components/EmailDraftCard";
+import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { useChat } from "../hooks/useChat";
 import { newClientTodoId, useUserTodos } from "../hooks/useUserTodos";
@@ -31,6 +33,7 @@ export default function Chat() {
   const [contextOpen, setContextOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [phonePromptOpen, setPhonePromptOpen] = useState(false);
+  const [allySmsE164, setAllySmsE164] = useState(null);
   const {
     todos: railTodos,
     setTodos: setRailTodos,
@@ -68,6 +71,20 @@ export default function Chat() {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, sessionToken, refreshUser, setSearchParams]);
+
+  useEffect(() => {
+    if (!sessionToken) return;
+    let cancelled = false;
+    api
+      .get("/api/auth/app-config")
+      .then((res) => {
+        if (!cancelled) setAllySmsE164(res.data?.ally_sms_e164 || null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionToken]);
 
   useEffect(() => {
     if (!sessionToken || !user) return;
@@ -141,6 +158,14 @@ export default function Chat() {
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         {!user?.sms_plan_active ? (
           <SmsSubscribeBanner phoneE164={user?.phone_e164} />
+        ) : user?.phone_e164 && allySmsE164 ? (
+          <div className="shrink-0 border-b border-emerald-200/80 bg-emerald-50/50 px-4 py-2 sm:px-6">
+            <TextAllyHandoff
+              compact
+              allySmsE164={allySmsE164}
+              userPhoneE164={user.phone_e164}
+            />
+          </div>
         ) : null}
         <ContextFilesPanel
           open={contextOpen}
@@ -191,7 +216,11 @@ export default function Chat() {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {messages.length === 0 ? (
-            <ChatLanding user={user} onPickPrompt={(t) => sendFromComposer(t)} />
+            <ChatLanding
+              user={user}
+              allySmsE164={allySmsE164}
+              onPickPrompt={(t) => sendFromComposer(t)}
+            />
           ) : (
             <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
               {user?.email && (

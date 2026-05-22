@@ -10,3 +10,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
+
+# Google Sign-In popup needs to read window.closed (avoids COOP console noise).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"

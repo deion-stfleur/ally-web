@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import TextAllyHandoff from "./TextAllyHandoff";
 
 function formatApiError(err) {
   const d = err.response?.data?.detail;
@@ -33,8 +34,23 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [allySmsE164, setAllySmsE164] = useState(null);
+  const [savedPhoneE164, setSavedPhoneE164] = useState(null);
 
   const canSavePhone = Boolean(smsPlanActive);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/api/auth/app-config")
+      .then((res) => {
+        if (!cancelled) setAllySmsE164(res.data?.ally_sms_e164 || null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -71,8 +87,9 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
     setSaving(true);
     setError(null);
     try {
-      await api.patch("/api/auth/me/phone", { phone: raw });
+      const { data } = await api.patch("/api/auth/me/phone", { phone: raw });
       await refreshUser();
+      setSavedPhoneE164(data?.phone_e164 || raw);
       setShowSuccess(true);
     } catch (e) {
       setError(formatApiError(e));
@@ -128,17 +145,19 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
             <div className="pt-2 text-center">
               <IconCheckCircle />
               <h2 id="phone-success-title" className="mt-5 text-lg font-semibold text-slate-900">
-                Number saved — SMS is on
+                Number saved — open Messages next
               </h2>
-              <p className="mt-3 text-left text-sm leading-relaxed text-slate-600">
-                Your plan is active. Text Ally from this number anytime; it stays linked to the same
-                account as web chat.
-              </p>
-              <p className="mt-3 text-left text-sm leading-relaxed text-slate-600">
-                You should get a welcome text shortly. If you signed in with Google, Gmail, Calendar,
-                and Drive stay connected for SMS answers too.
+              <p className="mt-2 text-left text-sm leading-relaxed text-slate-600">
+                Your plan is active. Send one text from your phone to start SMS; replies use the same
+                Google account as this web session.
               </p>
             </div>
+
+            <TextAllyHandoff
+              className="mt-4"
+              allySmsE164={allySmsE164}
+              userPhoneE164={savedPhoneE164}
+            />
 
             <div className="mt-6 flex justify-end">
               <button
@@ -146,7 +165,7 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
                 onClick={finishAfterSuccess}
                 className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
               >
-                Got it
+                Done
               </button>
             </div>
           </>
@@ -208,11 +227,12 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
               Text Ally from your phone
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Enter your mobile number to text Ally when you are away from your computer. SMS is
-              included with your active plan.
+              Save the mobile number you will text from. After saving, we will show Ally&apos;s line and an
+              <strong className="font-medium text-slate-800"> Open Messages</strong> button — you send the first
+              text (required by our SMS provider), then Ally can reply.
             </p>
             <p className="mt-2 rounded-lg border border-violet-100 bg-violet-50/80 px-3 py-2 text-xs leading-relaxed text-violet-950">
-              SMS requires a plan from $10/mo. You are subscribed — save your number to start texting.
+              Use the same phone you will message from. SMS is included with your active plan.
             </p>
 
             <label htmlFor="phone-prompt-input" className="mt-5 block text-xs font-medium text-slate-500">

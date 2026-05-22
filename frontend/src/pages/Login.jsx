@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { api } from "../api/client";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import { useAuth } from "../hooks/useAuth";
@@ -50,12 +51,26 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [otpRequested, setOtpRequested] = useState(false);
+  const [allySmsE164, setAllySmsE164] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate(returnTo, { replace: true });
     }
   }, [isAuthenticated, navigate, returnTo]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .get("/api/auth/app-config")
+      .then((res) => {
+        if (!cancelled) setAllySmsE164(res.data?.ally_sms_e164 || null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleGoogleSignIn() {
     clearAuthError();
@@ -102,14 +117,35 @@ export default function Login() {
             </div>
             <h1 className="alm-login__title">
               <strong>Welcome to Ally</strong>
-              <span>Sign in with your phone or Google</span>
+              <span>Sign in with Google to get started</span>
             </h1>
             <p className="alm-login__lead">
-              Start with phone sign-in for texting. Connect Google anytime to unlock Gmail,
-              Calendar, and Drive actions.
+              Google sign-in unlocks Gmail, Calendar, and Drive. After you&apos;re in, add your
+              phone in the app to text Ally
+              {allySmsE164 ? (
+                <>
+                  {" "}
+                  at <strong className="font-medium text-slate-800">{allySmsE164}</strong>
+                </>
+              ) : null}
+              .
             </p>
 
             <div className="alm-login__panel">
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={busy}
+                className="alm-login__google"
+              >
+                <IconGoogle />
+                {busyAction === "google" ? "Signing in…" : "Sign in with Google"}
+              </button>
+
+              <p className="alm-login__or" aria-hidden>
+                <span>or use phone SMS code</span>
+              </p>
+
               <form className="alm-login__phone" onSubmit={handlePhoneContinue}>
                 <input
                   value={phone}
@@ -147,20 +183,12 @@ export default function Login() {
                       : "Send code"}
                 </button>
               </form>
-
-              <p className="alm-login__or" aria-hidden>
-                <span>or</span>
-              </p>
-
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={busy}
-                className="alm-login__google"
-              >
-                <IconGoogle />
-                {busyAction === "google" ? "Signing in…" : "Sign in with Google"}
-              </button>
+              {allySmsE164 ? (
+                <p className="mt-3 text-center text-xs leading-relaxed text-slate-500">
+                  Phone codes require our messaging provider to recognize your number. If SMS
+                  fails, use Google sign-in, then link your phone inside the app.
+                </p>
+              ) : null}
             </div>
 
             {authError ? (

@@ -1,4 +1,6 @@
-export default function ChatLanding({ user, onPickPrompt }) {
+import TextAllyHandoff from "./TextAllyHandoff";
+
+export default function ChatLanding({ user, onPickPrompt, allySmsE164 = null }) {
   const first = user?.name?.split(/\s+/)[0] || "there";
 
   const tasks = [
@@ -28,6 +30,20 @@ export default function ChatLanding({ user, onPickPrompt }) {
       <p className="mt-2 max-w-lg text-center text-sm text-slate-500">
         Tell us what you need — email, Drive, Calendar, and more. We&apos;ll handle the rest.
       </p>
+
+      {user?.sms_plan_active && user?.phone_e164 && allySmsE164 ? (
+        <div className="mt-8 w-full max-w-3xl">
+          <TextAllyHandoff
+            allySmsE164={allySmsE164}
+            userPhoneE164={user.phone_e164}
+          />
+        </div>
+      ) : user?.sms_plan_active && !user?.phone_e164 ? (
+        <p className="mt-6 max-w-md text-center text-sm text-violet-800">
+          Link your phone in the popup to text Ally from Messages — save your number, then send &quot;Hi
+          Ally&quot; to get off the web app.
+        </p>
+      ) : null}
 
       <div className="mt-10 grid w-full max-w-3xl gap-4 sm:grid-cols-2">
         <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-lg shadow-slate-900/20">

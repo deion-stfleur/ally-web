@@ -89,6 +89,16 @@ export function AuthProvider({ children }) {
     };
   }, [sessionToken]);
 
+  useEffect(() => {
+    const onExpired = () => {
+      setAuthHeader(null);
+      setSessionToken(null);
+      setUser(null);
+    };
+    window.addEventListener("ally:session-expired", onExpired);
+    return () => window.removeEventListener("ally:session-expired", onExpired);
+  }, []);
+
   const clearAuthError = useCallback(() => setAuthError(null), []);
 
   const refreshUser = useCallback(async () => {

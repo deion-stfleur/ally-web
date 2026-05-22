@@ -255,12 +255,18 @@ async def send_sendblue_text_async(
 
 
 async def send_phone_saved_welcome_sms(*, to_e164: str) -> None:
-    """Welcome text after the user saves `phone_e164` in the web app."""
+    """Optional welcome after phone save. May fail until the user texts this line first (Sendblue)."""
     msg = (
-        "Ally here: your number is saved. Text this line anytime; "
-        "it stays linked to the same account as the web app."
+        "Ally: your number is saved on the web app. Reply here anytime — "
+        "if you do not see this, send Hi Ally to this number first from your phone."
     )
-    await send_sendblue_text_async(to_number=to_e164, content=msg)
+    try:
+        await send_sendblue_text_async(to_number=to_e164, content=msg)
+    except Exception:
+        logger.info(
+            "welcome SMS skipped or failed (user may need to text first) to=%s",
+            to_e164,
+        )
 
 
 async def _get_or_create_sendblue_conversation(
