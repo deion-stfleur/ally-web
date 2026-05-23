@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import AccountSettingsModal from "./AccountSettingsModal";
+import AllyQuickTips from "./AllyQuickTips";
 import { useAuth } from "../hooks/useAuth";
 import { newClientTodoId } from "../hooks/useUserTodos";
 
@@ -27,45 +28,6 @@ export default function ChatRightRail({
   const [quickRequests, setQuickRequests] = useState([]);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState(null);
-
-  const [rsSheetId, setRsSheetId] = useState("");
-  const [rsRange, setRsRange] = useState("Sheet1!A:Z");
-  const [rsConfirm, setRsConfirm] = useState(true);
-  const [rsBusy, setRsBusy] = useState(false);
-  const [rsNote, setRsNote] = useState(null);
-
-  useEffect(() => {
-    if (!user) return;
-    setRsSheetId(user.default_receipts_spreadsheet_id || "");
-    setRsRange(user.default_receipts_sheet_range || "Sheet1!A:Z");
-    setRsConfirm(user.receipts_confirm_before_append !== false);
-  }, [
-    user?.default_receipts_spreadsheet_id,
-    user?.default_receipts_sheet_range,
-    user?.receipts_confirm_before_append,
-  ]);
-
-  const saveReceiptSettings = useCallback(async () => {
-    if (!sessionToken) return;
-    setRsBusy(true);
-    setRsNote(null);
-    try {
-      await api.patch("/api/auth/me/receipt-settings", {
-        default_receipts_spreadsheet_id: rsSheetId.trim() || "",
-        default_receipts_sheet_range: rsRange.trim() || "Sheet1!A:Z",
-        receipts_confirm_before_append: rsConfirm,
-      });
-      await refreshUser?.();
-      setRsNote("Saved.");
-    } catch (e) {
-      const detail = e.response?.data?.detail;
-      setRsNote(
-        typeof detail === "string" ? detail : "Could not save receipt settings."
-      );
-    } finally {
-      setRsBusy(false);
-    }
-  }, [sessionToken, rsSheetId, rsRange, rsConfirm, refreshUser]);
 
   const fetchQuickRequests = useCallback(async () => {
     if (!sessionToken) return;
@@ -403,94 +365,11 @@ export default function ChatRightRail({
             )}
           </div>
 
-          {/* Receipts → Sheets */}
-          <div className={`rounded-2xl border p-4 ${borderSubtle} ${cardMuted}`}>
-            <h2 className="text-base font-semibold tracking-tight">Receipts</h2>
-            <p
-              className={`mt-1 text-[11px] leading-relaxed ${darkRail ? "text-slate-400" : "text-slate-500"}`}
-            >
-              Default Google Sheet for receipt rows (from the spreadsheet URL). Ally asks before
-              appending when enabled.
-            </p>
-            {!sessionToken && (
-              <p className={`mt-2 text-xs ${darkRail ? "text-slate-400" : "text-slate-500"}`}>
-                Sign in to save receipt settings.
-              </p>
-            )}
-            {sessionToken && (
-              <div className="mt-3 space-y-2">
-                <label className="block">
-                  <span
-                    className={`mb-0.5 block text-[10px] font-semibold uppercase tracking-wide ${darkRail ? "text-slate-400" : "text-slate-500"}`}
-                  >
-                    Spreadsheet ID
-                  </span>
-                  <input
-                    type="text"
-                    value={rsSheetId}
-                    onChange={(e) => setRsSheetId(e.target.value)}
-                    placeholder="from docs.google.com/spreadsheets/d/THIS_PART/edit"
-                    disabled={rsBusy}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none ${
-                      darkRail
-                        ? "border-slate-600 bg-slate-900 text-slate-100 placeholder:text-slate-500"
-                        : "border-slate-200 bg-white text-slate-800 placeholder:text-slate-400"
-                    }`}
-                  />
-                </label>
-                <label className="block">
-                  <span
-                    className={`mb-0.5 block text-[10px] font-semibold uppercase tracking-wide ${darkRail ? "text-slate-400" : "text-slate-500"}`}
-                  >
-                    Append range (A1)
-                  </span>
-                  <input
-                    type="text"
-                    value={rsRange}
-                    onChange={(e) => setRsRange(e.target.value)}
-                    placeholder="Sheet1!A:Z"
-                    disabled={rsBusy}
-                    className={`w-full rounded-lg border px-2 py-1.5 text-xs outline-none ${
-                      darkRail
-                        ? "border-slate-600 bg-slate-900 text-slate-100 placeholder:text-slate-500"
-                        : "border-slate-200 bg-white text-slate-800 placeholder:text-slate-400"
-                    }`}
-                  />
-                </label>
-                <label className="flex cursor-pointer items-center gap-2 pt-1">
-                  <input
-                    type="checkbox"
-                    checked={rsConfirm}
-                    onChange={(e) => setRsConfirm(e.target.checked)}
-                    disabled={rsBusy}
-                    className="rounded border-slate-300"
-                  />
-                  <span className={`text-xs ${darkRail ? "text-slate-300" : "text-slate-700"}`}>
-                    Ask before appending a row
-                  </span>
-                </label>
-                <button
-                  type="button"
-                  onClick={() => void saveReceiptSettings()}
-                  disabled={rsBusy}
-                  className={`mt-1 w-full rounded-lg py-2 text-xs font-semibold transition disabled:opacity-50 ${
-                    darkRail
-                      ? "bg-sky-600 text-white hover:bg-sky-500"
-                      : "bg-slate-900 text-white hover:bg-slate-800"
-                  }`}
-                >
-                  {rsBusy ? "Saving…" : "Save receipt settings"}
-                </button>
-                {rsNote && (
-                  <p
-                    className={`text-center text-[11px] ${rsNote === "Saved." ? "text-emerald-600" : "text-red-500"}`}
-                  >
-                    {rsNote}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          <AllyQuickTips
+            darkRail={darkRail}
+            onTryPrompt={onPickQuickRequest}
+            composerBusy={composerBusy}
+          />
 
           {/* To do */}
           <div>
