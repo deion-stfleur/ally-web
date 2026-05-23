@@ -1,0 +1,302 @@
+/* Quick tips — sky brand accents */
+.ally-quick-tips {
+  border-radius: 1rem;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.ally-quick-tips--light {
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  background: linear-gradient(145deg, #f0f9ff 0%, #e0f2fe 42%, #f8fafc 100%);
+  box-shadow: 0 12px 32px -16px rgba(14, 116, 144, 0.35);
+}
+
+.ally-quick-tips--dark {
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: linear-gradient(145deg, #0c4a6e 0%, #0f172a 55%, #1e293b 100%);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.45);
+}
+
+.ally-quick-tips__header {
+  margin-bottom: 0.875rem;
+}
+
+.ally-quick-tips__badge {
+  display: inline-block;
+  margin-bottom: 0.375rem;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0369a1;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+}
+
+.ally-quick-tips--dark .ally-quick-tips__badge {
+  color: #e0f2fe;
+  background: rgba(14, 165, 233, 0.25);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.ally-quick-tips__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0c4a6e;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__title {
+  color: #f0f9ff;
+}
+
+.ally-quick-tips__sub {
+  margin: 0.35rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  color: #0369a1;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__sub {
+  color: #94a3b8;
+}
+
+.ally-quick-tips__sub strong {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__sub strong {
+  color: #7dd3fc;
+}
+
+.ally-quick-tips__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ally-quick-tips__item {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.72);
+  border-left-width: 3px;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__item {
+  border-color: rgba(51, 65, 85, 0.9);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.ally-quick-tips__item--sky {
+  border-left-color: #0ea5e9;
+}
+.ally-quick-tips__item--emerald {
+  border-left-color: #10b981;
+}
+.ally-quick-tips__item--cyan {
+  border-left-color: #06b6d4;
+}
+.ally-quick-tips__item--amber {
+  border-left-color: #f59e0b;
+}
+.ally-quick-tips__item--blue {
+  border-left-color: #3b82f6;
+}
+.ally-quick-tips__item--teal {
+  border-left-color: #14b8a6;
+}
+
+.ally-quick-tips__item.is-open {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 14px -6px rgba(14, 165, 233, 0.35);
+}
+
+.ally-quick-tips--dark .ally-quick-tips__item.is-open {
+  background: rgba(30, 41, 59, 0.85);
+  box-shadow: 0 4px 14px -6px rgba(14, 165, 233, 0.25);
+}
+
+.ally-quick-tips__item-head {
+  margin: 0;
+}
+
+.ally-quick-tips__trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ally-quick-tips__trigger-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__trigger-text {
+  color: #f1f5f9;
+}
+
+.ally-quick-tips__pro-pill {
+  margin-left: 0.35rem;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+}
+
+.ally-quick-tips__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+}
+
+.ally-quick-tips__icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.ally-quick-tips__icon--sky {
+  color: #0284c7;
+  background: rgba(14, 165, 233, 0.15);
+}
+.ally-quick-tips__icon--emerald {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.15);
+}
+.ally-quick-tips__icon--cyan {
+  color: #0891b2;
+  background: rgba(6, 182, 212, 0.15);
+}
+.ally-quick-tips__icon--amber {
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.15);
+}
+.ally-quick-tips__icon--blue {
+  color: #2563eb;
+  background: rgba(59, 130, 246, 0.15);
+}
+.ally-quick-tips__icon--teal {
+  color: #0d9488;
+  background: rgba(20, 184, 166, 0.15);
+}
+
+.ally-quick-tips--dark .ally-quick-tips__icon--sky {
+  color: #7dd3fc;
+  background: rgba(14, 165, 233, 0.2);
+}
+.ally-quick-tips--dark .ally-quick-tips__icon--emerald {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.2);
+}
+.ally-quick-tips--dark .ally-quick-tips__icon--cyan {
+  color: #67e8f9;
+  background: rgba(6, 182, 212, 0.2);
+}
+.ally-quick-tips--dark .ally-quick-tips__icon--amber {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.2);
+}
+.ally-quick-tips--dark .ally-quick-tips__icon--blue {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.2);
+}
+.ally-quick-tips--dark .ally-quick-tips__icon--teal {
+  color: #5eead4;
+  background: rgba(20, 184, 166, 0.2);
+}
+
+.ally-quick-tips__chevron {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: #64748b;
+  transition: transform 0.2s ease;
+}
+
+.ally-quick-tips__item.is-open .ally-quick-tips__chevron {
+  transform: rotate(180deg);
+  color: #0ea5e9;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__chevron {
+  color: #94a3b8;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__item.is-open .ally-quick-tips__chevron {
+  color: #38bdf8;
+}
+
+.ally-quick-tips__panel {
+  padding: 0 0.75rem 0.75rem 2.75rem;
+}
+
+.ally-quick-tips__panel[hidden] {
+  display: none;
+}
+
+.ally-quick-tips__body {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__body {
+  color: #cbd5e1;
+}
+
+.ally-quick-tips__try {
+  margin-top: 0.625rem;
+  width: 100%;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  box-shadow: 0 2px 8px -2px rgba(14, 165, 233, 0.55);
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.ally-quick-tips__try:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.ally-quick-tips__try:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ally-quick-tips--dark .ally-quick-tips__try {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+}
