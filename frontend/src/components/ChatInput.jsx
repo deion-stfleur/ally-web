@@ -184,9 +184,6 @@ export default function ChatInput({
             </div>
           </div>
         </form>
-        <p className="mt-2 text-center text-[11px] text-slate-400">
-          Ally may display inaccurate info. Double-check important actions (especially email).
-        </p>
       </div>
     </div>
   );

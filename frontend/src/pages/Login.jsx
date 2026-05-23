@@ -42,7 +42,7 @@ export default function Login() {
   const returnTo =
     typeof location.state?.from === "string" && location.state.from.startsWith("/")
       ? location.state.from
-      : "/chat";
+      : "/home";
   const { isAuthenticated, login, loginWithPhone, authError, clearAuthError } =
     useAuth();
   const [busyAction, setBusyAction] = useState(null);

@@ -40,7 +40,7 @@ export default function MarketingFooter() {
                 <Link to="/login">Log in</Link>
               </li>
               <li>
-                <Link to="/chat">Open app</Link>
+                <Link to="/home">Open app</Link>
               </li>
             </ul>
           </div>

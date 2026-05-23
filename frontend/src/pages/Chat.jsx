@@ -6,18 +6,16 @@ import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
-import AllyQuickTips from "../components/AllyQuickTips";
+import AccountSettingsModal from "../components/AccountSettingsModal";
 import InPageMobileFooter from "../components/InPageMobileFooter";
-import ChatLanding from "../components/ChatLanding";
 import ChatMessage from "../components/ChatMessage";
-import ChatRightRail from "../components/ChatRightRail";
 import ContextFilesPanel from "../components/ContextFilesPanel";
 import EmailDraftCard from "../components/EmailDraftCard";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
-import { useAppRouteLayout } from "../hooks/useAppRouteLayout";
 import { useChat } from "../hooks/useChat";
 import { newClientTodoId, useUserTodos } from "../hooks/useUserTodos";
+import { APP_HOME_PATH } from "../utils/appPaths";
 import {
   clearPendingPhone,
   getPendingPhone,
@@ -47,25 +45,30 @@ function localCalendarDateKey() {
   return `${y}-${m}-${day}`;
 }
 
+function hasChatIntent(state) {
+  if (!state) return false;
+  return Boolean(
+    state.newChat ||
+      state.loadConversationId ||
+      state.seedPrompt ||
+      state.openPricing
+  );
+}
+
 export default function Chat() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, sessionToken, logout, refreshUser } = useAuth();
+  const { user, sessionToken, refreshUser, deleteAccount } = useAuth();
   const [contextOpen, setContextOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [phonePromptOpen, setPhonePromptOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
-  const [allySmsE164, setAllySmsE164] = useState(null);
+  const { appendTodo } = useUserTodos(sessionToken);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const {
-    todos: railTodos,
-    setTodos: setRailTodos,
-    todosLoaded,
-    todosSaveError,
-    appendTodo,
-  } = useUserTodos(sessionToken);
-  const {
+    ready,
     messages,
     sendMessage,
     addReceiptImages,
@@ -99,20 +102,6 @@ export default function Chat() {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, sessionToken, refreshUser, setSearchParams]);
-
-  useEffect(() => {
-    if (!sessionToken) return;
-    let cancelled = false;
-    api
-      .get("/api/auth/app-config")
-      .then((res) => {
-        if (!cancelled) setAllySmsE164(res.data?.ally_sms_e164 || null);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionToken]);
 
   useEffect(() => {
     if (!sessionToken || !user) return;
@@ -155,25 +144,53 @@ export default function Chat() {
     [sendMessage, appendTodo]
   );
 
-  async function onLogoutClick() {
-    await logout();
-    navigate("/login", { replace: true });
-  }
+  useEffect(() => {
+    const state = location.state;
+    if (!state) return;
+
+    if (state.newChat) {
+      setSearchOpen(false);
+      setContextOpen(false);
+      setMobileMenuOpen(false);
+      startNewChat();
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
+
+    if (state.openPricing) {
+      setPricingOpen(true);
+    }
+    if (state.loadConversationId) {
+      loadConversation(state.loadConversationId);
+    }
+    if (state.seedPrompt) {
+      sendFromComposer(state.seedPrompt);
+    }
+
+    if (state.openPricing || state.loadConversationId || state.seedPrompt) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [
+    location.pathname,
+    location.state,
+    navigate,
+    loadConversation,
+    sendFromComposer,
+    startNewChat,
+  ]);
+
+  useEffect(() => {
+    if (!ready || !sessionToken) return;
+    if (hasChatIntent(location.state)) return;
+    if (messages.length === 0) {
+      navigate(APP_HOME_PATH, { replace: true });
+    }
+  }, [ready, sessionToken, messages.length, location.state, navigate]);
 
   const showChatChrome = messages.length > 0;
 
-  useAppRouteLayout("chat");
-
-  useEffect(() => {
-    if (!location.state?.openPricing) return;
-    setPricingOpen(true);
-    navigate("/chat", { replace: true, state: null });
-  }, [location.state, navigate]);
-
   return (
-    <div
-      className={`chat-page flex h-full min-h-0 text-slate-900 ${showChatChrome ? "bg-[#F9FAFB]" : "bg-sky-100/40"}`}
-    >
+    <div className="chat-page flex h-full min-h-0 bg-[#F9FAFB] text-slate-900">
       <PhonePromptModal
         open={phonePromptOpen}
         onDismiss={dismissPhonePrompt}
@@ -186,6 +203,17 @@ export default function Chat() {
         }}
       />
       <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
+      <AccountSettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        user={user}
+        onDeleteAccount={deleteAccount}
+        onDeleted={() => navigate("/login", { replace: true })}
+        onViewPlans={() => {
+          setSettingsOpen(false);
+          setPricingOpen(true);
+        }}
+      />
       <div className="chat-page__main relative flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatMobileHeader
           user={user}
@@ -200,6 +228,40 @@ export default function Chat() {
           }}
           onOpenSearch={() => setSearchOpen(true)}
           onLinkPhone={() => setPhonePromptOpen(true)}
+          headerRight={
+            showChatChrome ? (
+              <div className="chat-app-header__actions">
+                <button
+                  type="button"
+                  title="Search chats and completed tasks"
+                  onClick={() => setSearchOpen(true)}
+                  className="chat-app-header__icon-btn"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchOpen(false);
+                    startNewChat();
+                    setContextOpen(false);
+                  }}
+                  className="chat-app-header__new-chat"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                  New chat
+                </button>
+              </div>
+            ) : null
+          }
         />
         {!user?.sms_plan_active ? (
           <SmsSubscribeBanner
@@ -207,7 +269,7 @@ export default function Chat() {
             onViewPlans={() => setPricingOpen(true)}
           />
         ) : null}
-        {messages.length === 0 ? (
+        {showChatChrome ? (
           <button
             type="button"
             className="chat-mobile-menu-fab lg:hidden"
@@ -224,39 +286,6 @@ export default function Chat() {
           onAttachChange={setAttachIds}
         />
 
-        {showChatChrome && (
-          <header className="hidden shrink-0 items-center justify-end gap-2 border-b border-slate-200/80 bg-white/90 px-5 py-3.5 backdrop-blur-md sm:px-6 lg:flex">
-            <button
-              type="button"
-              title="Search chats and completed tasks"
-              onClick={() => setSearchOpen(true)}
-              className="rounded-xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchOpen(false);
-                startNewChat();
-                setContextOpen(false);
-              }}
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:text-sm"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-              New chat
-            </button>
-          </header>
-        )}
-
         <ChatSearchModal
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
@@ -265,21 +294,7 @@ export default function Chat() {
         />
 
         <div className="chat-page__scroll min-h-0 flex-1 overflow-y-auto">
-          {messages.length === 0 ? (
-            <>
-              <ChatLanding
-                user={user}
-                allySmsE164={allySmsE164}
-                onPickPrompt={(t) => sendFromComposer(t)}
-              />
-              <div className="chat-landing-quick-tips">
-                <AllyQuickTips
-                  onTryPrompt={sendFromComposer}
-                  composerBusy={streaming || emailSending}
-                />
-              </div>
-            </>
-          ) : (
+          {showChatChrome ? (
             <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
               {user?.email && (
                 <p className="text-center text-xs text-slate-400">{user.email}</p>
@@ -296,7 +311,7 @@ export default function Chat() {
                 </p>
               )}
             </div>
-          )}
+          ) : null}
           <InPageMobileFooter />
         </div>
 
@@ -314,36 +329,21 @@ export default function Chat() {
           </div>
         )}
 
-        <div
-          className={`chat-page__composer-wrap${
-            messages.length === 0 ? " chat-composer--empty-mobile" : ""
-          }`}
-        >
-          <ChatInput
-            onSend={sendFromComposer}
-            disabled={streaming || emailSending}
-            attachIds={attachIds}
-            onRemoveAttach={(id) =>
-              setAttachIds((prev) => prev.filter((x) => x !== id))
-            }
-            onReceiptImages={addReceiptImages}
-            onOpenMobileMenu={() => setMobileMenuOpen(true)}
-          />
-        </div>
+        {showChatChrome ? (
+          <div className="chat-page__composer-wrap">
+            <ChatInput
+              onSend={sendFromComposer}
+              disabled={streaming || emailSending}
+              attachIds={attachIds}
+              onRemoveAttach={(id) =>
+                setAttachIds((prev) => prev.filter((x) => x !== id))
+              }
+              onReceiptImages={addReceiptImages}
+              onOpenMobileMenu={() => setMobileMenuOpen(true)}
+            />
+          </div>
+        ) : null}
       </div>
-      <ChatRightRail
-        user={user}
-        sessionToken={sessionToken}
-        refreshUser={refreshUser}
-        onPickQuickRequest={sendFromComposer}
-        composerBusy={streaming || emailSending}
-        todos={railTodos}
-        setTodos={setRailTodos}
-        todosLoaded={todosLoaded}
-        todosSaveError={todosSaveError}
-        onLogout={onLogoutClick}
-        onOpenPricing={() => setPricingOpen(true)}
-      />
     </div>
   );
 }

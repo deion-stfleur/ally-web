@@ -1,9 +1,14 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import GlobalMobileFooter from "./components/GlobalMobileFooter";
+import ProtectedAppLayout from "./components/ProtectedAppLayout";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import AccountSettings from "./pages/AccountSettings";
 import AutomationsGuide from "./pages/AutomationsGuide";
 import Chat from "./pages/Chat";
+import Home from "./pages/Home";
+import { APP_HOME_PATH, CHAT_PATH } from "./utils/appPaths";
+import ChatRecipes from "./pages/ChatRecipes";
+import RedirectChatConversation from "./components/RedirectChatConversation";
 import Features from "./pages/Features";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -26,29 +31,20 @@ function AppRoutes() {
       <Route path="/use-cases" element={<UseCases />} />
       <Route path="/login" element={<Login />} />
       <Route
-        path="/chat"
         element={
           <ProtectedRoute>
-            <Chat />
+            <ProtectedAppLayout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/automations"
-        element={
-          <ProtectedRoute>
-            <AutomationsGuide />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/account"
-        element={
-          <ProtectedRoute>
-            <AccountSettings />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path={APP_HOME_PATH} element={<Home />} />
+        <Route path={CHAT_PATH} element={<Chat />} />
+        <Route path="/automations" element={<AutomationsGuide />} />
+        <Route path="/account" element={<AccountSettings />} />
+        <Route path="/chats" element={<Navigate to={APP_HOME_PATH} replace />} />
+        <Route path="/chats/:conversationId" element={<RedirectChatConversation />} />
+        <Route path="/recipes" element={<ChatRecipes />} />
+      </Route>
       <Route path="/pricing" element={<Pricing />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

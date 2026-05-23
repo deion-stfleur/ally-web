@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 
 /** Survives refresh / remount when Postgres has nothing yet or hydrate races auth. */
-const CHAT_UI_SNAPSHOT_KEY = "ally_chat_ui_snapshot_v1";
+export const CHAT_UI_SNAPSHOT_KEY = "ally_chat_ui_snapshot_v1";
 
 /**
  * After Google sign-in, AuthContext stores the new session token here so /chat opens on the home
@@ -51,11 +51,13 @@ export function useChat(opts = {}) {
    * repopulate messages. When set to the current token, skip server hydrate for that token.
    */
   const openHomeAppliedForTokenRef = useRef(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!sessionToken) {
       priorSessionTokenRef.current = null;
       openHomeAppliedForTokenRef.current = null;
+      setReady(true);
       try {
         sessionStorage.removeItem(CHAT_UI_SNAPSHOT_KEY);
       } catch {
@@ -67,6 +69,7 @@ export function useChat(opts = {}) {
       messagesRef.current = [];
       return;
     }
+    setReady(false);
     const switchedSession =
       priorSessionTokenRef.current !== null &&
       priorSessionTokenRef.current !== sessionToken;
@@ -74,6 +77,7 @@ export function useChat(opts = {}) {
 
     let cancelled = false;
     (async () => {
+      try {
       if (switchedSession) {
         openHomeAppliedForTokenRef.current = null;
       }
@@ -171,6 +175,9 @@ export function useChat(opts = {}) {
           setConversationId(snapCid);
           conversationIdRef.current = snapCid;
         }
+      }
+      } finally {
+        if (!cancelled) setReady(true);
       }
     })();
     return () => {
@@ -388,6 +395,7 @@ export function useChat(opts = {}) {
   );
 
   return {
+    ready,
     messages,
     sendMessage,
     addReceiptImages,

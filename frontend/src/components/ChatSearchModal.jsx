@@ -178,7 +178,7 @@ export default function ChatSearchModal({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search chats and projects"
+            placeholder="Search messages, tasks, and past chats"
             className="min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 outline-none ring-0"
             autoComplete="off"
           />

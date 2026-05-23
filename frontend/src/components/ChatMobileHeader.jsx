@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { APP_HOME_PATH } from "../utils/appPaths";
+import AppShellHeader from "./AppShellHeader";
 import MobileSlideMenu from "./MobileSlideMenu";
 
 function IconMenu() {
@@ -42,6 +44,8 @@ export default function ChatMobileHeader({
   onMenuOpenChange,
   onOpenPricing,
   showHeaderMenu = true,
+  headerRight = null,
+  headerClassName = "",
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,24 +85,28 @@ export default function ChatMobileHeader({
     </button>
   );
 
+  const menuButton = showHeaderMenu ? (
+    <button
+      type="button"
+      className="app-shell-header__menu-btn"
+      aria-expanded={menuOpen}
+      aria-label={menuOpen ? "Close menu" : "Open menu"}
+      onClick={() => setMenuOpen((o) => !o)}
+    >
+      {menuOpen ? <IconClose /> : <IconMenu />}
+    </button>
+  ) : null;
+
+  const right = (
+    <>
+      {headerRight}
+      {menuButton}
+    </>
+  );
+
   return (
     <>
-      <header className="chat-mobile-header lg:hidden">
-        <Link to="/chat" className="chat-mobile-header__logo">
-          <span aria-hidden>✳</span> ally
-        </Link>
-        {showHeaderMenu ? (
-          <button
-            type="button"
-            className="chat-mobile-header__menu-btn"
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            {menuOpen ? <IconClose /> : <IconMenu />}
-          </button>
-        ) : null}
-      </header>
+      <AppShellHeader right={right} className={headerClassName} />
 
       <MobileSlideMenu
         open={menuOpen}
@@ -126,7 +134,7 @@ export default function ChatMobileHeader({
           </span>
           <button
             type="button"
-            className="chat-mobile-header__menu-btn"
+            className="app-shell-header__menu-btn"
             aria-label="Close menu"
             onClick={closeMenu}
           >
@@ -134,7 +142,7 @@ export default function ChatMobileHeader({
           </button>
         </div>
         <nav className="mobile-slide-menu__links">
-          {menuItem("Home", () => navigate("/automations"))}
+          {menuItem("Home", () => navigate(APP_HOME_PATH))}
           {menuItem("Account", () =>
             navigate("/account", { state: { from: location.pathname } })
           )}
