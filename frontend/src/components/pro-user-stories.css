@@ -9,44 +9,45 @@
 
 .ally-pro-stories--landing {
   max-width: 920px;
-  padding: 3.5rem 1.5rem 4rem;
+  padding: 3.5rem 1.5rem 6.5rem;
   border-top: 1px solid rgba(14, 116, 144, 0.12);
   background: linear-gradient(180deg, #f8fcff 0%, #eef6fb 100%);
 }
 
 .ally-pro-stories--modal {
-  padding: 1.5rem 0 0.5rem;
+  padding: 1.5rem 0 2.5rem;
   margin-top: 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.45);
 }
 
 .ally-pro-stories__head {
   text-align: center;
-  margin-bottom: 1.75rem;
+  margin-bottom: 2.25rem;
 }
 
 .ally-pro-stories__title {
   margin: 0;
-  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-size: clamp(1.875rem, 5vw, 2.625rem);
   font-weight: 700;
   letter-spacing: -0.03em;
+  line-height: 1.15;
   color: #0f172a;
 }
 
 .ally-pro-stories--modal .ally-pro-stories__title {
-  font-size: 1.25rem;
+  font-size: clamp(1.375rem, 4vw, 1.625rem);
 }
 
 .ally-pro-stories__sub {
-  margin: 0.625rem auto 0;
-  max-width: 34rem;
-  font-size: 0.9375rem;
-  line-height: 1.5;
+  margin: 0.75rem auto 0;
+  max-width: 38rem;
+  font-size: clamp(1rem, 2.2vw, 1.1875rem);
+  line-height: 1.55;
   color: #475569;
 }
 
 .ally-pro-stories--modal .ally-pro-stories__sub {
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   color: #0c4a6e;
 }
 
@@ -57,11 +58,16 @@
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto auto;
   width: 100%;
+  margin-bottom: 2.5rem;
+}
+
+.ally-pro-stories--modal .ally-pro-stories__quadrants {
+  margin-bottom: 1.5rem;
 }
 
 .ally-pro-stories__quadrant {
   min-width: 0;
-  padding: 1.25rem 1.35rem;
+  padding: 1.5rem 1.5rem;
   box-sizing: border-box;
 }
 
@@ -87,19 +93,19 @@
   display: block;
   margin-bottom: 0.25rem;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 3.25rem;
+  font-size: 3.75rem;
   line-height: 0.85;
   font-weight: 700;
   color: #38bdf8;
 }
 
 .ally-pro-stories--modal .ally-pro-stories__quote-mark {
-  font-size: 2.5rem;
+  font-size: 3rem;
 }
 
 .ally-pro-stories__pullquote-text {
   margin: 0;
-  font-size: clamp(1.125rem, 2.8vw, 1.625rem);
+  font-size: clamp(1.25rem, 3vw, 1.875rem);
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: -0.02em;
@@ -107,7 +113,7 @@
 }
 
 .ally-pro-stories--modal .ally-pro-stories__pullquote-text {
-  font-size: 1.0625rem;
+  font-size: 1.1875rem;
 }
 
 .ally-pro-stories__pullquote-text strong {
@@ -133,13 +139,13 @@
 }
 
 .ally-pro-stories__name {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #0f172a;
 }
 
 .ally-pro-stories__role {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: #64748b;
 }
 
@@ -153,7 +159,7 @@
 
 .ally-pro-stories__bubble-text {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 500;
   color: #ffffff;
 }
@@ -170,8 +176,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.625rem;
-  font-size: 0.6875rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -179,21 +185,21 @@
 }
 
 .ally-pro-stories__card-icon {
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
   flex-shrink: 0;
   color: #0ea5e9;
 }
 
 .ally-pro-stories__card-body {
   margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font-size: clamp(0.9375rem, 2vw, 1.0625rem);
+  line-height: 1.55;
   color: #334155;
 }
 
 .ally-pro-stories--modal .ally-pro-stories__card-body {
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
 }
 
 .ally-pro-stories__card-body strong {
