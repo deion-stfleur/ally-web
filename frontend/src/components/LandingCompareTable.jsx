@@ -110,13 +110,12 @@ export default function LandingCompareTable() {
   return (
     <section className="alm-compare" aria-labelledby="alm-compare-heading">
       <div className="alm-compare__head">
-        <p className="alm-auto__badge">Compare</p>
         <h2 id="alm-compare-heading" className="alm-compare__title">
-          Same smarts, different job
+          Ally finishes tasks in your messages
         </h2>
         <p className="alm-compare__sub">
-          Ally, big chat apps, and phone assistants can all sound helpful. Here is where the work actually
-          happens, and what only Ally is built for.
+          Most AI stops at advice. Ally works inside Gmail, Calendar, Drive, and Sheets, then pings
+          you when the job is actually done.
         </p>
       </div>
 

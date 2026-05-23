@@ -58,9 +58,8 @@ export default function LandingFaq() {
   return (
     <section className="alm-faq" aria-labelledby={`${baseId}-faq-heading`}>
       <div className="alm-faq__panel">
-        <p className="alm-faq__badge">Questions</p>
         <h2 id={`${baseId}-faq-heading`} className="alm-faq__title">
-          Frequently Asked Questions
+          Frequently asked questions
         </h2>
 
         <ul className="alm-faq__list">
