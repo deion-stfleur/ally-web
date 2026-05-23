@@ -87,32 +87,12 @@
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.65);
   background: rgba(255, 255, 255, 0.72);
-  border-left-width: 3px;
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ally-quick-tips--dark .ally-quick-tips__item {
   border-color: rgba(51, 65, 85, 0.9);
   background: rgba(15, 23, 42, 0.55);
-}
-
-.ally-quick-tips__item--sky {
-  border-left-color: #0ea5e9;
-}
-.ally-quick-tips__item--emerald {
-  border-left-color: #10b981;
-}
-.ally-quick-tips__item--cyan {
-  border-left-color: #06b6d4;
-}
-.ally-quick-tips__item--amber {
-  border-left-color: #f59e0b;
-}
-.ally-quick-tips__item--blue {
-  border-left-color: #3b82f6;
-}
-.ally-quick-tips__item--teal {
-  border-left-color: #14b8a6;
 }
 
 .ally-quick-tips__item.is-open {
