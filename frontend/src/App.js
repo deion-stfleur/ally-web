@@ -1,5 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import GlobalMobileFooter from "./components/GlobalMobileFooter";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import AccountSettings from "./pages/AccountSettings";
 import AutomationsGuide from "./pages/AutomationsGuide";
 import Chat from "./pages/Chat";
 import Features from "./pages/Features";
@@ -39,6 +41,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <AccountSettings />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -49,7 +59,12 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <div className="app-shell">
+          <div className="app-route-shell">
+            <AppRoutes />
+          </div>
+          <GlobalMobileFooter />
+        </div>
       </AuthProvider>
     </BrowserRouter>
   );

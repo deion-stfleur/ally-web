@@ -1,4 +1,3 @@
-import { useCallback, useId, useState } from "react";
 import "./ally-quick-tips.css";
 
 const TIPS = [
@@ -99,13 +98,6 @@ export default function AllyQuickTips({
   onTryPrompt,
   composerBusy = false,
 }) {
-  const baseId = useId().replace(/:/g, "");
-  const [openId, setOpenId] = useState("chat");
-
-  const toggle = useCallback((id) => {
-    setOpenId((prev) => (prev === id ? null : id));
-  }, []);
-
   const rootClass = [
     "ally-quick-tips",
     darkRail ? "ally-quick-tips--dark" : "ally-quick-tips--light",
@@ -117,73 +109,39 @@ export default function AllyQuickTips({
         <span className="ally-quick-tips__badge">Guide</span>
         <h2 className="ally-quick-tips__title">Quick tips: how to use Ally</h2>
         <p className="ally-quick-tips__sub">
-          Tap a topic to expand. Use <strong>Try in chat</strong> to drop an example into the composer.
+          Use <strong>Try in chat</strong> to drop an example into the composer.
         </p>
       </div>
 
-      <ul className="ally-quick-tips__list" role="list">
-        {TIPS.map((tip) => {
-          const isOpen = openId === tip.id;
-          const panelId = `${baseId}-panel-${tip.id}`;
-          const buttonId = `${baseId}-btn-${tip.id}`;
-
-          return (
-            <li
-              key={tip.id}
-              className={[
-                "ally-quick-tips__item",
-                `ally-quick-tips__item--${tip.accent}`,
-                isOpen ? "is-open" : "",
-              ].join(" ")}
-            >
-              <h3 className="ally-quick-tips__item-head">
-                <button
-                  id={buttonId}
-                  type="button"
-                  className="ally-quick-tips__trigger"
-                  aria-expanded={isOpen}
-                  aria-controls={panelId}
-                  onClick={() => toggle(tip.id)}
-                >
-                  <TipIconById id={tip.id} accent={tip.accent} />
-                  <span className="ally-quick-tips__trigger-text">
-                    {tip.title}
-                    {tip.pro ? <span className="ally-quick-tips__pro-pill">Pro</span> : null}
-                  </span>
-                  <svg
-                    className="ally-quick-tips__chevron"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                    aria-hidden
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
+      <ul className="ally-quick-tips__list">
+        {TIPS.map((tip) => (
+          <li
+            key={tip.id}
+            className={[
+              "ally-quick-tips__item",
+              `ally-quick-tips__item--${tip.accent}`,
+            ].join(" ")}
+          >
+            <div className="ally-quick-tips__card-head">
+              <TipIconById id={tip.id} accent={tip.accent} />
+              <h3 className="ally-quick-tips__card-title">
+                {tip.title}
+                {tip.pro ? <span className="ally-quick-tips__pro-pill">Pro</span> : null}
               </h3>
-              <div
-                id={panelId}
-                role="region"
-                aria-labelledby={buttonId}
-                hidden={!isOpen}
-                className="ally-quick-tips__panel"
+            </div>
+            <p className="ally-quick-tips__body">{tip.body}</p>
+            {tip.try && onTryPrompt ? (
+              <button
+                type="button"
+                disabled={composerBusy}
+                onClick={() => onTryPrompt(tip.try)}
+                className="ally-quick-tips__try"
               >
-                <p className="ally-quick-tips__body">{tip.body}</p>
-                {tip.try && onTryPrompt ? (
-                  <button
-                    type="button"
-                    disabled={composerBusy}
-                    onClick={() => onTryPrompt(tip.try)}
-                    className="ally-quick-tips__try"
-                  >
-                    Try in chat
-                  </button>
-                ) : null}
-              </div>
-            </li>
-          );
-        })}
+                Try in chat
+              </button>
+            ) : null}
+          </li>
+        ))}
       </ul>
     </div>
   );

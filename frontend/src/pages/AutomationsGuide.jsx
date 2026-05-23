@@ -1,8 +1,9 @@
-import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ChatMobileHeader from "../components/ChatMobileHeader";
+import InPageMobileFooter from "../components/InPageMobileFooter";
 import FadeInSection from "../components/FadeInSection";
 import { useAuth } from "../hooks/useAuth";
+import { useAppRouteLayout } from "../hooks/useAppRouteLayout";
 
 const EXAMPLES = [
   {
@@ -40,13 +41,10 @@ export default function AutomationsGuide() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  useEffect(() => {
-    document.documentElement.classList.add("ally-route-chat");
-    return () => document.documentElement.classList.remove("ally-route-chat");
-  }, []);
+  useAppRouteLayout("scroll");
 
   return (
-    <div className="automations-guide flex h-full min-h-0 flex-col bg-sky-50/50 text-slate-900">
+    <div className="automations-guide bg-sky-50/50 text-slate-900">
       <ChatMobileHeader
         user={user}
         onNewChat={() => navigate("/chat")}
@@ -54,8 +52,7 @@ export default function AutomationsGuide() {
         onLinkPhone={() => navigate("/chat")}
       />
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="automations-guide__inner mx-auto max-w-lg px-4 py-6 pb-10 sm:px-5 lg:max-w-2xl">
+      <div className="automations-guide__inner mx-auto max-w-lg px-4 py-6 pb-6 sm:px-5 lg:max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">Home</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
             Create Ally automations
@@ -92,8 +89,8 @@ export default function AutomationsGuide() {
               Open Ally chat
             </Link>
           </FadeInSection>
-        </div>
       </div>
+      <InPageMobileFooter />
     </div>
   );
 }

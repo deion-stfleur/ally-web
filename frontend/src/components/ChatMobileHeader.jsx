@@ -1,8 +1,7 @@
 import { useCallback, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
-import AccountSettingsModal from "./AccountSettingsModal";
 import MobileSlideMenu from "./MobileSlideMenu";
 
 function IconMenu() {
@@ -42,11 +41,12 @@ export default function ChatMobileHeader({
   menuOpen: menuOpenProp,
   onMenuOpenChange,
   onOpenPricing,
+  showHeaderMenu = true,
 }) {
   const navigate = useNavigate();
-  const { deleteAccount, logout } = useAuth();
+  const location = useLocation();
+  const { logout } = useAuth();
   const [menuOpenInternal, setMenuOpenInternal] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
 
   const menuOpen = menuOpenProp ?? menuOpenInternal;
@@ -87,15 +87,17 @@ export default function ChatMobileHeader({
         <Link to="/chat" className="chat-mobile-header__logo">
           <span aria-hidden>✳</span> ally
         </Link>
-        <button
-          type="button"
-          className="chat-mobile-header__menu-btn"
-          aria-expanded={menuOpen}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          onClick={() => setMenuOpen((o) => !o)}
-        >
-          {menuOpen ? <IconClose /> : <IconMenu />}
-        </button>
+        {showHeaderMenu ? (
+          <button
+            type="button"
+            className="chat-mobile-header__menu-btn"
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            {menuOpen ? <IconClose /> : <IconMenu />}
+          </button>
+        ) : null}
       </header>
 
       <MobileSlideMenu
@@ -133,7 +135,9 @@ export default function ChatMobileHeader({
         </div>
         <nav className="mobile-slide-menu__links">
           {menuItem("Home", () => navigate("/automations"))}
-          {menuItem("Account", () => setSettingsOpen(true))}
+          {menuItem("Account", () =>
+            navigate("/account", { state: { from: location.pathname } })
+          )}
           {menuItem(billingBusy ? "Opening billing…" : "Billing & plan", openBilling)}
           {menuItem("Pricing", () => onOpenPricing?.())}
           {menuItem("New chat", onNewChat)}
@@ -144,15 +148,6 @@ export default function ChatMobileHeader({
           })}
         </nav>
       </MobileSlideMenu>
-
-      <AccountSettingsModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        user={user}
-        onDeleteAccount={deleteAccount}
-        onDeleted={() => navigate("/login", { replace: true })}
-        onViewPlans={onOpenPricing}
-      />
 
     </>
   );

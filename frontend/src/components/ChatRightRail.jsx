@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import AccountSettingsModal from "./AccountSettingsModal";
-import AllyQuickTips from "./AllyQuickTips";
 import { useAuth } from "../hooks/useAuth";
 import { newClientTodoId } from "../hooks/useUserTodos";
+import { openAccountSettings } from "../utils/openAccountSettings";
 
 export default function ChatRightRail({
   user,
@@ -231,7 +231,7 @@ export default function ChatRightRail({
                   role="menuitem"
                   onClick={() => {
                     setAccountOpen(false);
-                    setSettingsOpen(true);
+                    openAccountSettings(navigate, () => setSettingsOpen(true));
                   }}
                   className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium transition ${
                     darkRail ? "text-slate-100 hover:bg-slate-700" : "text-slate-800 hover:bg-slate-50"
@@ -364,12 +364,6 @@ export default function ChatRightRail({
               </ul>
             )}
           </div>
-
-          <AllyQuickTips
-            darkRail={darkRail}
-            onTryPrompt={onPickQuickRequest}
-            composerBusy={composerBusy}
-          />
 
           {/* To do */}
           <div>

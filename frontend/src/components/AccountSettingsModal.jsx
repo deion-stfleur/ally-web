@@ -1,18 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
-import { api } from "../api/client";
-
-function formatApiError(err) {
-  const d = err.response?.data?.detail;
-  if (typeof d === "string") return d;
-  if (Array.isArray(d)) return d.map((x) => x.msg ?? JSON.stringify(x)).join("; ");
-  if (d && typeof d === "object") return JSON.stringify(d);
-  return err.message || "Request failed";
-}
+import AccountSettingsPanel from "./AccountSettingsPanel";
 
 /**
- * Center settings modal: left nav (Account / Options), right pane; Account includes delete with confirm.
+ * Center settings modal (desktop / wide screens).
  */
 export default function AccountSettingsModal({
   open,
@@ -22,23 +13,9 @@ export default function AccountSettingsModal({
   onDeleted,
   onViewPlans,
 }) {
-  const [nav, setNav] = useState("account");
-  const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!open) return;
-    setNav("account");
-    setConfirming(false);
-    setBusy(false);
-    setError(null);
-  }, [open]);
-
   const handleClose = useCallback(() => {
-    if (busy) return;
     onClose();
-  }, [busy, onClose]);
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,20 +26,6 @@ export default function AccountSettingsModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, handleClose]);
 
-  const handleConfirmDelete = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await onDeleteAccount();
-      onClose();
-      onDeleted?.();
-    } catch (e) {
-      setError(formatApiError(e));
-    } finally {
-      setBusy(false);
-    }
-  }, [onDeleteAccount, onClose, onDeleted]);
-
   if (!open) return null;
 
   const node = (
@@ -70,7 +33,7 @@ export default function AccountSettingsModal({
       className="fixed inset-0 z-[115] flex items-center justify-center bg-black/50 px-4 py-8"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={nav === "options" ? "account-settings-options" : "account-settings-title"}
+      aria-labelledby="account-settings-title"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
@@ -82,8 +45,7 @@ export default function AccountSettingsModal({
         <button
           type="button"
           onClick={handleClose}
-          disabled={busy}
-          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           aria-label="Close settings"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -91,174 +53,14 @@ export default function AccountSettingsModal({
           </svg>
         </button>
 
-        <aside className="flex w-[min(40%,200px)] shrink-0 flex-col border-r border-slate-200 bg-slate-50 p-4 pt-14">
-          <p className="px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Account</p>
-          <button
-            type="button"
-            onClick={() => {
-              setNav("account");
-              setConfirming(false);
-              setError(null);
-            }}
-            className={`mt-1 rounded-lg px-2 py-2 text-left text-sm font-medium transition ${
-              nav === "account"
-                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
-            }`}
-          >
-            Account
-          </button>
-          <p className="mt-6 px-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Options</p>
-          <button
-            type="button"
-            onClick={() => {
-              setNav("options");
-              setConfirming(false);
-              setError(null);
-            }}
-            className={`mt-1 rounded-lg px-2 py-2 text-left text-sm font-medium transition ${
-              nav === "options"
-                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
-            }`}
-          >
-            Options
-          </button>
-        </aside>
-
-        <div className="min-h-[280px] min-w-0 flex-1 overflow-y-auto p-6 pt-14">
-          {nav === "account" && (
-            <div>
-              <h2 id="account-settings-title" className="text-lg font-semibold text-slate-900">
-                Account
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Signed in as{" "}
-                <span className="font-medium text-slate-800">{user?.email || "your Google account"}</span>
-              </p>
-
-              <div className="mt-8 border-t border-slate-100 pt-6">
-                <p className="text-sm font-medium text-slate-800">Subscription</p>
-                <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                  Text Ally from your phone on the same Google-connected account.{" "}
-                  <strong className="font-medium text-slate-800">Ally Standard ($10/mo)</strong> includes
-                  web chat, Google (Gmail, Calendar, Drive), and SMS when you text first.{" "}
-                  <strong className="font-medium text-slate-800">Ally Pro ($30/mo)</strong> adds proactive
-                  texts, profile memory, and deeper follow-through.
-                </p>
-                {user?.sms_plan_active ? (
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
-                      {user.subscription_plan === "pro"
-                        ? "Ally Pro active"
-                        : user.subscription_plan === "starter"
-                          ? "Ally Standard active"
-                          : "Active"}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={async () => {
-                        setBusy(true);
-                        setError(null);
-                        try {
-                          const { data } = await api.post("/api/billing/portal-session");
-                          if (data?.url) window.location.assign(data.url);
-                          else setError("No portal URL returned.");
-                        } catch (e) {
-                          setError(formatApiError(e));
-                        } finally {
-                          setBusy(false);
-                        }
-                      }}
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      Manage billing
-                    </button>
-                  </div>
-                ) : (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onViewPlans?.();
-                      }}
-                      className="inline-flex items-center rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500"
-                    >
-                      View pricing and subscribe
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {!confirming ? (
-                <div className="mt-8 border-t border-slate-100 pt-6">
-                  <p className="text-sm font-medium text-slate-800">Delete account</p>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                    Permanently remove your Ally profile, chat history, todos, and linked data from our servers.
-                    The next time you sign in with Google, we start a brand-new account for you.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setConfirming(true);
-                      setError(null);
-                    }}
-                    disabled={busy}
-                    className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
-                  >
-                    Delete account…
-                  </button>
-                </div>
-              ) : (
-                <div className="mt-8 rounded-xl border border-red-100 bg-red-50/80 p-4">
-                  <p className="text-sm font-semibold text-red-900">Are you sure?</p>
-                  <p className="mt-2 text-sm leading-relaxed text-red-800/90">
-                    This cannot be undone. Your conversations, tasks, and saved settings on Ally will be erased.
-                  </p>
-                  {error && (
-                    <p className="mt-2 text-xs text-red-700" role="alert">
-                      {error}
-                    </p>
-                  )}
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setConfirming(false);
-                        setError(null);
-                      }}
-                      disabled={busy}
-                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleConfirmDelete}
-                      disabled={busy}
-                      className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
-                    >
-                      {busy ? "Deleting…" : "Yes, delete my account"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {nav === "options" && (
-            <div>
-              <h2 id="account-settings-options" className="text-lg font-semibold text-slate-900">
-                Options
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                More preferences will land here later. Use the profile tab for account deletion.
-              </p>
-            </div>
-          )}
-        </div>
+        <AccountSettingsPanel
+          variant="modal"
+          user={user}
+          onDeleteAccount={onDeleteAccount}
+          onDeleted={onDeleted}
+          onViewPlans={onViewPlans}
+          onClose={handleClose}
+        />
       </div>
     </div>
   );

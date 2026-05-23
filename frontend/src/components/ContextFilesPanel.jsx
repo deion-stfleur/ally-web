@@ -25,7 +25,7 @@ export default function ContextFilesPanel({
         className="fixed inset-0 z-30 bg-slate-900/20 backdrop-blur-[1px] lg:hidden"
         onClick={onClose}
       />
-      <div className="absolute bottom-0 left-[72px] top-0 z-40 flex w-[min(100vw-72px,300px)] flex-col border-r border-slate-200/90 bg-white shadow-2xl shadow-slate-900/10">
+      <div className="absolute bottom-0 left-0 top-0 z-40 flex w-[min(100vw,300px)] flex-col border-r border-slate-200/90 bg-white shadow-2xl shadow-slate-900/10">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-900">Context</h2>
           <button

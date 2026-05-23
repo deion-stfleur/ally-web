@@ -4,16 +4,18 @@ import PricingModal from "../components/PricingModal";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
+import AllyQuickTips from "../components/AllyQuickTips";
+import InPageMobileFooter from "../components/InPageMobileFooter";
 import ChatLanding from "../components/ChatLanding";
 import ChatMessage from "../components/ChatMessage";
-import ChatRail from "../components/ChatRail";
 import ChatRightRail from "../components/ChatRightRail";
 import ContextFilesPanel from "../components/ContextFilesPanel";
 import EmailDraftCard from "../components/EmailDraftCard";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { useAppRouteLayout } from "../hooks/useAppRouteLayout";
 import { useChat } from "../hooks/useChat";
 import { newClientTodoId, useUserTodos } from "../hooks/useUserTodos";
 import {
@@ -47,6 +49,7 @@ function localCalendarDateKey() {
 
 export default function Chat() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, sessionToken, logout, refreshUser } = useAuth();
   const [contextOpen, setContextOpen] = useState(false);
@@ -159,14 +162,17 @@ export default function Chat() {
 
   const showChatChrome = messages.length > 0;
 
+  useAppRouteLayout("chat");
+
   useEffect(() => {
-    document.documentElement.classList.add("ally-route-chat");
-    return () => document.documentElement.classList.remove("ally-route-chat");
-  }, []);
+    if (!location.state?.openPricing) return;
+    setPricingOpen(true);
+    navigate("/chat", { replace: true, state: null });
+  }, [location.state, navigate]);
 
   return (
     <div
-      className={`flex h-full min-h-0 text-slate-900 ${showChatChrome ? "bg-[#F9FAFB]" : "bg-sky-100/40"}`}
+      className={`chat-page flex h-full min-h-0 text-slate-900 ${showChatChrome ? "bg-[#F9FAFB]" : "bg-sky-100/40"}`}
     >
       <PhonePromptModal
         open={phonePromptOpen}
@@ -180,15 +186,10 @@ export default function Chat() {
         }}
       />
       <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
-      <ChatRail
-        user={user}
-        onLogout={onLogoutClick}
-        contextOpen={contextOpen}
-        onToggleContext={() => setContextOpen((o) => !o)}
-      />
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="chat-page__main relative flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatMobileHeader
           user={user}
+          showHeaderMenu={false}
           menuOpen={mobileMenuOpen}
           onMenuOpenChange={setMobileMenuOpen}
           onOpenPricing={() => setPricingOpen(true)}
@@ -263,13 +264,21 @@ export default function Chat() {
           onSelectConversation={(id) => loadConversation(id)}
         />
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="chat-page__scroll min-h-0 flex-1 overflow-y-auto">
           {messages.length === 0 ? (
-            <ChatLanding
-              user={user}
-              allySmsE164={allySmsE164}
-              onPickPrompt={(t) => sendFromComposer(t)}
-            />
+            <>
+              <ChatLanding
+                user={user}
+                allySmsE164={allySmsE164}
+                onPickPrompt={(t) => sendFromComposer(t)}
+              />
+              <div className="chat-landing-quick-tips">
+                <AllyQuickTips
+                  onTryPrompt={sendFromComposer}
+                  composerBusy={streaming || emailSending}
+                />
+              </div>
+            </>
           ) : (
             <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
               {user?.email && (
@@ -288,6 +297,7 @@ export default function Chat() {
               )}
             </div>
           )}
+          <InPageMobileFooter />
         </div>
 
         {pendingEmail && (
@@ -305,9 +315,9 @@ export default function Chat() {
         )}
 
         <div
-          className={
-            messages.length === 0 ? "chat-composer--empty-mobile" : ""
-          }
+          className={`chat-page__composer-wrap${
+            messages.length === 0 ? " chat-composer--empty-mobile" : ""
+          }`}
         >
           <ChatInput
             onSend={sendFromComposer}

@@ -83,54 +83,37 @@
 }
 
 .ally-quick-tips__item {
-  overflow: hidden;
   border-radius: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.72);
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.75rem;
+  box-shadow: 0 2px 10px -6px rgba(14, 165, 233, 0.2);
 }
 
 .ally-quick-tips--dark .ally-quick-tips__item {
   border-color: rgba(51, 65, 85, 0.9);
   background: rgba(15, 23, 42, 0.55);
+  box-shadow: none;
 }
 
-.ally-quick-tips__item.is-open {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 14px -6px rgba(14, 165, 233, 0.35);
-}
-
-.ally-quick-tips--dark .ally-quick-tips__item.is-open {
-  background: rgba(30, 41, 59, 0.85);
-  box-shadow: 0 4px 14px -6px rgba(14, 165, 233, 0.25);
-}
-
-.ally-quick-tips__item-head {
-  margin: 0;
-}
-
-.ally-quick-tips__trigger {
+.ally-quick-tips__card-head {
   display: flex;
-  width: 100%;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
-  border: none;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
+  margin-bottom: 0.5rem;
 }
 
-.ally-quick-tips__trigger-text {
+.ally-quick-tips__card-title {
+  margin: 0;
   flex: 1;
   min-width: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 600;
+  line-height: 1.3;
   color: #0f172a;
 }
 
-.ally-quick-tips--dark .ally-quick-tips__trigger-text {
+.ally-quick-tips--dark .ally-quick-tips__card-title {
   color: #f1f5f9;
 }
 
@@ -212,38 +195,9 @@
   background: rgba(20, 184, 166, 0.2);
 }
 
-.ally-quick-tips__chevron {
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  color: #64748b;
-  transition: transform 0.2s ease;
-}
-
-.ally-quick-tips__item.is-open .ally-quick-tips__chevron {
-  transform: rotate(180deg);
-  color: #0ea5e9;
-}
-
-.ally-quick-tips--dark .ally-quick-tips__chevron {
-  color: #94a3b8;
-}
-
-.ally-quick-tips--dark .ally-quick-tips__item.is-open .ally-quick-tips__chevron {
-  color: #38bdf8;
-}
-
-.ally-quick-tips__panel {
-  padding: 0 0.75rem 0.75rem 2.75rem;
-}
-
-.ally-quick-tips__panel[hidden] {
-  display: none;
-}
-
 .ally-quick-tips__body {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   line-height: 1.5;
   color: #475569;
 }
@@ -253,8 +207,9 @@
 }
 
 .ally-quick-tips__try {
-  margin-top: 0.625rem;
+  margin-top: 0.75rem;
   width: 100%;
+  max-width: 12rem;
   border: none;
   border-radius: 0.5rem;
   padding: 0.45rem 0.75rem;
@@ -279,4 +234,15 @@
 
 .ally-quick-tips--dark .ally-quick-tips__try {
   background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+}
+
+@media (max-width: 1023px) {
+  .ally-quick-tips__try {
+    display: block;
+    width: fit-content;
+    min-width: 10.5rem;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
 }
