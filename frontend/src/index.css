@@ -392,7 +392,7 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   width: 100%;
   padding: 16px 24px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #7dd3fc 0%, #0ea5e9 100%);
+  background: #0ea5e9;
   color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
@@ -400,11 +400,11 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   border: none;
   cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 4px 14px -4px rgba(14, 165, 233, 0.55);
+  box-shadow: 0 4px 14px -4px rgba(14, 165, 233, 0.45);
 }
 
 .mobile-slide-menu__cta:hover {
-  filter: brightness(1.04);
+  background: #0284c7;
 }
 
 .chat-mobile-header {
