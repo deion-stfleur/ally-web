@@ -147,30 +147,34 @@ export default function PricingModal({ open, onClose }) {
                   key={plan.id}
                   className={`pricing-modal__card${plan.featured ? " pricing-modal__card--featured" : ""}`}
                 >
-                  {plan.featured ? <p className="pricing-modal__badge">Most popular</p> : null}
-                  <h3 className="pricing-modal__plan-name">{plan.name}</h3>
-                  <p className="pricing-modal__plan-tag">{plan.tagline}</p>
-                  <p className="pricing-modal__price">
-                    ${plan.price}
-                    <span className="pricing-modal__price-unit">/month</span>
-                  </p>
-                  <ul className="pricing-modal__features">
-                    {plan.features.slice(0, 4).map((f) => (
-                      <li key={f}>{f}</li>
-                    ))}
-                  </ul>
-                  {isCurrent ? (
-                    <p className="pricing-modal__current">Your current plan</p>
-                  ) : (
-                    <button
-                      type="button"
-                      className={`pricing-modal__cta${plan.featured ? " pricing-modal__cta--featured" : ""}`}
-                      disabled={Boolean(busyPlan) || isOther}
-                      onClick={() => startCheckout(plan.id)}
-                    >
-                      {subscribeLabel(plan, busyPlan === plan.id)}
-                    </button>
-                  )}
+                  <div className="pricing-modal__card-main">
+                    {plan.featured ? <p className="pricing-modal__badge">Most popular</p> : null}
+                    <h3 className="pricing-modal__plan-name">{plan.name}</h3>
+                    <p className="pricing-modal__plan-tag">{plan.tagline}</p>
+                    <p className="pricing-modal__price">
+                      ${plan.price}
+                      <span className="pricing-modal__price-unit">/month</span>
+                    </p>
+                    <ul className="pricing-modal__features">
+                      {plan.features.slice(0, 4).map((f) => (
+                        <li key={f}>{f}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="pricing-modal__card-foot">
+                    {isCurrent ? (
+                      <p className="pricing-modal__current">Your current plan</p>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`pricing-modal__cta${plan.featured ? " pricing-modal__cta--featured" : ""}`}
+                        disabled={Boolean(busyPlan) || isOther}
+                        onClick={() => startCheckout(plan.id)}
+                      >
+                        {subscribeLabel(plan, busyPlan === plan.id)}
+                      </button>
+                    )}
+                  </div>
                 </article>
               );
             })}

@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import TextAllyHandoff from "./TextAllyHandoff";
+import {
+  clearPendingPhone,
+  consumeShowSmsHandoff,
+  getPendingPhone,
+  markShowSmsHandoff,
+  setPendingPhone,
+} from "../utils/phoneOnboarding";
 
 function formatApiError(err) {
   const d = err.response?.data?.detail;
@@ -12,23 +18,34 @@ function formatApiError(err) {
   return err.message || "Request failed";
 }
 
-function IconCheckCircle() {
+function isPaymentRequired(err) {
+  return err?.response?.status === 402;
+}
+
+function IconMessagesBubble() {
   return (
     <div
-      className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 ring-4 ring-emerald-50"
+      className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-b from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/35 ring-4 ring-emerald-50"
       aria-hidden
     >
-      <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2.25} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      <svg className="h-9 w-9 text-white" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z" />
       </svg>
     </div>
   );
 }
 
 /**
- * Prompt to link a phone for SMS. Requires an active plan before saving (enforced on API too).
+ * Phone-first onboarding: enter number → subscribe if needed → Messages handoff.
  */
-export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlanActive }) {
+export default function PhonePromptModal({
+  open,
+  onDismiss,
+  refreshUser,
+  smsPlanActive,
+  onViewPlans,
+  userPhoneE164 = null,
+}) {
   const inputRef = useRef(null);
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
@@ -36,8 +53,6 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
   const [showSuccess, setShowSuccess] = useState(false);
   const [allySmsE164, setAllySmsE164] = useState(null);
   const [savedPhoneE164, setSavedPhoneE164] = useState(null);
-
-  const canSavePhone = Boolean(smsPlanActive);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,14 +73,18 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
       return;
     }
     setError(null);
-    setPhone("");
-    setShowSuccess(false);
-    if (canSavePhone) {
-      const t = window.setTimeout(() => inputRef.current?.focus(), 50);
-      return () => window.clearTimeout(t);
+
+    if (consumeShowSmsHandoff() && userPhoneE164 && smsPlanActive) {
+      setSavedPhoneE164(userPhoneE164);
+      setShowSuccess(true);
+      return;
     }
-    return undefined;
-  }, [open, canSavePhone]);
+
+    setShowSuccess(false);
+    setPhone(userPhoneE164 || getPendingPhone() || "");
+    const t = window.setTimeout(() => inputRef.current?.focus(), 50);
+    return () => window.clearTimeout(t);
+  }, [open, userPhoneE164, smsPlanActive]);
 
   const finishAfterSuccess = useCallback(() => {
     setShowSuccess(false);
@@ -77,26 +96,46 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
     onDismiss();
   }, [onDismiss, saving]);
 
+  const openPricingForPhone = useCallback(
+    (raw) => {
+      setPendingPhone(raw);
+      onDismiss();
+      onViewPlans?.();
+    },
+    [onDismiss, onViewPlans]
+  );
+
   const handleSave = useCallback(async () => {
-    if (!canSavePhone) return;
     const raw = phone.trim();
     if (!raw) {
       setError("Enter your phone number.");
       return;
     }
+
+    if (!smsPlanActive) {
+      openPricingForPhone(raw);
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
       const { data } = await api.patch("/api/auth/me/phone", { phone: raw });
+      clearPendingPhone();
       await refreshUser();
       setSavedPhoneE164(data?.phone_e164 || raw);
+      markShowSmsHandoff();
       setShowSuccess(true);
     } catch (e) {
+      if (isPaymentRequired(e)) {
+        openPricingForPhone(raw);
+        return;
+      }
       setError(formatApiError(e));
     } finally {
       setSaving(false);
     }
-  }, [canSavePhone, phone, refreshUser]);
+  }, [phone, smsPlanActive, refreshUser, openPricingForPhone]);
 
   useEffect(() => {
     if (!open) return;
@@ -143,13 +182,12 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
             </button>
 
             <div className="pt-2 text-center">
-              <IconCheckCircle />
+              <IconMessagesBubble />
               <h2 id="phone-success-title" className="mt-5 text-lg font-semibold text-slate-900">
-                Number saved — open Messages next
+                You&apos;re set — open Messages
               </h2>
-              <p className="mt-2 text-left text-sm leading-relaxed text-slate-600">
-                Your plan is active. Send one text from your phone to start SMS; replies use the same
-                Google account as this web session.
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Text Ally from your saved number. Send the first message below so Ally can reply by SMS.
               </p>
             </div>
 
@@ -157,56 +195,17 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
               className="mt-4"
               allySmsE164={allySmsE164}
               userPhoneE164={savedPhoneE164}
+              showMessageIcon
             />
 
             <div className="mt-6 flex justify-end">
               <button
                 type="button"
                 onClick={finishAfterSuccess}
-                className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500"
               >
                 Done
               </button>
-            </div>
-          </>
-        ) : !canSavePhone ? (
-          <>
-            <button
-              type="button"
-              onClick={handleDismissForm}
-              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-              aria-label="Close"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <h2 id="phone-prompt-title" className="pr-10 text-lg font-semibold text-slate-900">
-              Subscribe before linking your phone
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Web chat is free. To text Ally from your phone, you need{" "}
-              <strong className="font-medium text-slate-800">Ally Standard ($10/mo)</strong> or{" "}
-              <strong className="font-medium text-slate-800">Ally Pro ($30/mo)</strong>. After you
-              subscribe, come back here to save your number.
-            </p>
-
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={handleDismissForm}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                Not now
-              </button>
-              <Link
-                to="/pricing"
-                onClick={() => onDismiss()}
-                className="inline-flex items-center justify-center rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700"
-              >
-                View plans
-              </Link>
             </div>
           </>
         ) : (
@@ -227,16 +226,12 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
               Text Ally from your phone
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Save the mobile number you will text from. After saving, we will show Ally&apos;s line and an
-              <strong className="font-medium text-slate-800"> Open Messages</strong> button — you send the first
-              text (required by our SMS provider), then Ally can reply.
-            </p>
-            <p className="mt-2 rounded-lg border border-violet-100 bg-violet-50/80 px-3 py-2 text-xs leading-relaxed text-violet-950">
-              Use the same phone you will message from. SMS is included with your active plan.
+              Enter the mobile number you&apos;ll text from. Web chat stays free — SMS needs Ally Standard or
+              Pro.
             </p>
 
             <label htmlFor="phone-prompt-input" className="mt-5 block text-xs font-medium text-slate-500">
-              Phone number
+              Your phone number
             </label>
             <input
               id="phone-prompt-input"
@@ -275,9 +270,9 @@ export default function PhonePromptModal({ open, onDismiss, refreshUser, smsPlan
                 type="button"
                 onClick={handleSave}
                 disabled={saving}
-                className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Save number"}
+                {saving ? "Saving…" : "Save & continue"}
               </button>
             </div>
           </>

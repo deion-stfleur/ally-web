@@ -16,12 +16,26 @@ function readFileBase64(file) {
   });
 }
 
+function IconMenu() {
+  return (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function ChatInput({
   onSend,
   disabled,
   attachIds,
   onRemoveAttach,
   onReceiptImages,
+  onOpenMobileMenu,
 }) {
   const [text, setText] = useState("");
   const receiptFileRef = useRef(null);
@@ -73,18 +87,30 @@ export default function ChatInput({
             />
           </div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2.5">
-            <label className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
-              <span className="hidden sm:inline">Source</span>
-              <select
-                disabled={disabled}
-                className="max-w-[11rem] cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-700 outline-none hover:border-slate-300 disabled:opacity-50"
-                defaultValue="gmail"
-              >
-                <option value="drive">Drive (sample files)</option>
-                <option value="gmail">Gmail</option>
-                <option value="calendar">Calendar</option>
-              </select>
-            </label>
+            <div className="flex min-w-0 items-center gap-2">
+              {onOpenMobileMenu ? (
+                <button
+                  type="button"
+                  onClick={onOpenMobileMenu}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700 transition hover:border-slate-300 hover:bg-slate-100 lg:hidden"
+                  aria-label="Open menu"
+                >
+                  <IconMenu />
+                </button>
+              ) : null}
+              <label className="hidden min-w-0 items-center gap-2 text-xs text-slate-500 lg:flex">
+                <span>Source</span>
+                <select
+                  disabled={disabled}
+                  className="max-w-[11rem] cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-700 outline-none hover:border-slate-300 disabled:opacity-50"
+                  defaultValue="gmail"
+                >
+                  <option value="drive">Drive (sample files)</option>
+                  <option value="gmail">Gmail</option>
+                  <option value="calendar">Calendar</option>
+                </select>
+              </label>
+            </div>
             <div className="flex items-center gap-1">
               <input
                 ref={receiptFileRef}
@@ -148,7 +174,11 @@ export default function ChatInput({
                 aria-label="Send"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+                  />
                 </svg>
               </button>
             </div>

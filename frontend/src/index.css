@@ -257,10 +257,6 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
     display: none !important;
   }
 
-  .chat-landing-llama {
-    display: none !important;
-  }
-
   .chat-landing-tasks {
     display: none !important;
   }
@@ -275,8 +271,36 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   }
 }
 
+.chat-mobile-menu-fab {
+  position: fixed;
+  right: 16px;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.28);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chat-mobile-menu-fab:hover {
+  background: #f8fafc;
+}
+
 @media (min-width: 1024px) {
   .chat-mobile-header {
+    display: none !important;
+  }
+
+  .chat-mobile-menu-fab {
     display: none !important;
   }
 }
@@ -390,16 +414,16 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   text-decoration: none;
 }
 
-/* In-app pricing modal */
+/* In-app pricing modal — full screen */
 .pricing-modal {
   position: fixed;
   inset: 0;
   z-index: 115;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   padding: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: #ffffff;
   box-sizing: border-box;
 }
 
@@ -407,13 +431,15 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: min(100%, 36rem);
-  max-height: min(92dvh, 720px);
+  height: 100%;
+  max-width: 100%;
+  max-height: 100dvh;
+  max-height: -webkit-fill-available;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem 1rem 0 0;
+  border: none;
+  border-radius: 0;
   background: #ffffff;
-  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.28);
+  box-shadow: none;
   box-sizing: border-box;
 }
 
@@ -424,7 +450,7 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   justify-content: space-between;
   gap: 0.5rem;
   border-bottom: 1px solid #f1f5f9;
-  padding: 0.875rem 1rem;
+  padding: max(0.875rem, env(safe-area-inset-top)) 1rem 0.875rem;
 }
 
 .pricing-modal__title {
@@ -450,12 +476,12 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 }
 
 .pricing-modal__body {
+  display: flex;
   min-height: 0;
   flex: 1;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0.875rem 1rem 1.25rem;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0.875rem 1rem max(1rem, env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -468,19 +494,39 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 
 .pricing-modal__grid {
   display: grid;
+  flex: 1;
+  min-height: 0;
   grid-template-columns: 1fr;
   gap: 0.75rem;
   margin-top: 0.875rem;
+  align-items: stretch;
 }
 
 .pricing-modal__card {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
   border-radius: 1rem;
   border: 1px solid #e2e8f0;
   background: #ffffff;
   padding: 0.875rem;
   box-sizing: border-box;
   min-width: 0;
+}
+
+.pricing-modal__card-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.pricing-modal__card-foot {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 0.75rem;
 }
 
 .pricing-modal__card--featured {
@@ -546,7 +592,8 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 }
 
 .pricing-modal__current {
-  margin: 0.875rem 0 0;
+  margin: 0;
+  padding: 0.75rem 0;
   text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
@@ -554,11 +601,11 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 }
 
 .pricing-modal__cta {
-  margin-top: 0.75rem;
+  margin-top: 0;
   width: 100%;
   border: none;
   border-radius: 0.75rem;
-  padding: 0.625rem 1rem;
+  padding: 0.875rem 1rem;
   background: #0f172a;
   color: #ffffff;
   font-size: 0.8125rem;
@@ -606,6 +653,17 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   color: #dc2626;
 }
 
+@media (max-width: 639px) {
+  .pricing-modal__grid {
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .pricing-modal__cta {
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
 @media (max-width: 430px) {
   .automations-guide__inner {
     padding-left: 0.875rem;
@@ -615,12 +673,6 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   .automations-guide__bubble {
     max-width: 100%;
     font-size: 0.75rem;
-  }
-
-  .pricing-modal__panel {
-    max-width: 100%;
-    max-height: min(94dvh, 100%);
-    border-radius: 0.875rem 0.875rem 0 0;
   }
 
   .pricing-modal__header {
@@ -645,27 +697,21 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 }
 
 @media (min-width: 640px) {
-  .pricing-modal {
-    align-items: center;
-    padding: 2rem 1rem;
-  }
-
-  .pricing-modal__panel {
-    border-radius: 1rem;
-    max-width: 42rem;
-  }
-
   .pricing-modal__grid {
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    max-width: 56rem;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .pricing-modal__header {
-    padding: 1rem 1.25rem;
+    padding: max(1rem, env(safe-area-inset-top)) 1.25rem 1rem;
   }
 
   .pricing-modal__body {
-    padding: 1rem 1.25rem 1.5rem;
+    padding: 1rem 1.25rem max(1.5rem, env(safe-area-inset-bottom));
   }
 
   .pricing-modal__intro {
@@ -682,6 +728,10 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 
   .pricing-modal__cta {
     font-size: 0.875rem;
-    padding: 0.625rem 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .pricing-modal__card {
+    padding: 1rem;
   }
 }

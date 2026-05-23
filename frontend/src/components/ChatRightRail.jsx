@@ -16,6 +16,7 @@ export default function ChatRightRail({
   todosLoaded = true,
   todosSaveError = null,
   onLogout,
+  onOpenPricing,
 }) {
   const navigate = useNavigate();
   const { deleteAccount } = useAuth();
@@ -626,6 +627,7 @@ export default function ChatRightRail({
       user={user}
       onDeleteAccount={deleteAccount}
       onDeleted={() => navigate("/login", { replace: true })}
+      onViewPlans={onOpenPricing}
     />
     </>
   );

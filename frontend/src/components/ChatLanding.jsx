@@ -11,16 +11,6 @@ export default function ChatLanding({ user, onPickPrompt, allySmsE164 = null }) 
 
   return (
     <div className="chat-landing-root mx-auto flex max-w-4xl flex-col items-center px-4 pb-8 pt-6">
-      <div className="chat-landing-llama relative mb-6 h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-white bg-violet-50 shadow-xl shadow-violet-300/40 ring-4 ring-sky-100/90">
-        <img
-          src="/ally-llama.png"
-          alt="Ally"
-          width={112}
-          height={112}
-          className="h-full w-full object-cover object-center"
-        />
-      </div>
-
       <h1 className="text-center text-3xl font-semibold tracking-tight text-slate-900">
         Hi, {first}
       </h1>
@@ -36,7 +26,7 @@ export default function ChatLanding({ user, onPickPrompt, allySmsE164 = null }) 
           />
         </div>
       ) : user?.sms_plan_active && !user?.phone_e164 ? (
-        <p className="mt-6 max-w-md text-center text-sm text-violet-800">
+        <p className="mt-6 max-w-md text-center text-sm text-sky-800">
           Link your phone in the popup to text Ally from Messages — save your number, then send &quot;Hi
           Ally&quot; to get off the web app.
         </p>

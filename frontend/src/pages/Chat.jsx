@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import ChatMobileHeader from "../components/ChatMobileHeader";
+import ChatMobileHeader, { ChatMobileMenuIcon } from "../components/ChatMobileHeader";
+import PricingModal from "../components/PricingModal";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
@@ -15,8 +16,26 @@ import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { useChat } from "../hooks/useChat";
 import { newClientTodoId, useUserTodos } from "../hooks/useUserTodos";
+import {
+  clearPendingPhone,
+  getPendingPhone,
+  markShowSmsHandoff,
+} from "../utils/phoneOnboarding";
 
 const PHONE_PROMPT_DISMISS_KEY = "ally_chat_phone_prompt_dismissed";
+
+async function savePendingPhoneAfterSubscribe(refreshUser) {
+  const pending = getPendingPhone();
+  if (!pending) return refreshUser();
+  try {
+    await api.patch("/api/auth/me/phone", { phone: pending });
+    clearPendingPhone();
+    markShowSmsHandoff();
+    return refreshUser();
+  } catch {
+    return refreshUser();
+  }
+}
 
 function localCalendarDateKey() {
   const d = new Date();
@@ -33,6 +52,8 @@ export default function Chat() {
   const [contextOpen, setContextOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [phonePromptOpen, setPhonePromptOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [pricingOpen, setPricingOpen] = useState(false);
   const [allySmsE164, setAllySmsE164] = useState(null);
   const {
     todos: railTodos,
@@ -63,9 +84,13 @@ export default function Chat() {
     const status = sub || sms;
     if (!status || !sessionToken) return;
     if (status === "success") {
-      refreshUser().then((me) => {
+      const hadPending = Boolean(getPendingPhone());
+      savePendingPhoneAfterSubscribe(refreshUser).then((me) => {
         setSearchParams({}, { replace: true });
-        if (me && !me.phone_e164) setPhonePromptOpen(true);
+        if (!me) return;
+        if (hadPending || !me.phone_e164) {
+          setPhonePromptOpen(true);
+        }
       });
     } else if (status === "cancel" || sms === "cancel") {
       setSearchParams({}, { replace: true });
@@ -148,7 +173,13 @@ export default function Chat() {
         onDismiss={dismissPhonePrompt}
         refreshUser={refreshUser}
         smsPlanActive={Boolean(user?.sms_plan_active)}
+        userPhoneE164={user?.phone_e164}
+        onViewPlans={() => {
+          setPhonePromptOpen(false);
+          setPricingOpen(true);
+        }}
       />
+      <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
       <ChatRail
         user={user}
         onLogout={onLogoutClick}
@@ -158,6 +189,9 @@ export default function Chat() {
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatMobileHeader
           user={user}
+          menuOpen={mobileMenuOpen}
+          onMenuOpenChange={setMobileMenuOpen}
+          onOpenPricing={() => setPricingOpen(true)}
           onNewChat={() => {
             setSearchOpen(false);
             startNewChat();
@@ -167,7 +201,20 @@ export default function Chat() {
           onLinkPhone={() => setPhonePromptOpen(true)}
         />
         {!user?.sms_plan_active ? (
-          <SmsSubscribeBanner phoneE164={user?.phone_e164} />
+          <SmsSubscribeBanner
+            phoneE164={user?.phone_e164}
+            onViewPlans={() => setPricingOpen(true)}
+          />
+        ) : null}
+        {messages.length === 0 ? (
+          <button
+            type="button"
+            className="chat-mobile-menu-fab lg:hidden"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            <ChatMobileMenuIcon />
+          </button>
         ) : null}
         <ContextFilesPanel
           open={contextOpen}
@@ -270,6 +317,7 @@ export default function Chat() {
               setAttachIds((prev) => prev.filter((x) => x !== id))
             }
             onReceiptImages={addReceiptImages}
+            onOpenMobileMenu={() => setMobileMenuOpen(true)}
           />
         </div>
       </div>
@@ -284,6 +332,7 @@ export default function Chat() {
         todosLoaded={todosLoaded}
         todosSaveError={todosSaveError}
         onLogout={onLogoutClick}
+        onOpenPricing={() => setPricingOpen(true)}
       />
     </div>
   );

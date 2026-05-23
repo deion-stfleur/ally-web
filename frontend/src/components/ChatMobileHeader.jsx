@@ -4,7 +4,6 @@ import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import AccountSettingsModal from "./AccountSettingsModal";
 import MobileSlideMenu from "./MobileSlideMenu";
-import PricingModal from "./PricingModal";
 
 function IconMenu() {
   return (
@@ -40,15 +39,20 @@ export default function ChatMobileHeader({
   onNewChat,
   onOpenSearch,
   onLinkPhone,
+  menuOpen: menuOpenProp,
+  onMenuOpenChange,
+  onOpenPricing,
 }) {
   const navigate = useNavigate();
   const { deleteAccount, logout } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpenInternal, setMenuOpenInternal] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [pricingOpen, setPricingOpen] = useState(false);
   const [billingBusy, setBillingBusy] = useState(false);
 
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const menuOpen = menuOpenProp ?? menuOpenInternal;
+  const setMenuOpen = onMenuOpenChange ?? setMenuOpenInternal;
+
+  const closeMenu = useCallback(() => setMenuOpen(false), [setMenuOpen]);
 
   const openBilling = useCallback(async () => {
     closeMenu();
@@ -56,13 +60,13 @@ export default function ChatMobileHeader({
     try {
       const { data } = await api.post("/api/billing/portal-session");
       if (data?.url) window.location.href = data.url;
-      else       setPricingOpen(true);
+      else onOpenPricing?.();
     } catch {
-      setPricingOpen(true);
+      onOpenPricing?.();
     } finally {
       setBillingBusy(false);
     }
-  }, [closeMenu]);
+  }, [closeMenu, onOpenPricing]);
 
   const menuItem = (label, onClick) => (
     <button
@@ -131,7 +135,7 @@ export default function ChatMobileHeader({
           {menuItem("Home", () => navigate("/automations"))}
           {menuItem("Account", () => setSettingsOpen(true))}
           {menuItem(billingBusy ? "Opening billing…" : "Billing & plan", openBilling)}
-          {menuItem("Pricing", () => setPricingOpen(true))}
+          {menuItem("Pricing", () => onOpenPricing?.())}
           {menuItem("New chat", onNewChat)}
           {menuItem("Search chats", onOpenSearch)}
           {menuItem("Sign out", async () => {
@@ -147,9 +151,29 @@ export default function ChatMobileHeader({
         user={user}
         onDeleteAccount={deleteAccount}
         onDeleted={() => navigate("/login", { replace: true })}
+        onViewPlans={onOpenPricing}
       />
 
-      <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
     </>
+  );
+}
+
+export function ChatMobileMenuIcon({ className = "" }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      className={className}
+    >
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
