@@ -118,9 +118,6 @@ export default function PricingModal({ open, onClose }) {
     >
       <div className="pricing-modal__panel" onMouseDown={(e) => e.stopPropagation()}>
         <div className="pricing-modal__header">
-          <h2 id="pricing-modal-title" className="pricing-modal__title">
-            Pick your plan
-          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -131,13 +128,17 @@ export default function PricingModal({ open, onClose }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+          <div className="pricing-modal__head-copy">
+            <h2 id="pricing-modal-title" className="pricing-modal__title">
+              Pick your plan
+            </h2>
+            <p className="pricing-modal__intro">
+              Both plans include web and SMS. Pro adds proactive texts and deeper follow-through.
+            </p>
+          </div>
         </div>
 
         <div className="pricing-modal__body">
-          <p className="pricing-modal__intro">
-            Both plans include web and SMS. Pro adds proactive texts and deeper follow-through.
-          </p>
-
           <div className="pricing-modal__grid">
             {PLANS.map((plan) => {
               const isCurrent = hasSub && activePlan === plan.id;
@@ -148,7 +149,13 @@ export default function PricingModal({ open, onClose }) {
                   className={`pricing-modal__card${plan.featured ? " pricing-modal__card--featured" : ""}`}
                 >
                   <div className="pricing-modal__card-main">
-                    {plan.featured ? <p className="pricing-modal__badge">Most popular</p> : null}
+                    {plan.featured ? (
+                      <p className="pricing-modal__badge">Most popular</p>
+                    ) : (
+                      <p className="pricing-modal__badge pricing-modal__badge--spacer" aria-hidden>
+                        &nbsp;
+                      </p>
+                    )}
                     <h3 className="pricing-modal__plan-name">{plan.name}</h3>
                     <p className="pricing-modal__plan-tag">{plan.tagline}</p>
                     <p className="pricing-modal__price">
