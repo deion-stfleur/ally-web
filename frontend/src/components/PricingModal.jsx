@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
-import ProUserStories from "./ProUserStories";
 
 function formatApiError(err) {
   const d = err.response?.data?.detail;
@@ -205,7 +204,6 @@ export default function PricingModal({ open, onClose }) {
             </p>
           ) : null}
 
-          <ProUserStories variant="modal" />
         </div>
       </div>
     </div>
