@@ -23,10 +23,18 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function MarketingHome() {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) {
+    return <Navigate to={APP_HOME_PATH} replace />;
+  }
+  return <Landing />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<MarketingHome />} />
       <Route path="/features" element={<Features />} />
       <Route path="/use-cases" element={<UseCases />} />
       <Route path="/login" element={<Login />} />
