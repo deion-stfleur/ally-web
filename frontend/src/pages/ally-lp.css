@@ -3111,7 +3111,7 @@
 /* ----- landing pricing (above footer) ----- */
 .alm-landing-pricing {
   width: 100%;
-  padding: 56px 0 64px;
+  padding: 56px 0 0;
   border-top: 1px solid var(--alm-border);
   background: #fbfdff;
 }

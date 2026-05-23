@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ProUserStories from "./ProUserStories";
 
 const PLANS = [
   {
@@ -77,6 +78,7 @@ export default function LandingPricing() {
             </article>
           ))}
         </div>
+        <ProUserStories variant="landing" />
       </div>
     </section>
   );
