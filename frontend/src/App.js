@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import GlobalMobileFooter from "./components/GlobalMobileFooter";
 import ProtectedAppLayout from "./components/ProtectedAppLayout";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
@@ -31,6 +31,22 @@ function MarketingHome() {
   return <Landing />;
 }
 
+/** Bare /chat opens the dashboard; only deep-link state stays on Chat. */
+function ChatEntry() {
+  const location = useLocation();
+  const state = location.state;
+  const hasIntent =
+    state &&
+    (state.newChat ||
+      state.loadConversationId ||
+      state.seedPrompt ||
+      state.openPricing);
+  if (!hasIntent) {
+    return <Navigate to={APP_HOME_PATH} replace />;
+  }
+  return <Chat />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -46,7 +62,7 @@ function AppRoutes() {
         }
       >
         <Route path={APP_HOME_PATH} element={<Home />} />
-        <Route path={CHAT_PATH} element={<Chat />} />
+        <Route path={CHAT_PATH} element={<ChatEntry />} />
         <Route path="/automations" element={<AutomationsGuide />} />
         <Route path="/account" element={<AccountSettings />} />
         <Route path="/chats" element={<Navigate to={APP_HOME_PATH} replace />} />
