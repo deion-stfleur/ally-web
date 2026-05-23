@@ -1,4 +1,4 @@
-/* Ally Pro social proof — original copy, sky brand */
+/* Ally Pro social proof — 4-quadrant layout with axis dividers */
 .ally-pro-stories {
   width: 100%;
   max-width: 56rem;
@@ -35,7 +35,6 @@
 
 .ally-pro-stories--modal .ally-pro-stories__title {
   font-size: 1.25rem;
-  color: #0f172a;
 }
 
 .ally-pro-stories__sub {
@@ -51,66 +50,79 @@
   color: #0c4a6e;
 }
 
-.ally-pro-stories__featured {
+/* Quadrant grid + skinny cross axes */
+.ally-pro-stories__quadrants {
+  --ally-axis: rgba(14, 116, 144, 0.22);
   display: grid;
-  gap: 1.25rem;
-  align-items: start;
-  margin-bottom: 1.25rem;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  width: 100%;
 }
 
-@media (min-width: 768px) {
-  .ally-pro-stories__featured {
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: 1.5rem;
-    align-items: center;
-  }
+.ally-pro-stories__quadrant {
+  min-width: 0;
+  padding: 1.25rem 1.35rem;
+  box-sizing: border-box;
 }
 
-.ally-pro-stories__pullquote {
+.ally-pro-stories__quadrant--tl {
+  border-right: 1px solid var(--ally-axis);
+  border-bottom: 1px solid var(--ally-axis);
+}
+
+.ally-pro-stories__quadrant--tr {
+  border-bottom: 1px solid var(--ally-axis);
+}
+
+.ally-pro-stories__quadrant--bl {
+  border-right: 1px solid var(--ally-axis);
+}
+
+.ally-pro-stories__quadrant--tl {
   margin: 0;
-  position: relative;
 }
 
+/* Top-left pull quote */
 .ally-pro-stories__quote-mark {
   display: block;
   margin-bottom: 0.25rem;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 3.5rem;
+  font-size: 3.25rem;
   line-height: 0.85;
   font-weight: 700;
   color: #38bdf8;
 }
 
-.ally-pro-stories__pullquote p {
+.ally-pro-stories--modal .ally-pro-stories__quote-mark {
+  font-size: 2.5rem;
+}
+
+.ally-pro-stories__pullquote-text {
   margin: 0;
-  font-size: clamp(1.25rem, 3.2vw, 1.75rem);
+  font-size: clamp(1.125rem, 2.8vw, 1.625rem);
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: -0.02em;
   color: #0f172a;
 }
 
-.ally-pro-stories--modal .ally-pro-stories__pullquote p {
-  font-size: 1.125rem;
+.ally-pro-stories--modal .ally-pro-stories__pullquote-text {
+  font-size: 1.0625rem;
 }
 
-.ally-pro-stories__pullquote strong {
+.ally-pro-stories__pullquote-text strong {
   font-weight: 700;
   color: #0369a1;
 }
 
-.ally-pro-stories__meta {
+/* Top-right meta */
+.ally-pro-stories__quadrant--tr {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
   gap: 1rem;
-  align-items: flex-start;
-}
-
-@media (min-width: 768px) {
-  .ally-pro-stories__meta {
-    align-items: flex-end;
-    text-align: right;
-  }
+  text-align: right;
 }
 
 .ally-pro-stories__attribution {
@@ -153,30 +165,7 @@
   color: rgba(255, 255, 255, 0.75);
 }
 
-.ally-pro-stories__grid {
-  display: grid;
-  gap: 0.875rem;
-}
-
-@media (min-width: 640px) {
-  .ally-pro-stories__grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-}
-
-.ally-pro-stories__card {
-  border-radius: 1rem;
-  border: 1px solid rgba(14, 165, 233, 0.2);
-  background: rgba(255, 255, 255, 0.92);
-  padding: 1rem 1.125rem;
-  box-shadow: 0 8px 24px -12px rgba(14, 116, 144, 0.2);
-}
-
-.ally-pro-stories--modal .ally-pro-stories__card {
-  background: rgba(255, 255, 255, 0.88);
-}
-
+/* Bottom story quadrants */
 .ally-pro-stories__card-label {
   display: flex;
   align-items: center;
@@ -210,4 +199,26 @@
 .ally-pro-stories__card-body strong {
   font-weight: 600;
   color: #0f172a;
+}
+
+@media (max-width: 639px) {
+  .ally-pro-stories__quadrants {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, auto);
+  }
+
+  .ally-pro-stories__quadrant {
+    padding: 1.125rem 1rem;
+    border-right: none !important;
+    border-bottom: 1px solid var(--ally-axis);
+  }
+
+  .ally-pro-stories__quadrant--br {
+    border-bottom: none;
+  }
+
+  .ally-pro-stories__quadrant--tr {
+    align-items: flex-start;
+    text-align: left;
+  }
 }

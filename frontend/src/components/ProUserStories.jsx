@@ -30,6 +30,7 @@ function IconInbox() {
 
 const STORIES = [
   {
+    quadrant: "bl",
     label: "Morning brief · SMS",
     icon: IconMorning,
     body: (
@@ -40,6 +41,7 @@ const STORIES = [
     ),
   },
   {
+    quadrant: "br",
     label: "Inbox watch · alerts",
     icon: IconInbox,
     body: (
@@ -71,17 +73,18 @@ export default function ProUserStories({ variant = "landing" }) {
         </p>
       </header>
 
-      <div className="ally-pro-stories__featured">
-        <blockquote className="ally-pro-stories__pullquote">
+      <div className="ally-pro-stories__quadrants">
+        <blockquote className="ally-pro-stories__quadrant ally-pro-stories__quadrant--tl">
           <span className="ally-pro-stories__quote-mark" aria-hidden>
             &ldquo;
           </span>
-          <p>
+          <p className="ally-pro-stories__pullquote-text">
             I started with web chat for drafts — now Ally <strong>texts me first</strong> when a
             deadline moves and queues the send while I&apos;m away from my laptop.
           </p>
         </blockquote>
-        <aside className="ally-pro-stories__meta">
+
+        <aside className="ally-pro-stories__quadrant ally-pro-stories__quadrant--tr">
           <p className="ally-pro-stories__attribution">
             <span className="ally-pro-stories__name">Morgan Lee</span>
             <span className="ally-pro-stories__role">founder, Northline Studio</span>
@@ -91,13 +94,14 @@ export default function ProUserStories({ variant = "landing" }) {
             <span className="ally-pro-stories__bubble-status">Delivered</span>
           </div>
         </aside>
-      </div>
 
-      <div className="ally-pro-stories__grid">
         {STORIES.map((story) => {
           const Icon = story.icon;
           return (
-            <article key={story.label} className="ally-pro-stories__card">
+            <article
+              key={story.label}
+              className={`ally-pro-stories__quadrant ally-pro-stories__quadrant--${story.quadrant}`}
+            >
               <div className="ally-pro-stories__card-label">
                 <Icon />
                 <span>{story.label}</span>
