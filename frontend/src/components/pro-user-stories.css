@@ -9,14 +9,15 @@
 
 .ally-pro-stories--landing {
   max-width: 920px;
-  padding: 3.5rem 1.5rem 6.5rem;
+  margin-top: 3.5rem;
+  padding: 4.5rem 1.5rem 6.5rem;
   border-top: 1px solid rgba(14, 116, 144, 0.12);
   background: linear-gradient(180deg, #f8fcff 0%, #eef6fb 100%);
 }
 
 .ally-pro-stories--modal {
-  padding: 1.5rem 0 2.5rem;
-  margin-top: 0.5rem;
+  margin-top: 3.5rem;
+  padding: 4rem 0 2.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.45);
 }
 
