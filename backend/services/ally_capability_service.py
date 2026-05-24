@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from typing import Any
 
-from services import deep_link_service, places_service, site_service
+from services import deep_link_service, meeting_baas_service, places_service, site_service
 from services.site_service import SiteServiceError, SiteToolContext
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ ALLY_TOOL_NAMES = frozenset(
         "read_site_file",
         "list_site_files",
         "publish_ally_site",
+        "join_meeting_for_notes",
     }
 )
 
@@ -30,6 +32,8 @@ async def execute_ally_tool(
     tool_input: dict[str, Any],
     *,
     site_ctx: SiteToolContext | None = None,
+    meeting_user_id: uuid.UUID | None = None,
+    meeting_db: Any | None = None,
 ) -> str:
     inp = tool_input if isinstance(tool_input, dict) else {}
     try:
@@ -126,6 +130,40 @@ async def execute_ally_tool(
                 site_ctx, slug=str(inp.get("slug") or "")
             )
             return json.dumps(out)
+
+        if name == "join_meeting_for_notes":
+            if meeting_db is None or meeting_user_id is None:
+                return json.dumps(
+                    {"error": "meeting_join_unavailable", "detail": "Requires signed-in session."}
+                )
+            if not meeting_baas_service.meeting_baas_configured():
+                return json.dumps(
+                    {"error": "meeting_baas_not_configured", "detail": "MEETING_BAAS_API_KEY missing."}
+                )
+            from db.models import User
+
+            user = await meeting_db.get(User, meeting_user_id)
+            if user is None:
+                return json.dumps({"error": "user_not_found"})
+            url = str(inp.get("meeting_url") or "").strip()
+            if not url:
+                urls = meeting_baas_service.extract_meeting_urls(
+                    str(inp.get("message") or "")
+                )
+                url = urls[0] if urls else ""
+            if not url:
+                return json.dumps({"error": "missing_meeting_url"})
+            job = await meeting_baas_service.join_meeting_for_user(
+                meeting_db, user=user, meeting_url=url
+            )
+            return json.dumps(
+                {
+                    "ok": True,
+                    "bot_id": job.external_bot_id,
+                    "status": job.status,
+                    "message": "Bot joining — user gets SMS notes when the meeting ends.",
+                }
+            )
 
         return json.dumps({"error": f"unknown_ally_tool: {name}"})
     except SiteServiceError as e:

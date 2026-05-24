@@ -36,6 +36,7 @@ from services.user_profile_service import (
     schedule_memory_extraction,
 )
 from services.watch_rules_service import create_watch_rule as create_watch_rule_row
+from services.meeting_baas_service import try_handle_meeting_join_sms
 
 logger = logging.getLogger(__name__)
 
@@ -407,6 +408,27 @@ async def process_sendblue_inbound(
             await db.commit()
             # Continue without Google tools so finance/web questions still work over SMS.
             creds = None
+
+    meeting_reply = await try_handle_meeting_join_sms(db, user=user, message=content)
+    if meeting_reply is not None:
+        conv_id = await _get_or_create_sendblue_conversation(db, user=user)
+        conv = await get_owned_conversation(db, user_id=user.id, conversation_id=conv_id)
+        if conv is None:
+            await db.rollback()
+            raise RuntimeError("sendblue conversation missing")
+        await append_pair(
+            db,
+            conversation=conv,
+            user_text=content,
+            assistant_text=meeting_reply,
+        )
+        await db.commit()
+        await asyncio.to_thread(
+            _send_message_sync,
+            content=_sms_plain(meeting_reply),
+            to_number=caller,
+        )
+        return
 
     conv_id = await _get_or_create_sendblue_conversation(db, user=user)
     _conv, prior_msgs = await load_conversation_messages(

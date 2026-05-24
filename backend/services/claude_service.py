@@ -633,6 +633,20 @@ ALLY_CAPABILITY_TOOLS: list[dict[str, Any]] = [
             "required": ["slug"],
         },
     },
+    {
+        "name": "join_meeting_for_notes",
+        "description": (
+            "Send Ally Notes bot to a Google Meet / Zoom / Teams URL. User gets an SMS summary "
+            "when the meeting ends. Use when they share a meeting link and want notes."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "meeting_url": {"type": "string"},
+            },
+            "required": ["meeting_url"],
+        },
+    },
 ]
 
 MCP_TOOLS: list[dict[str, Any]] = [
@@ -787,6 +801,11 @@ ALLY_CAPABILITIES_SUFFIX = """
 - Frame takes as **your opinion from research**, not financial advice: "if you're watching the game, player X's usage stands out because…"
 - Always add briefly: entertainment only, 21+ where applicable, gamble responsibly (1-800-GAMBLER in the US).
 
+## Meeting notes bot (Meeting BaaS)
+- When user shares a **Google Meet / Zoom / Teams** link and wants notes, call `join_meeting_for_notes` with `meeting_url`.
+- Tell them ally notes is joining and they'll get a **text when the call ends**.
+- Admit the bot from the waiting room when prompted.
+
 ## SMS link discipline (strict)
 - At most **one** short URL per SMS unless the user asked for multiple and you keep each on its own line without a list format.
 - Prefer tool `primary_url` or `url` fields over pasting long URLs.
@@ -882,6 +901,7 @@ async def run_chat(
     enable_google_tools: bool = True,
     mcp_user_id: str | None = None,
     site_ctx: Any | None = None,
+    meeting_ctx: Any | None = None,
 ) -> tuple[str, dict[str, Any] | None]:
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     system = SYSTEM + ALLY_CAPABILITIES_SUFFIX
@@ -968,10 +988,13 @@ async def run_chat(
                         except Exception as e:
                             out = json.dumps({"error": "mcp_call_failed", "detail": str(e)})
                     elif block.name in ally_capability_service.ALLY_TOOL_NAMES:
+                        mc = meeting_ctx if isinstance(meeting_ctx, dict) else {}
                         out = await ally_capability_service.execute_ally_tool(
                             block.name,
                             inp,
                             site_ctx=site_ctx,
+                            meeting_user_id=mc.get("user_id"),
+                            meeting_db=mc.get("db"),
                         )
                     else:
                         out = _execute_workspace_tool(block.name, inp, google_credentials)

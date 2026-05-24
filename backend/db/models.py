@@ -418,6 +418,37 @@ class SiteFile(Base):
     version: Mapped[SiteVersion] = relationship(back_populates="files")
 
 
+class MeetingBotJob(Base):
+    """Meeting BaaS bot linked to a user (SMS or chat initiated)."""
+
+    __tablename__ = "meeting_bot_jobs"
+    __table_args__ = (Index("ix_meeting_bot_jobs_user_id", "user_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    external_bot_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    meeting_url: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="joined")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    webhook_payload: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class AuthSession(Base):
     """Server-side session backing JWT sub (survives Heroku dyno restarts)."""
 

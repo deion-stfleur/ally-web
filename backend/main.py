@@ -26,6 +26,7 @@ from routers.opentable import router as opentable_router
 from routers.todos import router as todos_router
 from routers.watch_rules import router as watch_rules_router
 from routers.public_sites import router as public_sites_router
+from routers.meeting_baas_webhook import router as meeting_baas_webhook_router
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
 
@@ -105,6 +106,7 @@ app.include_router(schedule_router, prefix="/api")
 app.include_router(todos_router, prefix="/api")
 app.include_router(watch_rules_router, prefix="/api")
 app.include_router(public_sites_router, prefix="/api")
+app.include_router(meeting_baas_webhook_router, prefix="/api")
 
 
 @app.get("/api/health")

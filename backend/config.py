@@ -60,6 +60,9 @@ class Settings:
     google_maps_api_key: str | None
     # Public base for published mini-sites (defaults to FRONTEND_URL → /s/{slug}).
     ally_sites_public_base_url: str | None
+    # Meeting BaaS (optional): bot joins Meet/Zoom/Teams for notes.
+    meeting_baas_api_key: str | None
+    backend_public_url: str | None
 
 
 def load_settings() -> Settings:
@@ -98,6 +101,8 @@ def load_settings() -> Settings:
         apify_resy_mcp_url=_optional("APIFY_RESY_MCP_URL"),
         google_maps_api_key=_optional("GOOGLE_MAPS_API_KEY"),
         ally_sites_public_base_url=_optional("ALLY_SITES_PUBLIC_BASE_URL"),
+        meeting_baas_api_key=_optional("MEETING_BAAS_API_KEY"),
+        backend_public_url=_optional("BACKEND_PUBLIC_URL"),
     )
 
 
