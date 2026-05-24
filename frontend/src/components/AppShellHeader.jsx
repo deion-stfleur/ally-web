@@ -1,4 +1,5 @@
 import AllyHomeLink from "./AllyHomeLink";
+import AppShellAccountAvatar from "./AppShellAccountAvatar";
 
 /**
  * Signed-in app top bar: ✳ ally (home → /home) on the left, optional back + title.
@@ -9,6 +10,8 @@ export default function AppShellHeader({
   onBack,
   backLabel = "Back",
   right = null,
+  user = null,
+  showAccountAvatar = true,
   className = "",
 }) {
   return (
@@ -29,7 +32,10 @@ export default function AppShellHeader({
       ) : (
         <span className="app-shell-header__title-spacer" aria-hidden />
       )}
-      <div className="app-shell-header__right">{right}</div>
+      <div className="app-shell-header__right">
+        {right}
+        {user && showAccountAvatar ? <AppShellAccountAvatar user={user} /> : null}
+      </div>
     </header>
   );
 }

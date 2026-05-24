@@ -118,6 +118,10 @@ async def _run_agent_task_sms(session: AsyncSession, job: ScheduledJob) -> None:
         confirm_before_append=bool(user.receipts_confirm_before_append),
     )
 
+    from services.site_service import SiteToolContext
+
+    site_ctx = SiteToolContext(user_id=user.id, db=session)
+
     reply, _action = await run_chat(
         instruction,
         history,
@@ -125,6 +129,7 @@ async def _run_agent_task_sms(session: AsyncSession, job: ScheduledJob) -> None:
         receipt_defaults=rd,
         enable_google_tools=creds is not None,
         mcp_user_id=str(user.id),
+        site_ctx=site_ctx,
     )
     cleaned, _nested = split_reply_and_action(reply or "")
     body = (cleaned or (reply or "")).strip() or "(no text reply)"

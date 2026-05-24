@@ -24,6 +24,17 @@ function ArrowIcon({ className = "" }) {
 
 const EXPLORE_CARDS = [
   {
+    id: "text",
+    title: "Text Ally",
+    icon: "imessage",
+    usersLabel: "Messages",
+    usersValue: "iOS",
+    downloadsLabel: "Text",
+    downloadsValue: "Ally",
+    tone: "brand",
+    action: "phone",
+  },
+  {
     id: "messages",
     title: "Past messages",
     icon: "chat",
@@ -59,17 +70,6 @@ const EXPLORE_CARDS = [
     to: "/recipes",
   },
   {
-    id: "text",
-    title: "Text Ally",
-    icon: "phone",
-    usersLabel: "SMS",
-    usersValue: "Mobile",
-    downloadsLabel: "Same",
-    downloadsValue: "Power",
-    tone: "deep",
-    action: "phone",
-  },
-  {
     id: "account",
     title: "Account",
     icon: "user",
@@ -92,6 +92,25 @@ const EXPLORE_CARDS = [
     action: "newChat",
   },
 ];
+
+function IMessageIcon() {
+  const gradId = "home-imessage-grad";
+  return (
+    <svg className="home-explore-card__imessage-icon" viewBox="0 0 24 24" aria-hidden>
+      <defs>
+        <linearGradient id={gradId} x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#65F090" />
+          <stop offset="1" stopColor="#34C759" />
+        </linearGradient>
+      </defs>
+      <rect width="24" height="24" rx="5.5" fill={`url(#${gradId})`} />
+      <path
+        fill="#ffffff"
+        d="M16.35 7H7.65A2.15 2.15 0 005.5 9.15v4.7A2.15 2.15 0 007.65 16h5.85l1.95 1.95V16h1.9A2.15 2.15 0 0019.5 13.85V9.15A2.15 2.15 0 0017.35 7z"
+      />
+    </svg>
+  );
+}
 
 function CardIcon({ name }) {
   const paths = {
@@ -157,7 +176,6 @@ export default function HomeExploreSection({
   onOpenSearch,
   onLinkPhone,
   onOpenChat,
-  onOpenAccount,
 }) {
   const navigate = useNavigate();
   const trackRef = useRef(null);
@@ -185,7 +203,7 @@ export default function HomeExploreSection({
         onOpenChat?.({ seedPrompt: card.prompt });
         break;
       case "account":
-        openAccountSettings(navigate, onOpenAccount);
+        openAccountSettings(navigate, window.location.pathname);
         break;
       case "newChat":
         onOpenChat?.({ newChat: true });
@@ -208,8 +226,8 @@ export default function HomeExploreSection({
           Ally is ready
         </h1>
         <p className="home-explore__lead">
-          Text Ally from Messages to handle email, calendar, and tasks—or search your past chats
-          below.
+          Text Ally from Messages to book flights, reserve dates, find restaurants, and more—or search
+          your past chats below.
         </p>
         <AllySearchField onOpen={onOpenSearch} />
       </div>
@@ -239,8 +257,12 @@ export default function HomeExploreSection({
                 onClick={() => handleCard(card)}
               >
                 <div className="home-explore-card__top">
-                  <span className="home-explore-card__icon-wrap">
-                    <CardIcon name={card.icon} />
+                  <span
+                    className={`home-explore-card__icon-wrap${
+                      card.icon === "imessage" ? " home-explore-card__icon-wrap--imessage" : ""
+                    }`}
+                  >
+                    {card.icon === "imessage" ? <IMessageIcon /> : <CardIcon name={card.icon} />}
                   </span>
                 </div>
                 <h3 className="home-explore-card__title">{card.title}</h3>

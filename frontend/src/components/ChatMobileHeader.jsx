@@ -106,7 +106,7 @@ export default function ChatMobileHeader({
 
   return (
     <>
-      <AppShellHeader right={right} className={headerClassName} />
+      <AppShellHeader right={right} user={user} className={headerClassName} />
 
       <MobileSlideMenu
         open={menuOpen}

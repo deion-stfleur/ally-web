@@ -17,7 +17,7 @@ from services import (
     sheets_service,
     slides_service,
 )
-from services import apify_restaurant_mcp_service, mcp_gateway_service
+from services import ally_capability_service, apify_restaurant_mcp_service, mcp_gateway_service
 
 ACTION_BLOCK = re.compile(r"<action>\s*([\s\S]*?)\s*</action>", re.IGNORECASE)
 
@@ -475,6 +475,166 @@ NATIVE_WEB_SEARCH_TOOL: dict[str, Any] = {
     "max_uses": 5,
 }
 
+ALLY_CAPABILITY_TOOLS: list[dict[str, Any]] = [
+    {
+        "name": "things_to_do_near",
+        "description": (
+            "Find activities and places near a street address (Google Places). "
+            "Returns name, rating, and Google Maps links. Use when the user shares a location "
+            "and wants things to do, eat, or visit nearby."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "address": {"type": "string", "description": "Street address, neighborhood, or city"},
+                "query": {
+                    "type": "string",
+                    "description": "Optional focus: museums, coffee, parks, nightlife, etc.",
+                },
+                "radius_meters": {"type": "integer"},
+                "max_results": {"type": "integer"},
+            },
+            "required": ["address"],
+        },
+    },
+    {
+        "name": "build_flight_search_link",
+        "description": (
+            "Build Google Flights / Kayak search URLs from origin, destination, and dates. "
+            "Does not book tickets — user completes on the linked site. Use for flight requests "
+            "instead of guessing fares."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "origin": {"type": "string", "description": "Airport code or city"},
+                "destination": {"type": "string"},
+                "depart_date": {"type": "string", "description": "YYYY-MM-DD"},
+                "return_date": {"type": "string", "description": "YYYY-MM-DD optional"},
+                "adults": {"type": "integer"},
+            },
+        },
+    },
+    {
+        "name": "build_movie_search_link",
+        "description": (
+            "Build Fandango / Google showtimes links for a movie near a location. "
+            "Does not reserve seats — user books on the linked site."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "movie_title": {"type": "string"},
+                "location": {"type": "string", "description": "City, ZIP, or neighborhood"},
+                "date_str": {"type": "string", "description": "YYYY-MM-DD optional"},
+            },
+        },
+    },
+    {
+        "name": "create_ally_site",
+        "description": (
+            "Create a vibe-coded multi-file site (custom HTML/CSS/JS). Pass `files`: "
+            "[{path, content}] with at least index.html. Use design_tokens for colors/fonts. "
+            "Returns preview_url (draft) and optional public_url if publish=true. "
+            "For large builds use background_task first, then this tool."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "slug": {"type": "string"},
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {"type": "string"},
+                            "content": {"type": "string"},
+                        },
+                        "required": ["path", "content"],
+                    },
+                },
+                "html": {
+                    "type": "string",
+                    "description": "Shorthand: single index.html body if files omitted",
+                },
+                "design_tokens": {
+                    "type": "object",
+                    "description": "e.g. accent, font, vibe keywords for future edits",
+                },
+                "version_note": {"type": "string"},
+                "publish": {
+                    "type": "boolean",
+                    "description": "If true, live at public_url immediately",
+                },
+            },
+            "required": ["title"],
+        },
+    },
+    {
+        "name": "write_site_files",
+        "description": (
+            "Update an existing site project (merges into draft, new version). Pass changed files only "
+            "or full set. Use after user asks to tweak vibe/layout/copy."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "slug": {"type": "string"},
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {"type": "string"},
+                            "content": {"type": "string"},
+                        },
+                        "required": ["path", "content"],
+                    },
+                },
+                "version_note": {"type": "string"},
+            },
+            "required": ["slug", "files"],
+        },
+    },
+    {
+        "name": "read_site_file",
+        "description": "Read one file from the user's site draft or published version.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "slug": {"type": "string"},
+                "path": {"type": "string"},
+                "use_published": {"type": "boolean"},
+            },
+            "required": ["slug", "path"],
+        },
+    },
+    {
+        "name": "list_site_files",
+        "description": "List file paths in a site project.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "slug": {"type": "string"},
+                "use_published": {"type": "boolean"},
+            },
+            "required": ["slug"],
+        },
+    },
+    {
+        "name": "publish_ally_site",
+        "description": (
+            "Make the current draft the live public site. Tell user the public_url after."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"slug": {"type": "string"}},
+            "required": ["slug"],
+        },
+    },
+]
+
 MCP_TOOLS: list[dict[str, Any]] = [
     {
         "name": "mcp_call",
@@ -506,7 +666,7 @@ MCP_TOOLS: list[dict[str, Any]] = [
 
 def _tools_for_request(*, enable_google_tools: bool) -> list[dict[str, Any]]:
     workspace = WORKSPACE_TOOLS if enable_google_tools else []
-    return workspace + [NATIVE_WEB_SEARCH_TOOL] + MCP_TOOLS
+    return workspace + [NATIVE_WEB_SEARCH_TOOL] + ALLY_CAPABILITY_TOOLS + MCP_TOOLS
 
 SYSTEM = """you are ally — the user's smart friend on sms/imessage, not a corporate assistant.
 
@@ -605,6 +765,34 @@ Rules for background_task:
 </action>
 `time_local` and `timezone` may be omitted to use those defaults. They need a **verified phone** on the account for SMS; if missing, say they should add a phone in the app."""
 
+ALLY_CAPABILITIES_SUFFIX = """
+
+## Travel, dining, movies, and local (P1/P2)
+- **Flights:** call `build_flight_search_link` with origin, destination, and ISO dates when known; otherwise `web_search` then the link tool. Never invent prices or seat counts. Send **one** booking link (usually `primary_url`).
+- **Movies:** call `build_movie_search_link` with title + location; or `web_search` for showtimes. One ticket link max; user books on Fandango/Google.
+- **Restaurants (OpenTable/Resy):** after `mcp_call` search/availability, **always** include the official `booking_url` / reservation link from tool JSON in your reply. If only search results, send the best official booking link. Never claim a table is held unless the tool confirms a booking.
+- **Things to do near an address:** call `things_to_do_near` with the user's address; summarize top picks with **one** maps or venue link if helpful.
+
+## Vibe-coded websites (multi-file)
+- **Create:** `create_ally_site` with custom `files` (index.html + styles.css + optional script.js). Write real HTML/CSS — distinctive typography, layout, motion — not generic boilerplate. Store vibe in `design_tokens` (accent, fonts, mood).
+- **Iterate:** user asks to change look/copy → `read_site_file` / `list_site_files` then `write_site_files` with updated paths (new version each time).
+- **Preview vs live:** default is **draft** — share `preview_url` in SMS. When they approve, `publish_ally_site` → share `public_url`.
+- **Big builds:** queue `background_task` ("build site: …") then run site tools inside that job; text preview link when done.
+- Relative asset paths only (e.g. styles.css, not absolute CDN unless needed). Max ~32 files per version.
+
+## Sports / games (research & opinion only — strict)
+- You may discuss matchups, player form, injuries, and trends using `web_search`.
+- **Never** quote betting odds, lines, spreads, over/under, or implied probability from sportsbooks.
+- **Never** link to sportsbooks or promote gambling.
+- Frame takes as **your opinion from research**, not financial advice: "if you're watching the game, player X's usage stands out because…"
+- Always add briefly: entertainment only, 21+ where applicable, gamble responsibly (1-800-GAMBLER in the US).
+
+## SMS link discipline (strict)
+- At most **one** short URL per SMS unless the user asked for multiple and you keep each on its own line without a list format.
+- Prefer tool `primary_url` or `url` fields over pasting long URLs.
+- Do not send a link farm; pick the single best next step (book, maps, or site).
+"""
+
 
 def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
     m = ACTION_BLOCK.search(text)
@@ -693,13 +881,14 @@ async def run_chat(
     image_parts: list[tuple[str, str]] | None = None,
     enable_google_tools: bool = True,
     mcp_user_id: str | None = None,
+    site_ctx: Any | None = None,
 ) -> tuple[str, dict[str, Any] | None]:
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
-    system = SYSTEM
+    system = SYSTEM + ALLY_CAPABILITIES_SUFFIX
     if receipt_defaults is not None and _should_attach_receipt_instructions(
         user_message, image_parts, receipt_defaults
     ):
-        system = SYSTEM + _receipt_system_suffix(receipt_defaults)
+        system = system + _receipt_system_suffix(receipt_defaults)
     messages: list[dict[str, Any]] = []
     for h in history[-30:]:
         role, content = h.get("role"), h.get("content")
@@ -778,6 +967,12 @@ async def run_chat(
                             out = json.dumps({"error": "apify_mcp_failed", "detail": str(e)})
                         except Exception as e:
                             out = json.dumps({"error": "mcp_call_failed", "detail": str(e)})
+                    elif block.name in ally_capability_service.ALLY_TOOL_NAMES:
+                        out = await ally_capability_service.execute_ally_tool(
+                            block.name,
+                            inp,
+                            site_ctx=site_ctx,
+                        )
                     else:
                         out = _execute_workspace_tool(block.name, inp, google_credentials)
                     tool_results.append(

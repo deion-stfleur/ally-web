@@ -27,6 +27,7 @@ from models.schemas import (
     WatchRuleOut,
 )
 from services.claude_service import ReceiptDefaults, run_chat
+from services.site_service import SiteToolContext
 from services.chat_persist import (
     append_pair,
     create_conversation,
@@ -234,6 +235,13 @@ async def chat_endpoint(
     if mcp_user_id is None and session.db_user_id is not None:
         mcp_user_id = str(session.db_user_id)
 
+    site_ctx = None
+    chat_user_id: uuid.UUID | None = None
+    if db is not None:
+        chat_user_id = await resolve_db_user_id(db, session.google_sub, session.db_user_id)
+    if db is not None and chat_user_id is not None:
+        site_ctx = SiteToolContext(user_id=chat_user_id, db=db)
+
     try:
         reply, action_dict = await run_chat(
             body.message,
@@ -243,6 +251,7 @@ async def chat_endpoint(
             image_parts=image_parts,
             enable_google_tools=session.credentials is not None,
             mcp_user_id=mcp_user_id,
+            site_ctx=site_ctx,
         )
     except Exception as exc:
         raise HTTPException(

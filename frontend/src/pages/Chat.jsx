@@ -6,7 +6,6 @@ import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import ChatInput from "../components/ChatInput";
-import AccountSettingsModal from "../components/AccountSettingsModal";
 import InPageMobileFooter from "../components/InPageMobileFooter";
 import ChatMessage from "../components/ChatMessage";
 import ContextFilesPanel from "../components/ContextFilesPanel";
@@ -59,14 +58,13 @@ export default function Chat() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, sessionToken, refreshUser, deleteAccount } = useAuth();
+  const { user, sessionToken, refreshUser } = useAuth();
   const [contextOpen, setContextOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [phonePromptOpen, setPhonePromptOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const { appendTodo } = useUserTodos(sessionToken);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const {
     ready,
     messages,
@@ -203,17 +201,6 @@ export default function Chat() {
         }}
       />
       <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
-      <AccountSettingsModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        user={user}
-        onDeleteAccount={deleteAccount}
-        onDeleted={() => navigate("/login", { replace: true })}
-        onViewPlans={() => {
-          setSettingsOpen(false);
-          setPricingOpen(true);
-        }}
-      />
       <div className="chat-page__main relative flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatMobileHeader
           user={user}

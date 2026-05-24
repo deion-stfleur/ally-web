@@ -5,7 +5,6 @@ import PricingModal from "../components/PricingModal";
 import ChatSearchModal from "../components/ChatSearchModal";
 import PhonePromptModal from "../components/PhonePromptModal";
 import SmsSubscribeBanner from "../components/SmsSubscribeBanner";
-import AccountSettingsModal from "../components/AccountSettingsModal";
 import InPageMobileFooter from "../components/InPageMobileFooter";
 import HomeExploreSection from "../components/home/HomeExploreSection";
 import { api } from "../api/client";
@@ -45,14 +44,12 @@ export default function Home() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, sessionToken, refreshUser, deleteAccount } = useAuth();
+  const { user, sessionToken, refreshUser } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [phonePromptOpen, setPhonePromptOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
   const [allySmsE164, setAllySmsE164] = useState(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
   useEffect(() => {
     if (!sessionToken) return;
     try {
@@ -150,17 +147,6 @@ export default function Home() {
         }}
       />
       <PricingModal open={pricingOpen} onClose={() => setPricingOpen(false)} />
-      <AccountSettingsModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        user={user}
-        onDeleteAccount={deleteAccount}
-        onDeleted={() => navigate("/login", { replace: true })}
-        onViewPlans={() => {
-          setSettingsOpen(false);
-          setPricingOpen(true);
-        }}
-      />
       <div className="chat-page__main relative flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatMobileHeader
           user={user}
@@ -202,7 +188,6 @@ export default function Home() {
             onOpenSearch={() => setSearchOpen(true)}
             onLinkPhone={() => setPhonePromptOpen(true)}
             onOpenChat={openChat}
-            onOpenAccount={() => setSettingsOpen(true)}
           />
           <InPageMobileFooter />
         </div>

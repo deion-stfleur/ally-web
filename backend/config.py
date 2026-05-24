@@ -56,6 +56,10 @@ class Settings:
     apify_token: str | None
     apify_opentable_mcp_url: str | None
     apify_resy_mcp_url: str | None
+    # Google Maps Platform (Places + Geocoding) for things_to_do_near tool.
+    google_maps_api_key: str | None
+    # Public base for published mini-sites (defaults to FRONTEND_URL → /s/{slug}).
+    ally_sites_public_base_url: str | None
 
 
 def load_settings() -> Settings:
@@ -92,6 +96,8 @@ def load_settings() -> Settings:
         apify_token=_optional("APIFY_TOKEN"),
         apify_opentable_mcp_url=_optional("APIFY_OPENTABLE_MCP_URL"),
         apify_resy_mcp_url=_optional("APIFY_RESY_MCP_URL"),
+        google_maps_api_key=_optional("GOOGLE_MAPS_API_KEY"),
+        ally_sites_public_base_url=_optional("ALLY_SITES_PUBLIC_BASE_URL"),
     )
 
 

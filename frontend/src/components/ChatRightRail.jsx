@@ -498,6 +498,7 @@ export default function ChatRightRail({
       open={settingsOpen}
       onClose={() => setSettingsOpen(false)}
       user={user}
+      onLogout={onLogout}
       onDeleteAccount={deleteAccount}
       onDeleted={() => navigate("/login", { replace: true })}
       onViewPlans={onOpenPricing}

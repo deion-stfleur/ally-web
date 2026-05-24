@@ -9,6 +9,7 @@ export default function AccountSettingsModal({
   open,
   onClose,
   user,
+  onLogout,
   onDeleteAccount,
   onDeleted,
   onViewPlans,
@@ -56,6 +57,7 @@ export default function AccountSettingsModal({
         <AccountSettingsPanel
           variant="modal"
           user={user}
+          onLogout={onLogout}
           onDeleteAccount={onDeleteAccount}
           onDeleted={onDeleted}
           onViewPlans={onViewPlans}

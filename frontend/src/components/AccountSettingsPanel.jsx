@@ -15,6 +15,7 @@ function formatApiError(err) {
 export default function AccountSettingsPanel({
   variant = "modal",
   user,
+  onLogout,
   onDeleteAccount,
   onDeleted,
   onViewPlans,
@@ -46,6 +47,20 @@ export default function AccountSettingsPanel({
       setBusy(false);
     }
   }, [onDeleteAccount, onClose, onDeleted]);
+
+  const handleLogout = useCallback(async () => {
+    if (!onLogout) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await onLogout();
+      onClose?.();
+    } catch (e) {
+      setError(formatApiError(e));
+    } finally {
+      setBusy(false);
+    }
+  }, [onLogout, onClose]);
 
   const switchNav = (next) => {
     setNav(next);
@@ -171,23 +186,35 @@ export default function AccountSettingsPanel({
       {!confirming ? (
         <div className={isPage ? "account-settings__section account-settings__section--danger" : "mt-8 border-t border-slate-100 pt-6"}>
           <p className={isPage ? "account-settings__section-title" : "text-sm font-medium text-slate-800"}>
-            Delete account
+            Session
           </p>
           <p className={isPage ? "account-settings__body" : "mt-1 text-sm leading-relaxed text-slate-600"}>
-            Permanently remove your Ally profile, chat history, todos, and linked data from our servers. The
-            next time you sign in with Google, we start a brand-new account for you.
+            Sign out on this device, or permanently delete your Ally profile, chat history, todos, and linked
+            data. After deletion, the next Google sign-in starts a brand-new account.
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              setConfirming(true);
-              setError(null);
-            }}
-            disabled={busy}
-            className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
-          >
-            Delete account…
-          </button>
+          <div className={isPage ? "account-settings__actions" : "mt-4 flex flex-wrap gap-2"}>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={busy}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                {busy ? "Signing out…" : "Log out"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setConfirming(true);
+                setError(null);
+              }}
+              disabled={busy}
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+            >
+              Delete account…
+            </button>
+          </div>
         </div>
       ) : (
         <div className={isPage ? "account-settings__confirm" : "mt-8 rounded-xl border border-red-100 bg-red-50/80 p-4"}>

@@ -44,7 +44,6 @@ const TILES = [
 ];
 
 export default function ChatHomeGrid({
-  onOpenAccount,
   onOpenSearch,
   onLinkPhone,
   onNewChat,
@@ -57,7 +56,7 @@ export default function ChatHomeGrid({
         navigate(tile.to);
         break;
       case "account":
-        openAccountSettings(navigate, onOpenAccount);
+        openAccountSettings(navigate, window.location.pathname);
         break;
       case "phone":
         onLinkPhone?.();

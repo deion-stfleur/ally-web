@@ -2,9 +2,11 @@ import { useNavigate } from "react-router-dom";
 import AllyQuickTips from "../components/AllyQuickTips";
 import AppShellHeader from "../components/AppShellHeader";
 import InPageMobileFooter from "../components/InPageMobileFooter";
+import { useAuth } from "../hooks/useAuth";
 
 export default function ChatRecipes() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="chat-recipes-page bg-sky-50/40 text-slate-900">
@@ -12,6 +14,7 @@ export default function ChatRecipes() {
         title="Ally recipes"
         showBack
         onBack={() => navigate("/home")}
+        user={user}
       />
 
       <div className="chat-recipes-page__body">

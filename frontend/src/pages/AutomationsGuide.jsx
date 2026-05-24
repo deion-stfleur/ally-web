@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import AppShellHeader from "../components/AppShellHeader";
 import InPageMobileFooter from "../components/InPageMobileFooter";
 import FadeInSection from "../components/FadeInSection";
+import { useAuth } from "../hooks/useAuth";
 
 const EXAMPLES = [
   {
@@ -37,6 +38,7 @@ const EXAMPLES = [
 
 export default function AutomationsGuide() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="automations-guide bg-sky-50/50 text-slate-900">
@@ -44,6 +46,7 @@ export default function AutomationsGuide() {
         title="Automations"
         showBack
         onBack={() => navigate("/home")}
+        user={user}
       />
 
       <div className="automations-guide__inner mx-auto max-w-lg px-4 py-6 pb-6 sm:px-5 lg:max-w-2xl">

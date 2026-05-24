@@ -24,6 +24,7 @@ from services.chat_persist import (
     load_conversation_messages,
 )
 from services.claude_service import run_chat
+from services.site_service import SiteToolContext
 from services.job_runner import _credentials_from_user
 from models.schemas import RegisterWatchActionPayload
 from services.schedule_service import create_agent_task_job
@@ -421,6 +422,8 @@ async def process_sendblue_inbound(
             history.append({"role": m.role, "content": m.content})
     history = history[-20:]
 
+    site_ctx = SiteToolContext(user_id=user.id, db=db)
+
     action_dict: dict[str, Any] | None = None
     try:
         reply, action_dict = await run_chat(
@@ -429,6 +432,7 @@ async def process_sendblue_inbound(
             creds,
             enable_google_tools=creds is not None,
             mcp_user_id=str(user.id),
+            site_ctx=site_ctx,
         )
     except Exception:
         logger.exception("sendblue Claude failed")
