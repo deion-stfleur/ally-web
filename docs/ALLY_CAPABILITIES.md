@@ -53,6 +53,18 @@ Hosted on **your** stack (Postgres + API), not per-user Netlify.
 - **Sites**: DB storage only on your Heroku/Postgres plan.
 - **Sports**: no odds API; uses existing Anthropic + web search.
 
+## Instant push watches
+
+- `register_watch` with `"mode":"instant"` — worker polls every ~15 min (configurable 5–60).
+- Texts only when state **changes** vs `last_digest`; `ALL_QUIET` skips SMS.
+- Daily mode unchanged: once per day at `time_local`.
+
+## Calendar meeting auto-join (opt-in)
+
+- User must **explicitly** enable via SMS/chat (`enable_meeting_auto_join` or phrases like "auto join my meetings").
+- Worker reads Google Calendar for video links and dispatches Meeting BaaS ~2 min before start.
+- Say "stop auto join meetings" to disable. Still requires Google connected + worker dyno.
+
 ## Not included (future P2b)
 
 - Flight pricing API (Duffel/Amadeus live search)

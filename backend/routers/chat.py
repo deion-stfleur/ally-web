@@ -20,7 +20,9 @@ from models.schemas import (
     ChatHistoryMessage,
     ConversationListResponse,
     ConversationSummary,
+    DisableMeetingAutoJoinActionPayload,
     EmailActionPayload,
+    EnableMeetingAutoJoinActionPayload,
     RegisterWatchActionPayload,
     ScheduleEmailActionPayload,
     ScheduledJobResponse,
@@ -42,6 +44,7 @@ from services.user_profile_service import (
     clear_proactive_awaiting_reply,
     get_or_create_profile,
 )
+from services.meeting_calendar_auto_join_service import set_calendar_auto_join
 from services.watch_rules_service import create_watch_rule as create_watch_rule_row
 from services.session_store import UserSession
 
@@ -73,6 +76,8 @@ def _watch_rule_out(row) -> WatchRuleOut:
         time_local=row.time_local,
         timezone=row.timezone,
         status=row.status,
+        watch_mode=getattr(row, "watch_mode", None) or "daily",
+        poll_interval_minutes=int(getattr(row, "poll_interval_minutes", None) or 15),
         next_run_at=row.next_run_at,
     )
 
@@ -266,6 +271,8 @@ async def chat_endpoint(
     schedule_payload: ScheduleEmailActionPayload | None = None
     background_payload: BackgroundTaskActionPayload | None = None
     register_watch_payload: RegisterWatchActionPayload | None = None
+    enable_meeting_auto_join = False
+    disable_meeting_auto_join = False
     if action_dict:
         act = action_dict.get("action")
         if act == "send_email":
@@ -288,6 +295,10 @@ async def chat_endpoint(
                 register_watch_payload = RegisterWatchActionPayload.model_validate(action_dict)
             except ValidationError:
                 register_watch_payload = None
+        elif act == "enable_meeting_auto_join":
+            enable_meeting_auto_join = True
+        elif act == "disable_meeting_auto_join":
+            disable_meeting_auto_join = True
 
     text = (reply or "").strip() or " "
     out_cid: str | None = None
@@ -374,6 +385,8 @@ async def chat_endpoint(
                             spec_text=register_watch_payload.spec,
                             time_local=register_watch_payload.time_local,
                             tz_name=register_watch_payload.timezone,
+                            watch_mode=register_watch_payload.mode,
+                            poll_interval_minutes=register_watch_payload.poll_interval_minutes,
                         )
                         watch_rule = _watch_rule_out(wr)
                     except (ValueError, ValidationError) as exc:
@@ -381,6 +394,15 @@ async def chat_endpoint(
                     except Exception:
                         logger.exception("Watch rule creation failed")
                         text = f"{text}\n\n(Watch rule failed: could not save.)"
+                if chat_user is not None and enable_meeting_auto_join:
+                    if chat_user.google_refresh_token_encrypted:
+                        await set_calendar_auto_join(db, user=chat_user, enabled=True)
+                    else:
+                        text = (
+                            f"{text}\n\n(connect google in the app first to auto-join calendar meetings.)"
+                        ).strip()
+                if chat_user is not None and disable_meeting_auto_join:
+                    await set_calendar_auto_join(db, user=chat_user, enabled=False)
                 await db.commit()
                 out_cid = str(conv.id)
             except HTTPException:

@@ -90,6 +90,12 @@ class User(Base):
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stripe_subscription_status: Mapped[str | None] = mapped_column(String(64), nullable=True)
     stripe_plan: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    meeting_calendar_auto_join: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", default=False
+    )
+    meeting_auto_join_opt_in_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     profile: Mapped["UserProfile | None"] = relationship(
         "UserProfile",
         back_populates="user",
@@ -262,6 +268,13 @@ class UserWatchRule(Base):
         String(16), nullable=False, server_default="active", default="active"
     )
     next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    watch_mode: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default="daily", default="daily"
+    )
+    poll_interval_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="15", default=15
+    )
+    last_digest: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -434,6 +447,8 @@ class MeetingBotJob(Base):
     )
     external_bot_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     meeting_url: Mapped[str] = mapped_column(Text, nullable=False)
+    calendar_event_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    join_source: Mapped[str | None] = mapped_column(String(32), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="joined")
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     summary_text: Mapped[str | None] = mapped_column(Text, nullable=True)

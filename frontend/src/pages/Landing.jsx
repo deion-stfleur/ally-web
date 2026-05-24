@@ -4,6 +4,7 @@ import FadeInSection from "../components/FadeInSection";
 import LandingTextLoop from "../components/LandingTextLoop";
 import LandingTestimonials from "../components/LandingTestimonials";
 import LandingCompareTable from "../components/LandingCompareTable";
+import LandingProofPoints from "../components/LandingProofPoints";
 import LandingFaq from "../components/LandingFaq";
 import LandingPricing from "../components/LandingPricing";
 import MarketingFooter from "../components/MarketingFooter";
@@ -119,6 +120,10 @@ export default function Landing() {
 
         <FadeInSection as="div" className="alm-reveal-block">
           <LandingCompareTable />
+        </FadeInSection>
+
+        <FadeInSection as="div" className="alm-reveal-block alm-reveal-block--bleed">
+          <LandingProofPoints />
         </FadeInSection>
 
         <FadeInSection as="div" className="alm-reveal-block">

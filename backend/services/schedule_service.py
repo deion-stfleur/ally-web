@@ -57,6 +57,7 @@ async def create_agent_task_job(
     run_at: datetime,
     instruction: str,
     conversation_id: uuid.UUID | None,
+    watch_rule_id: uuid.UUID | None = None,
 ) -> ScheduledJob:
     """Queue a background `run_chat` turn; worker texts the user when done (if phone on file)."""
     text = (instruction or "").strip()
@@ -72,13 +73,16 @@ async def create_agent_task_job(
     if run_at > now + MAX_LEAD:
         raise ValueError(f"run_at cannot be more than {MAX_LEAD.days} days ahead.")
 
+    payload: dict = {
+        "instruction": text,
+        "conversation_id": str(conversation_id) if conversation_id else None,
+    }
+    if watch_rule_id is not None:
+        payload["watch_rule_id"] = str(watch_rule_id)
     job = ScheduledJob(
         user_id=user_id,
         job_type=JOB_AGENT_TASK_SMS,
-        payload_json={
-            "instruction": text,
-            "conversation_id": str(conversation_id) if conversation_id else None,
-        },
+        payload_json=payload,
         run_at=run_at,
         status="pending",
     )

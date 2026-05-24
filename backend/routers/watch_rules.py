@@ -30,6 +30,8 @@ def _out(row) -> WatchRuleOut:
         time_local=row.time_local,
         timezone=row.timezone,
         status=row.status,
+        watch_mode=getattr(row, "watch_mode", None) or "daily",
+        poll_interval_minutes=int(getattr(row, "poll_interval_minutes", None) or 15),
         next_run_at=row.next_run_at,
     )
 
@@ -58,6 +60,8 @@ async def create_watch_rule(
             spec_text=body.spec_text,
             time_local=body.time_local,
             tz_name=body.timezone,
+            watch_mode=body.watch_mode,
+            poll_interval_minutes=body.poll_interval_minutes,
         )
         await db.commit()
     except ValueError as exc:

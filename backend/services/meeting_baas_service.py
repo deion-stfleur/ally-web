@@ -130,6 +130,8 @@ async def join_meeting_for_user(
     *,
     user: User,
     meeting_url: str,
+    calendar_event_id: str | None = None,
+    join_source: str | None = None,
 ) -> MeetingBotJob:
     url = meeting_url.strip()
     if not url:
@@ -165,6 +167,8 @@ async def join_meeting_for_user(
         user_id=user.id,
         external_bot_id=bot_id,
         meeting_url=url,
+        calendar_event_id=(calendar_event_id or "").strip() or None,
+        join_source=(join_source or "").strip() or None,
         status="joined",
     )
     db.add(job)

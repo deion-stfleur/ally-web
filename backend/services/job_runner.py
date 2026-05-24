@@ -23,6 +23,7 @@ from services.schedule_service import (
     JOB_EXTRACT_USER_PROFILE,
     JOB_SEND_GMAIL,
 )
+from services.watch_rules_service import ALL_QUIET_PREFIX, apply_watch_job_result
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +135,16 @@ async def _run_agent_task_sms(session: AsyncSession, job: ScheduledJob) -> None:
     cleaned, _nested = split_reply_and_action(reply or "")
     body = (cleaned or (reply or "")).strip() or "(no text reply)"
 
+    watch_rule_id_raw = p.get("watch_rule_id")
+    watch_rule_id: uuid.UUID | None = None
+    if watch_rule_id_raw:
+        try:
+            watch_rule_id = uuid.UUID(str(watch_rule_id_raw))
+        except (ValueError, TypeError):
+            watch_rule_id = None
+    if watch_rule_id is not None:
+        await apply_watch_job_result(session, rule_id=watch_rule_id, reply_body=body)
+
     if conv_uuid is not None:
         conv = await get_owned_conversation(
             session, user_id=user.id, conversation_id=conv_uuid
@@ -149,13 +160,17 @@ async def _run_agent_task_sms(session: AsyncSession, job: ScheduledJob) -> None:
 
     phone = (user.phone_e164 or "").strip()
     if phone:
-        # Lazy import: sendblue_webhook_service imports job_runner for credentials.
-        from services.sendblue_webhook_service import send_sendblue_text_async
+        if watch_rule_id is not None and body.upper().startswith(ALL_QUIET_PREFIX):
+            logger.info("watch rule %s: ALL_QUIET — skipping SMS", watch_rule_id)
+        else:
+            # Lazy import: sendblue_webhook_service imports job_runner for credentials.
+            from services.sendblue_webhook_service import send_sendblue_text_async
 
-        await send_sendblue_text_async(
-            to_number=phone,
-            content=f"ally — done:\n{body}",
-        )
+            prefix = "ally — update:" if watch_rule_id is not None else "ally — done:"
+            await send_sendblue_text_async(
+                to_number=phone,
+                content=f"{prefix}\n{body}",
+            )
 
 
 async def _run_extract_user_profile(session: AsyncSession, job: ScheduledJob) -> None:

@@ -770,14 +770,21 @@ Rules for background_task:
 - Do not put a `background_task` inside `instruction` that queues more background work.
 - Do not use `background_task` for **paid** Apify `book_reservation` or **sending** email unless the user already clearly confirmed in-thread.
 
-**Daily SMS “tell me when / keep me posted” (MVP):** Ally can store **one recurring daily check** per saved rule (not instant push the second something happens). If the user wants to be **texted updates** about a topic:
+**SMS watches (daily or instant push):** If the user wants to be **texted updates** about a topic:
 1. Confirm **what** to track (one short `spec` string).
-2. Ask **what time of day** they want the text (local). If they never give a time, use **09:00** and **America/New_York** and say that plainly so they can correct you.
-3. When they agree, end with EXACTLY one block:
+2. **Daily** (default): ask what **time of day** (local). Default **09:00** **America/New_York** if omitted.
+3. **Instant push:** if they want to be texted **as soon as something changes** (scores, news, prices, etc.), use `"mode":"instant"` — polls about every 15 minutes; only texts when something meaningful changed.
+4. When they agree, end with EXACTLY one block:
 <action>
-{"action":"register_watch","spec":"Plain-language watch description","time_local":"09:00","timezone":"America/New_York"}
+{"action":"register_watch","spec":"Plain-language watch description","time_local":"09:00","timezone":"America/New_York","mode":"daily"}
 </action>
-`time_local` and `timezone` may be omitted to use those defaults. They need a **verified phone** on the account for SMS; if missing, say they should add a phone in the app."""
+For instant push use `"mode":"instant"` (optional `"poll_interval_minutes":15`). They need a **verified phone** for SMS.
+
+**Calendar meeting auto-join (opt-in only):** Only if the user **explicitly asks** to auto-join calendar meetings for notes (e.g. "auto join my meetings", "join my calendar meetings automatically"). Requires Google connected. End with:
+<action>
+{"action":"enable_meeting_auto_join"}
+</action>
+To turn off: `{"action":"disable_meeting_auto_join"}`. Never enable without clear user consent in the thread."""
 
 ALLY_CAPABILITIES_SUFFIX = """
 
@@ -805,6 +812,7 @@ ALLY_CAPABILITIES_SUFFIX = """
 - When user shares a **Google Meet / Zoom / Teams** link and wants notes, call `join_meeting_for_notes` with `meeting_url`.
 - Tell them ally notes is joining and they'll get a **text when the call ends**.
 - Admit the bot from the waiting room when prompted.
+- **Calendar auto-join:** only after they opted in via `enable_meeting_auto_join` (or equivalent text). Then Ally joins **calendar** video meetings automatically ~2 min before start — no need to paste the link each time. They can say "stop auto join meetings" to disable.
 
 ## SMS link discipline (strict)
 - At most **one** short URL per SMS unless the user asked for multiple and you keep each on its own line without a list format.
@@ -826,7 +834,14 @@ def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
     if not isinstance(data, dict):
         return text.strip(), None
     act = data.get("action")
-    if act in ("send_email", "schedule_email", "background_task", "register_watch"):
+    if act in (
+        "send_email",
+        "schedule_email",
+        "background_task",
+        "register_watch",
+        "enable_meeting_auto_join",
+        "disable_meeting_auto_join",
+    ):
         return reply, data
     return text.strip(), None
 

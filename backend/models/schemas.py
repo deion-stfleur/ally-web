@@ -187,18 +187,28 @@ class CreateAgentTaskRequest(BaseModel):
 
 
 class CreateWatchRuleRequest(BaseModel):
-    """Daily SMS check on a topic (worker enqueues agent_task at next_run)."""
+    """SMS watch on a topic (daily briefing or instant push polling)."""
 
     spec_text: str = Field(..., min_length=1, max_length=8000)
     time_local: str | None = Field(
         default=None,
         max_length=5,
-        description="HH:MM 24h in timezone; default 09:00 if omitted.",
+        description="HH:MM 24h in timezone; default 09:00 if omitted (daily mode).",
     )
     timezone: str | None = Field(
         default=None,
         max_length=64,
         description="IANA zone, e.g. America/Los_Angeles; default America/New_York if omitted.",
+    )
+    watch_mode: Literal["daily", "instant"] | None = Field(
+        default=None,
+        description="daily = once per day at time_local; instant = poll every ~15 min, text on change.",
+    )
+    poll_interval_minutes: int | None = Field(
+        default=None,
+        ge=5,
+        le=60,
+        description="Instant mode only: minutes between checks (default 15).",
     )
 
 
@@ -208,6 +218,8 @@ class WatchRuleOut(BaseModel):
     time_local: str
     timezone: str
     status: str
+    watch_mode: str = "daily"
+    poll_interval_minutes: int = 15
     next_run_at: datetime
 
 
@@ -216,12 +228,25 @@ class WatchRuleStatusPatch(BaseModel):
 
 
 class RegisterWatchActionPayload(BaseModel):
-    """Parsed from Claude <action> when user sets a daily SMS watch."""
+    """Parsed from Claude <action> when user sets an SMS watch."""
 
     action: Literal["register_watch"]
     spec: str = Field(..., min_length=1, max_length=8000)
     time_local: str | None = Field(default=None, max_length=5)
     timezone: str | None = Field(default=None, max_length=64)
+    mode: Literal["daily", "instant"] | None = Field(
+        default=None,
+        description="instant = push when the topic changes; daily = once per day.",
+    )
+    poll_interval_minutes: int | None = Field(default=None, ge=5, le=60)
+
+
+class EnableMeetingAutoJoinActionPayload(BaseModel):
+    action: Literal["enable_meeting_auto_join"]
+
+
+class DisableMeetingAutoJoinActionPayload(BaseModel):
+    action: Literal["disable_meeting_auto_join"]
 
 
 class ChatResponse(BaseModel):

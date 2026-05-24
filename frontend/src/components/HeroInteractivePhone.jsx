@@ -405,6 +405,9 @@ export default function HeroInteractivePhone() {
       <div className="alm-hero-phone__scene">
         <div className="alm-hero-phone__device">
           <div className="alm-hero-phone__bezel">
+            <span className="alm-hero-phone__hw-btn alm-hero-phone__hw-btn--vol-up" aria-hidden />
+            <span className="alm-hero-phone__hw-btn alm-hero-phone__hw-btn--vol-down" aria-hidden />
+            <span className="alm-hero-phone__hw-btn alm-hero-phone__hw-btn--power" aria-hidden />
             <div className="alm-hero-phone__bezel-glare" />
             <div
               ref={innerRef}

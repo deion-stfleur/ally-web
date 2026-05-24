@@ -77,9 +77,55 @@ def list_events(
                 "start": start.get("dateTime") or start.get("date"),
                 "end": end.get("dateTime") or end.get("date"),
                 "htmlLink": ev.get("htmlLink"),
+                "hangoutLink": ev.get("hangoutLink"),
+                "conferenceData": ev.get("conferenceData"),
+                "description": ev.get("description"),
+                "location": ev.get("location"),
             }
         )
     return events
+
+
+def meeting_url_from_event(ev: dict[str, Any]) -> str | None:
+    hangout = (ev.get("hangoutLink") or "").strip()
+    if hangout:
+        return hangout
+    conf = ev.get("conferenceData") or {}
+    for ep in conf.get("entryPoints") or []:
+        if not isinstance(ep, dict):
+            continue
+        if ep.get("entryPointType") == "video" and ep.get("uri"):
+            return str(ep["uri"]).strip()
+    blob = f"{ev.get('description') or ''} {ev.get('location') or ''}"
+    from services.meeting_baas_service import extract_meeting_urls
+
+    urls = extract_meeting_urls(blob)
+    return urls[0] if urls else None
+
+
+def list_events_with_meeting_links(
+    credentials: Credentials,
+    calendar_id: str = "primary",
+    time_min: str | None = None,
+    time_max: str | None = None,
+    max_results: int = 25,
+) -> list[dict[str, Any]]:
+    """Calendar events that include a Meet/Zoom/Teams link."""
+    out: list[dict[str, Any]] = []
+    for ev in list_events(
+        credentials,
+        calendar_id=calendar_id,
+        time_min=time_min,
+        time_max=time_max,
+        max_results=max_results,
+    ):
+        url = meeting_url_from_event(ev)
+        if not url:
+            continue
+        row = dict(ev)
+        row["meeting_url"] = url
+        out.append(row)
+    return out
 
 
 def create_event(

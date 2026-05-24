@@ -38,6 +38,7 @@ async def main() -> None:
     from db import session as db_session
     from db.session import create_engine_if_configured, dispose_engine
     from services.job_runner import run_due_jobs_once
+    from services.meeting_calendar_auto_join_service import tick_calendar_auto_join
     from services.watch_rules_service import enqueue_due_watch_rules
 
     create_engine_if_configured()
@@ -58,8 +59,12 @@ async def main() -> None:
             async with db_session.async_session_maker() as session:
                 async with session.begin():
                     n = await enqueue_due_watch_rules(session)
+                    cj = await tick_calendar_auto_join(session)
                 if n:
                     did_work = True
+                if cj:
+                    did_work = True
+                    logger.info("Worker calendar auto-join dispatched %s bot(s)", cj)
             now = time.monotonic()
             if now - last_proactive_at >= proactive_interval_s:
                 last_proactive_at = now

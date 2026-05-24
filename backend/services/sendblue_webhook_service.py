@@ -36,6 +36,9 @@ from services.user_profile_service import (
     schedule_memory_extraction,
 )
 from services.watch_rules_service import create_watch_rule as create_watch_rule_row
+from services.meeting_calendar_auto_join_service import (
+    try_handle_calendar_auto_join_preference_sms,
+)
 from services.meeting_baas_service import try_handle_meeting_join_sms
 
 logger = logging.getLogger(__name__)
@@ -409,6 +412,29 @@ async def process_sendblue_inbound(
             # Continue without Google tools so finance/web questions still work over SMS.
             creds = None
 
+    cal_pref_reply = await try_handle_calendar_auto_join_preference_sms(
+        db, user=user, message=content
+    )
+    if cal_pref_reply is not None:
+        conv_id = await _get_or_create_sendblue_conversation(db, user=user)
+        conv = await get_owned_conversation(db, user_id=user.id, conversation_id=conv_id)
+        if conv is None:
+            await db.rollback()
+            raise RuntimeError("sendblue conversation missing")
+        await append_pair(
+            db,
+            conversation=conv,
+            user_text=content,
+            assistant_text=cal_pref_reply,
+        )
+        await db.commit()
+        await asyncio.to_thread(
+            _send_message_sync,
+            content=_sms_plain(cal_pref_reply),
+            to_number=caller,
+        )
+        return
+
     meeting_reply = await try_handle_meeting_join_sms(db, user=user, message=content)
     if meeting_reply is not None:
         conv_id = await _get_or_create_sendblue_conversation(db, user=user)
@@ -482,6 +508,27 @@ async def process_sendblue_inbound(
                     f"{(reply or '').strip()}\n\n(couldn't queue background task.)".strip()
                 )
 
+    if isinstance(action_dict, dict) and action_dict.get("action") == "enable_meeting_auto_join":
+        from services.meeting_calendar_auto_join_service import set_calendar_auto_join
+
+        if user.google_refresh_token_encrypted:
+            await set_calendar_auto_join(db, user=user, enabled=True)
+            reply = (
+                (reply or "").strip()
+                + "\n\n(saved — i'll auto-join calendar video meetings when they start.)"
+            ).strip()
+        else:
+            reply = (
+                (reply or "").strip()
+                + "\n\n(connect google in the app first, then ask again.)"
+            ).strip()
+
+    if isinstance(action_dict, dict) and action_dict.get("action") == "disable_meeting_auto_join":
+        from services.meeting_calendar_auto_join_service import set_calendar_auto_join
+
+        await set_calendar_auto_join(db, user=user, enabled=False)
+        reply = ((reply or "").strip() + "\n\n(stopped calendar auto-join.)").strip()
+
     if isinstance(action_dict, dict) and action_dict.get("action") == "register_watch":
         try:
             rw = RegisterWatchActionPayload.model_validate(action_dict)
@@ -491,8 +538,13 @@ async def process_sendblue_inbound(
                 spec_text=rw.spec,
                 time_local=rw.time_local,
                 tz_name=rw.timezone,
+                watch_mode=rw.mode,
+                poll_interval_minutes=rw.poll_interval_minutes,
             )
-            reply = ((reply or "").strip() + "\n\n(saved your daily SMS watch.)").strip()
+            mode_label = "instant" if (rw.mode or "").strip().lower() == "instant" else "daily"
+            reply = (
+                (reply or "").strip() + f"\n\n(saved your {mode_label} SMS watch.)"
+            ).strip()
         except ValueError as exc:
             reply = f"{(reply or '').strip()}\n\n(watch save failed: {exc})".strip()
         except Exception:
