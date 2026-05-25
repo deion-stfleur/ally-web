@@ -1,4 +1,4 @@
-"""Meeting BaaS: join meetings, webhooks, summarize, SMS."""
+"""Meeting BaaS v2: join meetings, webhooks, summarize, SMS."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from db.models import MeetingBotJob, User
 
 logger = logging.getLogger(__name__)
 
-MEETING_BAAS_API = "https://api.meetingbaas.com/bots/"
+MEETING_BAAS_API_V2 = "https://api.meetingbaas.com/v2/bots"
 
 _MEETING_URL_RE = re.compile(
     r"https?://(?:"
@@ -103,6 +103,7 @@ def normalize_event_name(payload: dict[str, Any]) -> str:
 
 
 def transcript_to_plaintext(data: dict[str, Any]) -> str:
+    """Parse v1-style embedded transcript (fallback)."""
     transcript = data.get("transcript")
     if not isinstance(transcript, list):
         return ""
@@ -125,6 +126,46 @@ def transcript_to_plaintext(data: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _v2_transcript_to_plaintext(utterances: list[dict[str, Any]]) -> str:
+    """Parse v2 output_transcription.json utterances format."""
+    lines: list[str] = []
+    for u in utterances:
+        if not isinstance(u, dict):
+            continue
+        speaker = str(u.get("speaker") or u.get("channel") or "Speaker").strip()
+        text = str(u.get("text") or "").strip()
+        if text:
+            lines.append(f"{speaker}: {text}")
+    return "\n".join(lines)
+
+
+async def _fetch_v2_transcript(transcription_url: str) -> str:
+    """Download transcription JSON from presigned S3 URL and convert to plaintext."""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(transcription_url)
+            if resp.status_code != 200:
+                logger.warning("failed to fetch v2 transcript url=%s status=%d", transcription_url, resp.status_code)
+                return ""
+            payload = resp.json()
+    except Exception:
+        logger.exception("error fetching v2 transcript from %s", transcription_url)
+        return ""
+
+    # output_transcription.json has a "result" key with "utterances"
+    if isinstance(payload, dict):
+        result = payload.get("result") or payload
+        utterances = result.get("utterances") if isinstance(result, dict) else None
+        if isinstance(utterances, list):
+            return _v2_transcript_to_plaintext(utterances)
+        # Fallback: maybe it's directly a list of utterances
+        if isinstance(payload.get("utterances"), list):
+            return _v2_transcript_to_plaintext(payload["utterances"])
+    if isinstance(payload, list):
+        return _v2_transcript_to_plaintext(payload)
+    return ""
+
+
 async def join_meeting_for_user(
     db: AsyncSession,
     *,
@@ -137,17 +178,19 @@ async def join_meeting_for_user(
     if not url:
         raise ValueError("meeting_url is required")
 
-    body = {
+    body: dict[str, Any] = {
         "bot_name": "Ally Notes",
         "meeting_url": url,
         "webhook_url": meeting_webhook_url(),
         "entry_message": "Ally is taking notes for the host.",
         "extra": {"ally_user_id": str(user.id)},
         "recording_mode": "speaker_view",
+        "transcription_enabled": True,
+        "transcription_config": {"provider": "gladia"},
     }
     async with httpx.AsyncClient(timeout=90.0) as client:
         resp = await client.post(
-            MEETING_BAAS_API,
+            MEETING_BAAS_API_V2,
             headers={
                 "x-meeting-baas-api-key": _api_key(),
                 "Content-Type": "application/json",
@@ -157,9 +200,11 @@ async def join_meeting_for_user(
         if resp.status_code >= 400:
             detail = resp.text[:500]
             raise RuntimeError(f"Meeting BaaS join failed ({resp.status_code}): {detail}")
-        data = resp.json()
+        envelope = resp.json()
 
-    bot_id = str(data.get("bot_id") or "").strip()
+    # v2 wraps response in {success, data}
+    resp_data = envelope.get("data") if isinstance(envelope.get("data"), dict) else envelope
+    bot_id = str(resp_data.get("bot_id") or "").strip()
     if not bot_id:
         raise RuntimeError("Meeting BaaS did not return bot_id")
 
@@ -234,6 +279,7 @@ async def process_meeting_webhook_payload(
     payload: dict[str, Any],
 ) -> None:
     event = normalize_event_name(payload)
+    # v2 nests data under "data" key
     data = payload.get("data")
     if not isinstance(data, dict):
         data = payload
@@ -262,7 +308,7 @@ async def process_meeting_webhook_payload(
     if event in ("failed", "bot_failed"):
         job.status = "failed"
         job.error_message = str(
-            data.get("message") or data.get("error") or "bot failed"
+            data.get("message") or data.get("error_message") or data.get("error") or "bot failed"
         )[:2000]
         await db.flush()
         user = await resolve_user_for_job(db, job, data)
@@ -277,7 +323,15 @@ async def process_meeting_webhook_payload(
         logger.info("meeting baas webhook ignored event=%s bot=%s", event, bot_id)
         return
 
-    plain = transcript_to_plaintext(data)
+    # v2: fetch transcript from presigned URL; fall back to embedded v1 format
+    plain = ""
+    transcription_url = data.get("transcription") or data.get("raw_transcription")
+    if transcription_url and isinstance(transcription_url, str) and transcription_url.startswith("http"):
+        plain = await _fetch_v2_transcript(transcription_url)
+
+    if not plain:
+        plain = transcript_to_plaintext(data)
+
     summary = await summarize_transcript(plain)
     job.status = "completed"
     job.summary_text = summary
