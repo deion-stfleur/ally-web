@@ -59,6 +59,12 @@ Hosted on **your** stack (Postgres + API), not per-user Netlify.
 - Texts only when state **changes** vs `last_digest`; `ALL_QUIET` skips SMS.
 - Daily mode unchanged: once per day at `time_local`.
 
+## Browser site automation (Ally Pro + Railway)
+
+- Claude `browser_task` action → `scheduled_jobs` → **Railway** runs [Browser Use](https://github.com/browser-use/browser-use)
+- **Pro only** (`stripe_plan=pro` + active subscription when Stripe is configured)
+- Heroku worker does not run these jobs; see `docs/BROWSER_WORKER.md`
+
 ## Calendar meeting auto-join (opt-in)
 
 - User must **explicitly** enable via SMS/chat (`enable_meeting_auto_join` or phrases like "auto join my meetings").

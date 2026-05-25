@@ -26,8 +26,9 @@ from services.chat_persist import (
 from services.claude_service import run_chat
 from services.site_service import SiteToolContext
 from services.job_runner import _credentials_from_user
-from models.schemas import RegisterWatchActionPayload
-from services.schedule_service import create_agent_task_job
+from models.schemas import BrowserTaskActionPayload, RegisterWatchActionPayload
+from services.browser_job_service import PRO_REQUIRED_MSG
+from services.schedule_service import create_agent_task_job, create_browser_task_job
 from services.user_profile_service import (
     ONBOARDING_QUESTION,
     clear_proactive_awaiting_reply,
@@ -486,6 +487,30 @@ async def process_sendblue_inbound(
         logger.exception("sendblue Claude failed")
         reply = "Sorry, I could not complete that request. Try again in a moment."
         action_dict = None
+
+    if isinstance(action_dict, dict) and action_dict.get("action") == "browser_task":
+        try:
+            bt = BrowserTaskActionPayload.model_validate(action_dict)
+            run_at = datetime.now(timezone.utc) + timedelta(seconds=5)
+            await create_browser_task_job(
+                db,
+                user_id=user.id,
+                run_at=run_at,
+                task=bt.task,
+                conversation_id=conv_id,
+                start_url=bt.start_url,
+            )
+            reply = (
+                (reply or "").strip() or "checking the site — i'll text you when it's done."
+            ).strip()
+        except ValueError as exc:
+            if str(exc) == "pro_required":
+                reply = f"{(reply or '').strip()}\n\n{PRO_REQUIRED_MSG}".strip()
+            else:
+                reply = f"{(reply or '').strip()}\n\n(couldn't queue browser task: {exc})".strip()
+        except Exception:
+            logger.exception("sendblue browser_task create failed")
+            reply = f"{(reply or '').strip()}\n\n(couldn't queue browser task.)".strip()
 
     if isinstance(action_dict, dict) and action_dict.get("action") == "background_task":
         instr = str(action_dict.get("instruction") or "").strip()

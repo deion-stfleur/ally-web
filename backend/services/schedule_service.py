@@ -10,6 +10,7 @@ from db.models import ScheduledJob
 
 JOB_SEND_GMAIL = "send_gmail"
 JOB_AGENT_TASK_SMS = "agent_task_sms"
+JOB_BROWSER_TASK = "browser_task"
 JOB_EXTRACT_USER_PROFILE = "extract_user_profile"
 MAX_LEAD = timedelta(days=90)
 _MAX_INSTRUCTION = 12_000
@@ -82,6 +83,55 @@ async def create_agent_task_job(
     job = ScheduledJob(
         user_id=user_id,
         job_type=JOB_AGENT_TASK_SMS,
+        payload_json=payload,
+        run_at=run_at,
+        status="pending",
+    )
+    db.add(job)
+    await db.flush()
+    return job
+
+
+async def create_browser_task_job(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    run_at: datetime,
+    task: str,
+    conversation_id: uuid.UUID | None,
+    start_url: str | None = None,
+) -> ScheduledJob:
+    """Queue a Browser Use job (Railway worker). Ally Pro only."""
+    from db.models import User
+    from services.billing_plans import user_has_ally_pro
+
+    user = await db.get(User, user_id)
+    if user is None:
+        raise ValueError("user not found.")
+    if not user_has_ally_pro(user):
+        raise ValueError("pro_required")
+
+    text = (task or "").strip()
+    if not text:
+        raise ValueError("task is required.")
+    if len(text) > _MAX_INSTRUCTION:
+        raise ValueError(f"task too long (max {_MAX_INSTRUCTION} characters).")
+    if run_at.tzinfo is None:
+        raise ValueError("run_at must be timezone-aware (UTC recommended).")
+    now = datetime.now(timezone.utc)
+    if run_at > now + MAX_LEAD:
+        raise ValueError(f"run_at cannot be more than {MAX_LEAD.days} days ahead.")
+
+    payload: dict = {
+        "task": text,
+        "conversation_id": str(conversation_id) if conversation_id else None,
+    }
+    if start_url and (start_url := start_url.strip()):
+        payload["start_url"] = start_url
+
+    job = ScheduledJob(
+        user_id=user_id,
+        job_type=JOB_BROWSER_TASK,
         payload_json=payload,
         run_at=run_at,
         status="pending",

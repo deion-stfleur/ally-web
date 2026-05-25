@@ -63,6 +63,8 @@ class Settings:
     # Meeting BaaS (optional): bot joins Meet/Zoom/Teams for notes.
     meeting_baas_api_key: str | None
     backend_public_url: str | None
+    ally_internal_secret: str | None
+    browser_worker_max_steps: int
 
 
 def load_settings() -> Settings:
@@ -103,6 +105,10 @@ def load_settings() -> Settings:
         ally_sites_public_base_url=_optional("ALLY_SITES_PUBLIC_BASE_URL"),
         meeting_baas_api_key=_optional("MEETING_BAAS_API_KEY"),
         backend_public_url=_optional("BACKEND_PUBLIC_URL"),
+        ally_internal_secret=_optional("ALLY_INTERNAL_SECRET"),
+        browser_worker_max_steps=max(
+            5, min(80, int(os.getenv("BROWSER_WORKER_MAX_STEPS", "25")))
+        ),
     )
 
 

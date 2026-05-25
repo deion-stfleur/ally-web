@@ -176,6 +176,14 @@ class BackgroundTaskActionPayload(BaseModel):
     instruction: str = Field(..., min_length=1, max_length=12000)
 
 
+class BrowserTaskActionPayload(BaseModel):
+    """Parsed from Claude <action> when a Pro user needs real browser automation."""
+
+    action: Literal["browser_task"]
+    task: str = Field(..., min_length=1, max_length=12000)
+    start_url: str | None = Field(default=None, max_length=2048)
+
+
 class CreateAgentTaskRequest(BaseModel):
     """Queue a background agent run (same worker as scheduled Gmail)."""
 
@@ -259,6 +267,10 @@ class ChatResponse(BaseModel):
     background_job: ScheduledJobResponse | None = Field(
         default=None,
         description="Background agent run queued; worker texts when done if phone on file.",
+    )
+    browser_job: ScheduledJobResponse | None = Field(
+        default=None,
+        description="Pro-only Browser Use job queued for Railway worker.",
     )
     watch_rule: WatchRuleOut | None = Field(
         default=None,

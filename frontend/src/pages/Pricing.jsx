@@ -45,6 +45,7 @@ const PLANS = [
       "Handles complex tasks until they're done, all in one thread",
       "Sends scheduled recaps, check-ins, and reminders",
       "Run 24/7 background tasks for you",
+      "Live website checks (Browser automation for hard tasks)",
     ],
   },
 ];

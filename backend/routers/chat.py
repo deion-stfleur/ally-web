@@ -14,6 +14,7 @@ from deps import get_current_session, get_db_optional
 from db.models import Conversation, User
 from models.schemas import (
     BackgroundTaskActionPayload,
+    BrowserTaskActionPayload,
     ChatRequest,
     ChatResponse,
     ChatStateResponse,
@@ -39,7 +40,12 @@ from services.chat_persist import (
     load_latest_state,
     resolve_db_user_id,
 )
-from services.schedule_service import create_agent_task_job, create_send_gmail_job
+from services.browser_job_service import PRO_REQUIRED_MSG
+from services.schedule_service import (
+    create_agent_task_job,
+    create_browser_task_job,
+    create_send_gmail_job,
+)
 from services.user_profile_service import (
     clear_proactive_awaiting_reply,
     get_or_create_profile,
@@ -271,6 +277,7 @@ async def chat_endpoint(
     schedule_payload: ScheduleEmailActionPayload | None = None
     background_payload: BackgroundTaskActionPayload | None = None
     register_watch_payload: RegisterWatchActionPayload | None = None
+    browser_task_payload: BrowserTaskActionPayload | None = None
     enable_meeting_auto_join = False
     disable_meeting_auto_join = False
     if action_dict:
@@ -295,6 +302,11 @@ async def chat_endpoint(
                 register_watch_payload = RegisterWatchActionPayload.model_validate(action_dict)
             except ValidationError:
                 register_watch_payload = None
+        elif act == "browser_task":
+            try:
+                browser_task_payload = BrowserTaskActionPayload.model_validate(action_dict)
+            except ValidationError:
+                browser_task_payload = None
         elif act == "enable_meeting_auto_join":
             enable_meeting_auto_join = True
         elif act == "disable_meeting_auto_join":
@@ -304,6 +316,7 @@ async def chat_endpoint(
     out_cid: str | None = None
     scheduled_job: ScheduledJobResponse | None = None
     background_job: ScheduledJobResponse | None = None
+    browser_job: ScheduledJobResponse | None = None
     watch_rule: WatchRuleOut | None = None
 
     if db is not None:
@@ -377,6 +390,26 @@ async def chat_endpoint(
                     except Exception:
                         logger.exception("Background agent job creation failed")
                         text = f"{text}\n\n(Background task failed: could not create job.)"
+                if browser_task_payload is not None:
+                    try:
+                        run_at = datetime.now(timezone.utc) + timedelta(seconds=5)
+                        job = await create_browser_task_job(
+                            db,
+                            user_id=user_id,
+                            run_at=run_at,
+                            task=browser_task_payload.task,
+                            conversation_id=conv.id,
+                            start_url=browser_task_payload.start_url,
+                        )
+                        browser_job = _job_to_chat_response(job)
+                    except ValueError as exc:
+                        if str(exc) == "pro_required":
+                            text = f"{text}\n\n({PRO_REQUIRED_MSG})".strip()
+                        else:
+                            text = f"{text}\n\n(Browser task failed: {exc})"
+                    except Exception:
+                        logger.exception("Browser task job creation failed")
+                        text = f"{text}\n\n(Browser task failed: could not create job.)"
                 if register_watch_payload is not None:
                     try:
                         wr = await create_watch_rule_row(
@@ -414,6 +447,7 @@ async def chat_endpoint(
                 out_cid = None
                 scheduled_job = None
                 background_job = None
+                browser_job = None
                 watch_rule = None
 
     return ChatResponse(
@@ -421,6 +455,7 @@ async def chat_endpoint(
         email_action=email_action,
         scheduled_job=scheduled_job,
         background_job=background_job,
+        browser_job=browser_job,
         watch_rule=watch_rule,
         conversation_id=out_cid,
     )

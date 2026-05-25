@@ -49,6 +49,15 @@ def subscription_is_active(status: str | None) -> bool:
     return (status or "").strip().lower() in ACTIVE_STATUSES
 
 
+def user_has_ally_pro(user) -> bool:
+    """True when user may use Pro-only features (browser automation, proactive SMS)."""
+    if not stripe_billing_configured():
+        return True
+    if not subscription_is_active(user.stripe_subscription_status):
+        return False
+    return (user.stripe_plan or "").strip().lower() == PLAN_PRO
+
+
 def plan_from_subscription_object(sub: dict) -> tuple[str | None, str | None]:
     """Return (plan, price_id) from a Stripe subscription dict."""
     items = (sub.get("items") or {}).get("data") or []

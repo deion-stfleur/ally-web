@@ -784,7 +784,16 @@ For instant push use `"mode":"instant"` (optional `"poll_interval_minutes":15`).
 <action>
 {"action":"enable_meeting_auto_join"}
 </action>
-To turn off: `{"action":"disable_meeting_auto_join"}`. Never enable without clear user consent in the thread."""
+To turn off: `{"action":"disable_meeting_auto_join"}`. Never enable without clear user consent in the thread.
+
+**Browser automation (Ally Pro only):** When the user clearly needs you to **use a real website** (check a page, compare listings, fill a form on a site) and links/APIs are not enough:
+- Only queue if they are on **Ally Pro** (the app enforces this). If they are not Pro, say browser site checks are Pro-only and point to pricing — do **not** output `browser_task`.
+- Prefer `build_flight_search_link`, `mcp_call`, `things_to_do_near`, and `web_search` first when those suffice.
+- When Pro and a real browser is needed, end with EXACTLY one block:
+<action>
+{"action":"browser_task","task":"One clear instruction for the browser agent","start_url":"https://optional-start-page"}
+</action>
+`start_url` is optional. Keep your reply before the block short (e.g. checking the site — texting you when done). Do not use `browser_task` for quick facts, email, or calendar."""
 
 ALLY_CAPABILITIES_SUFFIX = """
 
@@ -814,6 +823,11 @@ ALLY_CAPABILITIES_SUFFIX = """
 - Admit the bot from the waiting room when prompted.
 - **Calendar auto-join:** only after they opted in via `enable_meeting_auto_join` (or equivalent text). Then Ally joins **calendar** video meetings automatically ~2 min before start — no need to paste the link each time. They can say "stop auto join meetings" to disable.
 
+## Browser site automation (Ally Pro only)
+- Use `browser_task` only when the user needs a **live website** checked (inventory, form, multi-page flow) and you already confirmed they want that depth.
+- Not for flights/movies/restaurants when a link tool or MCP booking URL is enough.
+- The Railway browser worker runs the task; user gets an SMS when done.
+
 ## SMS link discipline (strict)
 - At most **one** short URL per SMS unless the user asked for multiple and you keep each on its own line without a list format.
 - Prefer tool `primary_url` or `url` fields over pasting long URLs.
@@ -841,6 +855,7 @@ def split_reply_and_action(text: str) -> tuple[str, dict[str, Any] | None]:
         "register_watch",
         "enable_meeting_auto_join",
         "disable_meeting_auto_join",
+        "browser_task",
     ):
         return reply, data
     return text.strip(), None

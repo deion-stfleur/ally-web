@@ -53,6 +53,7 @@ async def _claim_next_job_id(session: AsyncSession) -> uuid.UUID | None:
 WITH cte AS (
     SELECT id FROM scheduled_jobs
     WHERE status = 'pending' AND run_at <= :now
+      AND job_type != 'browser_task'
     ORDER BY run_at ASC
     FOR UPDATE SKIP LOCKED
     LIMIT 1
