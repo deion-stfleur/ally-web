@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
+from services.llm_models import model_for_tier
 from db.models import User, UserProfile
 from services.sendblue_webhook_service import send_sendblue_text_async
 from services.billing_plans import PLAN_PRO, stripe_billing_configured
@@ -75,7 +76,7 @@ async def _run_web_searches(queries: list[str]) -> str:
     combined: list[str] = []
     for _ in range(4):
         resp = await client.messages.create(
-            model=settings.anthropic_model,
+            model=model_for_tier("heavy"),
             max_tokens=2048,
             system="Use web_search. Be factual and concise.",
             messages=messages,
@@ -167,7 +168,7 @@ async def _decide_proactive_message(
         f"search digest:\n{search_digest[:6000]}"
     )
     resp = await client.messages.create(
-        model=settings.anthropic_model,
+        model=model_for_tier("fast"),
         max_tokens=256,
         temperature=0.4,
         system=_DECIDE_SYSTEM,

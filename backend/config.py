@@ -34,6 +34,7 @@ class Settings:
     frontend_url: str
     anthropic_api_key: str
     anthropic_model: str
+    anthropic_model_fast: str
     # Postgres (Heroku, local, etc.). Optional until chat persistence is wired.
     database_url: str | None
     # Sendblue (SMS / iMessage webhook). All optional — omit to disable webhook.
@@ -83,6 +84,7 @@ def load_settings() -> Settings:
         anthropic_model=os.getenv(
             "ANTHROPIC_MODEL", "claude-sonnet-4-20250514"
         ).strip(),
+        anthropic_model_fast=os.getenv("ANTHROPIC_MODEL_FAST", "").strip(),
         database_url=db or None,
         sendblue_api_key=_optional("SENDBLUE_API_KEY") or _optional("SENDBLUE_API_API_KEY"),
         sendblue_api_secret=_optional("SENDBLUE_API_SECRET")

@@ -132,6 +132,7 @@ async def _run_agent_task_sms(session: AsyncSession, job: ScheduledJob) -> None:
         enable_google_tools=creds is not None,
         mcp_user_id=str(user.id),
         site_ctx=site_ctx,
+        model_tier="heavy",
     )
     cleaned, _nested = split_reply_and_action(reply or "")
     body = (cleaned or (reply or "")).strip() or "(no text reply)"

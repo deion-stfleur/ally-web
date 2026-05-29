@@ -10,6 +10,7 @@ from anthropic import AsyncAnthropic
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
+from services.llm_models import model_for_tier
 from db.models import User
 from services.chat_persist import get_owned_conversation, load_conversation_messages
 from services.user_profile_service import (
@@ -98,7 +99,7 @@ async def extract_profile_from_conversation(
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     try:
         resp = await client.messages.create(
-            model=settings.anthropic_model,
+            model=model_for_tier("fast"),
             max_tokens=1024,
             temperature=0.2,
             system=_EXTRACT_SYSTEM,

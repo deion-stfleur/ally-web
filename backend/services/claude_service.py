@@ -932,7 +932,13 @@ async def run_chat(
     mcp_user_id: str | None = None,
     site_ctx: Any | None = None,
     meeting_ctx: Any | None = None,
+    model_tier: str = "fast",
 ) -> tuple[str, dict[str, Any] | None]:
+    from services.llm_models import model_for_tier
+
+    tier = "heavy" if model_tier == "heavy" else "fast"
+    chat_model = model_for_tier(tier)
+
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     system = SYSTEM + ALLY_CAPABILITIES_SUFFIX
     if receipt_defaults is not None and _should_attach_receipt_instructions(
@@ -957,7 +963,7 @@ async def run_chat(
             enable_google_tools=bool(enable_google_tools and google_credentials is not None)
         )
         resp = await client.messages.create(
-            model=settings.anthropic_model,
+            model=chat_model,
             max_tokens=8192,
             system=system,
             messages=messages,

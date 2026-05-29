@@ -10,6 +10,7 @@ from anthropic import AsyncAnthropic
 from google.auth.credentials import Credentials
 
 from config import settings
+from services.llm_models import model_for_tier
 from services import gmail_service
 
 logger = logging.getLogger(__name__)
@@ -81,7 +82,7 @@ async def build_actionable_quick_requests(
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     try:
         resp = await client.messages.create(
-            model=settings.anthropic_model,
+            model=model_for_tier("fast"),
             max_tokens=1800,
             temperature=0.2,
             system=_SYSTEM,

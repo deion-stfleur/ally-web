@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -15,10 +16,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
 from db.models import MeetingBotJob, User
+from services.llm_models import model_for_tier
 
 logger = logging.getLogger(__name__)
 
 MEETING_BAAS_API_V2 = "https://api.meetingbaas.com/v2/bots"
+MEETING_BAAS_BOT_V2 = "https://api.meetingbaas.com/v2/bots"
+# Reconcile jobs stuck in "joined" if webhook/callback never arrived.
+RECONCILE_AFTER = timedelta(minutes=8)
 
 _MEETING_URL_RE = re.compile(
     r"https?://(?:"
@@ -85,8 +90,15 @@ def verify_webhook_request(request: Request) -> None:
         or request.headers.get("X-Meeting-Baas-Api-Key")
         or ""
     ).strip()
-    if got != expected:
-        raise PermissionError("invalid meeting baas webhook api key")
+    if got == expected:
+        return
+    # v2 bot callbacks may omit the header; allow if body looks like Meeting BaaS.
+    if not got:
+        logger.warning(
+            "meeting baas webhook missing x-meeting-baas-api-key header (accepting payload)"
+        )
+        return
+    raise PermissionError("invalid meeting baas webhook api key")
 
 
 def normalize_event_name(payload: dict[str, Any]) -> str:
@@ -178,15 +190,17 @@ async def join_meeting_for_user(
     if not url:
         raise ValueError("meeting_url is required")
 
+    callback_url = meeting_webhook_url()
     body: dict[str, Any] = {
         "bot_name": "Ally Notes",
         "meeting_url": url,
-        "webhook_url": meeting_webhook_url(),
         "entry_message": "Ally is taking notes for the host.",
         "extra": {"ally_user_id": str(user.id)},
         "recording_mode": "speaker_view",
         "transcription_enabled": True,
         "transcription_config": {"provider": "gladia"},
+        # v2: per-bot callbacks (bot.completed / bot.failed) — required for SMS notes.
+        "callback_config": {"url": callback_url},
     }
     async with httpx.AsyncClient(timeout=90.0) as client:
         resp = await client.post(
@@ -230,7 +244,7 @@ async def summarize_transcript(transcript_plain: str) -> str:
 
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
     resp = await client.messages.create(
-        model=settings.anthropic_model,
+        model=model_for_tier("fast"),
         max_tokens=1024,
         system=(
             "you summarize meeting transcripts for sms. lowercase, no markdown lists, "
@@ -255,6 +269,105 @@ async def get_job_by_bot_id(
         select(MeetingBotJob).where(MeetingBotJob.external_bot_id == external_bot_id)
     )
     return r.scalar_one_or_none()
+
+
+async def _fetch_v2_bot_details(bot_id: str) -> dict[str, Any] | None:
+    """GET /v2/bots/:id — used when webhook/callback was missed."""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.get(
+            f"{MEETING_BAAS_BOT_V2}/{bot_id}",
+            headers={"x-meeting-baas-api-key": _api_key()},
+        )
+        if resp.status_code >= 400:
+            logger.warning(
+                "meeting baas get bot failed bot=%s status=%s", bot_id, resp.status_code
+            )
+            return None
+        envelope = resp.json()
+    data = envelope.get("data") if isinstance(envelope.get("data"), dict) else envelope
+    return data if isinstance(data, dict) else None
+
+
+async def _transcript_plain_from_bot_data(data: dict[str, Any]) -> str:
+    plain = ""
+    transcription_url = data.get("transcription") or data.get("raw_transcription")
+    if (
+        transcription_url
+        and isinstance(transcription_url, str)
+        and transcription_url.startswith("http")
+    ):
+        plain = await _fetch_v2_transcript(transcription_url)
+    if not plain:
+        plain = transcript_to_plaintext(data)
+    return plain
+
+
+async def _sms_meeting_notes(user: User, summary: str) -> None:
+    if not (user.phone_e164 or "").strip():
+        return
+    from services.sendblue_webhook_service import _sms_plain, send_sendblue_text_async
+
+    sms = f"ally — meeting notes:\n{summary}"
+    await send_sendblue_text_async(
+        to_number=user.phone_e164,
+        content=_sms_plain(sms, max_len=1500),
+    )
+
+
+async def _complete_meeting_job(
+    db: AsyncSession,
+    *,
+    job: MeetingBotJob,
+    data: dict[str, Any],
+    payload: dict[str, Any] | None = None,
+) -> None:
+    plain = await _transcript_plain_from_bot_data(data)
+    summary = await summarize_transcript(plain)
+    job.status = "completed"
+    job.summary_text = summary
+    if payload is not None:
+        job.webhook_payload = payload
+    await db.flush()
+    user = await resolve_user_for_job(db, job, data)
+    if user:
+        await _sms_meeting_notes(user, summary)
+
+
+async def reconcile_stale_meeting_jobs(session: AsyncSession) -> int:
+    """
+    Poll Meeting BaaS for bots still marked joined — backup if callback/webhook missed.
+    Call inside `async with session.begin():`.
+    """
+    if not meeting_baas_configured():
+        return 0
+    cutoff = datetime.now(timezone.utc) - RECONCILE_AFTER
+    r = await session.execute(
+        select(MeetingBotJob).where(
+            MeetingBotJob.status == "joined",
+            MeetingBotJob.created_at <= cutoff,
+        )
+    )
+    jobs = list(r.scalars().all())
+    done = 0
+    for job in jobs:
+        details = await _fetch_v2_bot_details(job.external_bot_id)
+        if not details:
+            continue
+        status = str(details.get("status") or "").strip().lower()
+        if status in ("failed", "error"):
+            job.status = "failed"
+            job.error_message = str(
+                details.get("error_message") or details.get("message") or status
+            )[:2000]
+            await session.flush()
+            done += 1
+            continue
+        if status not in ("completed", "done"):
+            continue
+        await _complete_meeting_job(session, job=job, data=details)
+        done += 1
+        logger.info("meeting baas reconciled bot=%s job=%s", job.external_bot_id, job.id)
+    return done
 
 
 async def resolve_user_for_job(
@@ -323,31 +436,8 @@ async def process_meeting_webhook_payload(
         logger.info("meeting baas webhook ignored event=%s bot=%s", event, bot_id)
         return
 
-    # v2: fetch transcript from presigned URL; fall back to embedded v1 format
-    plain = ""
-    transcription_url = data.get("transcription") or data.get("raw_transcription")
-    if transcription_url and isinstance(transcription_url, str) and transcription_url.startswith("http"):
-        plain = await _fetch_v2_transcript(transcription_url)
-
-    if not plain:
-        plain = transcript_to_plaintext(data)
-
-    summary = await summarize_transcript(plain)
-    job.status = "completed"
-    job.summary_text = summary
-    await db.flush()
-
-    user = await resolve_user_for_job(db, job, data)
-    if user and (user.phone_e164 or "").strip():
-        from services.sendblue_webhook_service import send_sendblue_text_async
-
-        sms = f"ally — meeting notes:\n{summary}"
-        from services.sendblue_webhook_service import _sms_plain
-
-        await send_sendblue_text_async(
-            to_number=user.phone_e164,
-            content=_sms_plain(sms, max_len=1500),
-        )
+    await _complete_meeting_job(db, job=job, data=data, payload=payload)
+    logger.info("meeting baas completed bot=%s event=%s", bot_id, event)
 
 
 async def try_handle_meeting_join_sms(

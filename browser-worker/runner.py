@@ -50,7 +50,11 @@ async def run_browser_task(
     """
     from browser_use import Agent, Browser, ChatAnthropic
 
-    model = (os.getenv("ANTHROPIC_MODEL") or "claude-sonnet-4-20250514").strip()
+    model = (
+        os.getenv("ANTHROPIC_MODEL")
+        or os.getenv("ANTHROPIC_MODEL_HEAVY")
+        or "claude-sonnet-4-20250514"
+    ).strip()
     api_key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
     if not api_key:
         return "failed", "ANTHROPIC_API_KEY missing on browser worker"

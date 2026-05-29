@@ -24,6 +24,9 @@ def meeting_baas_status() -> dict[str, object]:
     return {
         "configured": meeting_baas_configured(),
         "webhook_url": meeting_webhook_url(),
+        "api_version": "v2",
+        "setup_doc": "docs/MEETING_BAAS_SETUP.md",
+        "callback_config": {"url": meeting_webhook_url()},
     }
 
 
