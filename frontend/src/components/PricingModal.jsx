@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../api/client";
-import { formatPlanPrice, PLANS } from "../constants/plans";
+import { PLANS } from "../constants/plans";
+import PlanPriceDisplay from "./PlanPriceDisplay";
 import { useAuth } from "../hooks/useAuth";
 
 function formatApiError(err) {
@@ -124,10 +125,13 @@ export default function PricingModal({ open, onClose }) {
                     )}
                     <h3 className="pricing-modal__plan-name">{plan.name}</h3>
                     <p className="pricing-modal__plan-tag">{plan.tagline}</p>
-                    <p className="pricing-modal__price">
-                      ${formatPlanPrice(plan.price)}
-                      <span className="pricing-modal__price-unit">/month</span>
-                    </p>
+                    <PlanPriceDisplay
+                      plan={plan}
+                      priceClassName="pricing-modal__price"
+                      compareClassName="pricing-modal__price-compare"
+                      currentClassName="pricing-modal__price-current"
+                      unitClassName="pricing-modal__price-unit"
+                    />
                     <ul className="pricing-modal__features">
                       {plan.features.slice(0, 4).map((f) => (
                         <li key={f}>{f}</li>

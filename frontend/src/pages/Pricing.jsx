@@ -2,7 +2,8 @@ import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
-import { formatPlanPrice, PLANS } from "../constants/plans";
+import { PLANS } from "../constants/plans";
+import PlanPriceDisplay from "../components/PlanPriceDisplay";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import "./ally-lp.css";
@@ -96,10 +97,7 @@ export default function Pricing() {
                 {plan.featured ? <p className="alm-pricing__badge">Most popular</p> : null}
                 <h2 className="alm-pricing__plan-name">{plan.name}</h2>
                 <p className="alm-pricing__plan-tag">{plan.tagline}</p>
-                <p className="alm-pricing__price">
-                  ${formatPlanPrice(plan.price)}
-                  <span className="alm-pricing__price-unit">/month</span>
-                </p>
+                <PlanPriceDisplay plan={plan} />
                 <ul className="alm-pricing__features">
                   {plan.features.map((f) => (
                     <li key={f}>{f}</li>

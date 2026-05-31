@@ -5,6 +5,7 @@ export const PLANS = [
     tier: "Starter",
     name: "Ally",
     price: 19.99,
+    compareAtPrice: 34.99,
     tagline: "Text Ally when you need a hand.",
     features: [
       "Works with Gmail, Calendar, Drive, Sheets and more",
@@ -20,6 +21,7 @@ export const PLANS = [
     tier: "Pro",
     name: "Ally Pro",
     price: 49.99,
+    compareAtPrice: 79.99,
     tagline: "Ally stays on it and texts you first.",
     featured: true,
     footnote: "cancel anytime. switch plans from your dashboard.",

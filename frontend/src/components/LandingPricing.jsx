@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { formatPlanPrice, PLANS } from "../constants/plans";
+import { PLANS } from "../constants/plans";
+import PlanPriceDisplay from "./PlanPriceDisplay";
 
 export default function LandingPricing() {
   return (
@@ -22,10 +23,7 @@ export default function LandingPricing() {
               {plan.featured ? <p className="alm-pricing__badge">Most popular</p> : null}
               <h3 className="alm-pricing__plan-name">{plan.name}</h3>
               <p className="alm-pricing__plan-tag">{plan.tagline}</p>
-              <p className="alm-pricing__price">
-                ${formatPlanPrice(plan.price)}
-                <span className="alm-pricing__price-unit">/month</span>
-              </p>
+              <PlanPriceDisplay plan={plan} />
               <ul className="alm-pricing__features">
                 {plan.features.map((f) => (
                   <li key={f}>{f}</li>

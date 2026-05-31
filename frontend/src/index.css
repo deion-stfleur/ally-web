@@ -1318,7 +1318,24 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 }
 
 .pricing-modal__price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.4rem;
   margin: 0.375rem 0 0;
+}
+
+.pricing-modal__price-compare {
+  margin-left: 0.1rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #c2410c;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: #ea580c;
+}
+
+.pricing-modal__price-current {
   font-size: 1.625rem;
   font-weight: 700;
   color: #0f172a;
@@ -1487,7 +1504,11 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
     font-size: 0.9375rem;
   }
 
-  .pricing-modal__price {
+  .pricing-modal__price-compare {
+    font-size: 1rem;
+  }
+
+  .pricing-modal__price-current {
     font-size: 1.75rem;
   }
 
