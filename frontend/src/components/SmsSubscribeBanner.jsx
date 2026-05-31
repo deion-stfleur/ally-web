@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { PRO_MONTHLY_LABEL, STARTER_MONTHLY_LABEL } from "../constants/plans";
 
 const DISMISS_KEY = "ally_sms_subscribe_banner_dismissed";
 
@@ -45,7 +46,7 @@ export default function SmsSubscribeBanner({ phoneE164, onViewPlans }) {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-sky-950">Subscribe to text Ally from this number</p>
         <p className="mt-0.5 text-xs leading-relaxed text-sky-900/85">
-          Web chat is free. SMS requires Ally Standard ($10/mo) or Ally Pro ($30/mo). {phoneHint}
+          Web chat is free. SMS requires {STARTER_MONTHLY_LABEL} or {PRO_MONTHLY_LABEL}. {phoneHint}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">

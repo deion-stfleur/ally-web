@@ -1,7 +1,9 @@
+import AllyMark from "./AllyMark";
+
 const TESTIMONIALS = [
   {
     id: "date-night",
-    title: "Saturday plans",
+    title: "Books dinner & drinks for you",
     quote:
       "Had zero plan for Saturday. I told Ally what we like and our budget. It sent a few cocktail spots and dinners nearby, booked both, and texted when to head out so we were not late.",
     name: "Marcus T.",
@@ -9,7 +11,7 @@ const TESTIMONIALS = [
   },
   {
     id: "apartment",
-    title: "Apartment hunt",
+    title: "Alerts you when listings drop",
     quote:
       "Ally watched Zillow, Facebook Marketplace, and Redfin for my budget and neighborhood. It texted the second a listing hit. I toured same day and signed the lease a week later.",
     name: "Priya K.",
@@ -17,7 +19,7 @@ const TESTIMONIALS = [
   },
   {
     id: "morning",
-    title: "Morning recap",
+    title: "Calendar & inbox in one text",
     quote:
       "Every morning I text Ally what's on today. It pulls my calendar and the emails that actually need a reply, then sends one short recap before I leave for work.",
     name: "Jordan L.",
@@ -25,7 +27,7 @@ const TESTIMONIALS = [
   },
   {
     id: "inbox",
-    title: "Inbox triage",
+    title: "Drafts email replies over SMS",
     quote:
       "I forward messy threads to Ally over text. It sends bullets plus draft replies I can send as is. I barely open Gmail on my phone during the workday now.",
     name: "Elena R.",
@@ -33,7 +35,7 @@ const TESTIMONIALS = [
   },
   {
     id: "trip",
-    title: "Weekend trip",
+    title: "Flights, hotels & restaurants",
     quote:
       "We planned a weekend trip in one thread. Ally compared flights, booked the hotel from what we said, and kept a running list of restaurants that matched what we wanted.",
     name: "Chris M.",
@@ -41,7 +43,7 @@ const TESTIMONIALS = [
   },
   {
     id: "lease",
-    title: "Lease renewal",
+    title: "Tracks deadlines & drafts emails",
     quote:
       "Ally tracked my lease end date and pinged me before renewal opened. It drafted the email asking for lower rent. I approved it and hit send.",
     name: "Sam D.",
@@ -49,7 +51,7 @@ const TESTIMONIALS = [
   },
   {
     id: "interview",
-    title: "Interview prep",
+    title: "Interview prep before the big day",
     quote:
       "Big interview on my calendar. Ally read the job post and my notes, then texted a prep brief the night before with talking points and questions to ask.",
     name: "Alex N.",
@@ -57,7 +59,7 @@ const TESTIMONIALS = [
   },
   {
     id: "errands",
-    title: "Errand thread",
+    title: "Five errands, one text thread",
     quote:
       "One text kicked off five small errands. Ally worked through each one over SMS and followed up when something stalled. I never had to re explain the list.",
     name: "Taylor W.",
@@ -65,7 +67,7 @@ const TESTIMONIALS = [
   },
   {
     id: "recap-night",
-    title: "Night summaries",
+    title: "Inbox summaries on your schedule",
     quote:
       "I asked Ally for inbox summaries at night and only urgent replies during the day. It kept that routine going for two weeks without me reminding it.",
     name: "Morgan S.",
@@ -143,14 +145,12 @@ export default function LandingTestimonials() {
   return (
     <section className="alm-testimonials" aria-labelledby="alm-testimonials-heading">
       <div className="alm-testimonials__head">
-        <p className="alm-testimonials__eyebrow" aria-hidden>
-          ✳
-        </p>
+        <AllyMark className="alm-testimonials__eyebrow" />
         <h2 id="alm-testimonials-heading" className="alm-testimonials__title">
-          How people are using Ally
+          What Ally handles for you
         </h2>
         <p className="alm-testimonials__sub">
-          Real errands over text. Plans, alerts, follow-through.
+          Booking, research, inbox, calendar, and follow-through over text.
         </p>
       </div>
 

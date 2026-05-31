@@ -1,4 +1,4 @@
-"""Stripe plan tiers: Ally ($10) and Ally Pro ($30)."""
+"""Stripe plan tiers: Ally ($19.99) and Ally Pro ($49.99)."""
 
 from __future__ import annotations
 

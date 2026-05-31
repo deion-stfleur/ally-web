@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { formatPlanPrice, PLANS } from "../constants/plans";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import "./ally-lp.css";
@@ -13,42 +14,6 @@ function formatApiError(err) {
   if (d && typeof d === "object") return JSON.stringify(d);
   return err.message || "Request failed";
 }
-
-const PLANS = [
-  {
-    id: "starter",
-    tier: "Starter",
-    name: "Ally",
-    price: 10,
-    tagline: "Text Ally when you need a hand.",
-    features: [
-      "Works with Gmail, Calendar, Drive, Sheets and more",
-      "Handles tasks and searches web for you",
-      "Keeps going until the job's done, then texts you",
-      "Available on web and iMessage",
-      "Learns your habits and preferences from chat",
-    ],
-    footnote: "$10/mo. cancel anytime.",
-  },
-  {
-    id: "pro",
-    tier: "Pro",
-    name: "Ally Pro",
-    price: 30,
-    tagline: "Ally stays on it and texts you first.",
-    featured: true,
-    footnote: "cancel anytime. switch plans from your dashboard.",
-    features: [
-      "Everything in Starter",
-      "Remembers your interests, schedule, and tasks across all chats",
-      "Texts you automatically when there's an update",
-      "Handles complex tasks until they're done, all in one thread",
-      "Sends scheduled recaps, check-ins, and reminders",
-      "Run 24/7 background tasks for you",
-      "Live website checks (Browser automation for hard tasks)",
-    ],
-  },
-];
 
 function subscribeLabel(plan, busy) {
   if (busy) return "Redirecting…";
@@ -132,7 +97,7 @@ export default function Pricing() {
                 <h2 className="alm-pricing__plan-name">{plan.name}</h2>
                 <p className="alm-pricing__plan-tag">{plan.tagline}</p>
                 <p className="alm-pricing__price">
-                  ${plan.price}
+                  ${formatPlanPrice(plan.price)}
                   <span className="alm-pricing__price-unit">/month</span>
                 </p>
                 <ul className="alm-pricing__features">

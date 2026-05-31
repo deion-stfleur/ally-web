@@ -1,17 +1,56 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import allyAvatar from "../assets/nav-brand.png";
+import AllyMark from "./AllyMark";
 
-const INTRO = [
-  { id: "i1", who: "ally", text: "text me an errand. calendar, inbox, or something to look up online." },
-  { id: "i2", who: "ally", text: "i'll keep working it and text you when something moves." },
+const DEMO_SCRIPT = [
+  { who: "ally", text: "hey. text me an errand. calendar, inbox, research, whatever you need." },
+  { who: "user", text: "what's on my calendar tomorrow?" },
+  {
+    who: "ally",
+    text: "standup 9:30, 1:1 w/ jordan at 11, focus block 2-4. want prep notes for either?",
+  },
+  { who: "user", text: "summarize my last email from alex" },
+  {
+    who: "ally",
+    text: "on it. 3 bullets plus a reply you can paste into gmail. texting you in a sec.",
+  },
+  { who: "user", text: "also join my 3pm product sync on zoom" },
+  {
+    who: "ally",
+    text: "got it. i'll join, take notes, and text you a recap when it ends.",
+  },
+  { who: "user", text: "need a gift for my mom, she loves gardening" },
+  {
+    who: "ally",
+    text: "nice. what's your budget and when do you need it? i'll send a few links that fit.",
+  },
+  { who: "user", text: "under $60, her birthday is next week" },
+  {
+    who: "ally",
+    text: "looking now. planter sets, herb kits, and a hand tool set. texting options.",
+  },
+  { who: "user", text: "book dinner saturday under $80" },
+  {
+    who: "ally",
+    text: "checking tables near you for saturday evening. i'll send 2-3 picks to confirm.",
+  },
+  { who: "user", text: "any good books on productivity?" },
+  {
+    who: "ally",
+    text: "deep work, atomic habits, and make time are the ones people love. want a quick why for each?",
+  },
+  { who: "user", text: "yeah send those" },
+  {
+    who: "ally",
+    text: "on it. texting quick summaries you can skim in 30 seconds.",
+  },
 ];
 
-const INTRO_KEYBOARD_SETTLE_MS = 340;
-const INTRO_TYPING_MS = 580;
-const INTRO_PAUSE_MS = 360;
-
-const MAX_USER_TURNS = 3;
+const MS_PER_CHAR = 62;
+const USER_AFTER_TYPE_MS = 900;
+const ALLY_TYPING_BASE_MS = 1400;
+const ALLY_MS_PER_CHAR = 28;
+const PAUSE_MS = 850;
+const LOOP_PAUSE_MS = 5500;
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -19,69 +58,8 @@ function wait(ms) {
   });
 }
 
-function prefersTouchInterface() {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(pointer: coarse)").matches ||
-    window.matchMedia("(hover: none)").matches
-  );
-}
-
-const IOS_KEYBOARD_ROWS = [
-  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
-  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-  ["Z", "X", "C", "V", "B", "N", "M"],
-];
-
-function safeAllyReply(userText, turnIndex) {
-  const t = (userText || "").toLowerCase().trim();
-  if (turnIndex >= MAX_USER_TURNS - 1) {
-    return {
-      cta: true,
-      text: "that's the demo. sign in and text me for real. i'll use your actual calendar and inbox.",
-    };
-  }
-  if (/what.*(on|today|tomorrow)|calendar|meeting|schedule|free|busy/.test(t)) {
-    return {
-      text: "checking your calendar. i'd text back: standup 9:30, 1:1 w/ jordan 11, focus block 2-4.",
-    };
-  }
-  if (/email|gmail|inbox|thread|summar|draft|reply|alex/.test(t)) {
-    return {
-      text: "on it. i'd skim that thread and send you 3 bullets plus a reply you can paste into gmail.",
-    };
-  }
-  if (/doc|sheet|drive|slide|folder|file/.test(t)) {
-    return {
-      text: "yep. i can spin up a doc or drop notes in a sheet from here. want a blank doc or a template?",
-    };
-  }
-  if (/remind|follow|track|todo|task/.test(t)) {
-    return {
-      text: "i'll keep that on my list and ping you when it's done or if i need a quick yes/no from you.",
-    };
-  }
-  if (/book|reserv|dinner|lunch|table/.test(t)) {
-    return {
-      text: "looking at times. i'd text you back 2-3 options that fit, then hold the one you pick.",
-    };
-  }
-  if (/hi|hey|hello|sup|yo/.test(t)) {
-    return {
-      text: 'try "what\'s on my calendar tomorrow" or "summarize my last email from alex."',
-    };
-  }
-  if (/thank|thx|cool|nice|ok|okay/.test(t)) {
-    return { text: "anytime. what should i tackle next?" };
-  }
-  if (t.length < 4) {
-    return { text: "say a little more, like a meeting name, thread, or what you want drafted." };
-  }
-  const contextual = [
-    "i'm listening. mail, calendar, drive, or the web. what's the errand?",
-    "throw me a real one: inbox thread, meeting prep, or a doc you need started.",
-  ];
-  return { text: contextual[turnIndex % contextual.length] };
+function allyTypingMs(text) {
+  return Math.min(3400, ALLY_TYPING_BASE_MS + text.length * ALLY_MS_PER_CHAR);
 }
 
 function IconChevLeft() {
@@ -119,14 +97,6 @@ function IconPlus() {
   );
 }
 
-function IconArrowUp() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z" transform="rotate(-90 12 12)" />
-    </svg>
-  );
-}
-
 function IconMic() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -140,93 +110,21 @@ function IconMic() {
   );
 }
 
-function IconDelete() {
+function TypingDots() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M7 7h10l-1 10H8L7 7zM9 9l6 6M15 9l-6 6"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IosKeyboard({ onKey, onDismiss }) {
-  const keyProps = (id, handler, extraClass = "") => ({
-    type: "button",
-    className: `alm-hero-phone__key${id ? ` alm-hero-phone__key--${id}` : ""}${extraClass ? ` ${extraClass}` : ""}`,
-    onMouseDown: (e) => e.preventDefault(),
-    onTouchStart: (e) => e.preventDefault(),
-    onClick: handler,
-  });
-
-  return (
-    <div className="alm-hero-phone__keyboard" role="presentation">
-      <div className="alm-hero-phone__keyboard-toolbar">
-        <button type="button" className="alm-hero-phone__kb-tool" onMouseDown={(e) => e.preventDefault()}>
-          Aa
-        </button>
-        <button
-          type="button"
-          className="alm-hero-phone__kb-tool"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onDismiss}
-        >
-          Hide keyboard
-        </button>
-      </div>
-      <div className="alm-hero-phone__keyboard-rows">
-        {IOS_KEYBOARD_ROWS.map((row, ri) => (
-          <div key={`row-${ri}`} className="alm-hero-phone__keyboard-row">
-            {ri === 2 ? (
-              <button {...keyProps("shift", () => onKey("shift"))} aria-label="Shift">
-                ⇧
-              </button>
-            ) : null}
-            {row.map((k) => (
-              <button key={k} {...keyProps(null, () => onKey(k))}>
-                {k}
-              </button>
-            ))}
-            {ri === 2 ? (
-              <button {...keyProps("delete", () => onKey("backspace"))} aria-label="Delete">
-                <IconDelete />
-              </button>
-            ) : null}
-          </div>
-        ))}
-        <div className="alm-hero-phone__keyboard-row alm-hero-phone__keyboard-row--bottom">
-          <button {...keyProps("mode", () => onKey("123"))}>123</button>
-          <button {...keyProps("space", () => onKey("space"), "alm-hero-phone__key--space")}>space</button>
-          <button {...keyProps("return", () => onKey("return"), "alm-hero-phone__key--return")}>
-            return
-          </button>
-        </div>
-      </div>
-    </div>
+    <span className="alm-hero-phone__ai-dots" aria-hidden>
+      <span className="alm-hero-phone__ai-dot" />
+      <span className="alm-hero-phone__ai-dot" />
+      <span className="alm-hero-phone__ai-dot" />
+    </span>
   );
 }
 
 export default function HeroInteractivePhone() {
   const [messages, setMessages] = useState([]);
-  const [draft, setDraft] = useState("");
-  const [userTurns, setUserTurns] = useState(0);
-  const [typing, setTyping] = useState(false);
-  const [done, setDone] = useState(false);
-  const [introComplete, setIntroComplete] = useState(false);
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [useFakeKeyboard, setUseFakeKeyboard] = useState(
-    () => typeof window !== "undefined" && !prefersTouchInterface()
-  );
+  const [typingWho, setTypingWho] = useState(null);
+  const [composerPreview, setComposerPreview] = useState("");
   const threadRef = useRef(null);
-  const inputRef = useRef(null);
-  const innerRef = useRef(null);
-  const phoneRootRef = useRef(null);
-  const scrollOpenTimerRef = useRef(null);
-  const introPlayedRef = useRef(false);
 
   const scrollThread = useCallback(() => {
     const el = threadRef.current;
@@ -235,173 +133,67 @@ export default function HeroInteractivePhone() {
 
   useEffect(() => {
     scrollThread();
-  }, [messages, typing, keyboardOpen, scrollThread]);
+  }, [messages, typingWho, composerPreview, scrollThread]);
 
   useEffect(() => {
-    setUseFakeKeyboard(!prefersTouchInterface());
-  }, []);
-
-  const dismissKeyboard = useCallback(() => {
-    setKeyboardOpen(false);
-    inputRef.current?.blur();
-  }, []);
-
-  const openKeyboard = useCallback(() => {
-    if (done || userTurns >= MAX_USER_TURNS) return;
-    setKeyboardOpen(true);
-    inputRef.current?.focus();
-  }, [done, userTurns]);
-
-  useEffect(() => {
-    const root = phoneRootRef.current;
-    if (!root) return undefined;
-
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const clearScrollTimer = () => {
-      if (scrollOpenTimerRef.current != null) {
-        window.clearTimeout(scrollOpenTimerRef.current);
-        scrollOpenTimerRef.current = null;
-      }
-    };
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) {
-          clearScrollTimer();
-          return;
-        }
-        if (done || userTurns >= MAX_USER_TURNS) return;
-        if (prefersTouchInterface()) return;
-
-        clearScrollTimer();
-        const delay = reduce ? 0 : 280;
-        scrollOpenTimerRef.current = window.setTimeout(() => {
-          scrollOpenTimerRef.current = null;
-          openKeyboard();
-        }, delay);
-      },
-      { threshold: 0.42, rootMargin: "-8% 0px -6% 0px" }
-    );
-
-    observer.observe(root);
-    return () => {
-      clearScrollTimer();
-      observer.disconnect();
-    };
-  }, [done, userTurns, openKeyboard]);
-
-  useEffect(() => {
-    if (!keyboardOpen || introPlayedRef.current) return undefined;
-    if (done || userTurns > 0) {
-      setIntroComplete(true);
-      return undefined;
-    }
-
-    introPlayedRef.current = true;
     let cancelled = false;
 
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    async function runIntro() {
-      if (reduce || prefersTouchInterface()) {
-        setMessages([...INTRO]);
-        setIntroComplete(true);
+    async function playScript() {
+      if (reduce) {
+        setMessages(DEMO_SCRIPT.map((line, i) => ({ id: `m-${i}`, ...line })));
+        setTypingWho(null);
+        setComposerPreview("");
         return;
       }
 
-      await wait(INTRO_KEYBOARD_SETTLE_MS);
-      if (cancelled) return;
+      while (!cancelled) {
+        setMessages([]);
+        setTypingWho(null);
+        setComposerPreview("");
 
-      setMessages([]);
-      setTyping(true);
-      await wait(INTRO_TYPING_MS);
-      if (cancelled) return;
+        for (let i = 0; i < DEMO_SCRIPT.length; i += 1) {
+          if (cancelled) return;
+          const line = DEMO_SCRIPT[i];
 
-      setTyping(false);
-      setMessages([INTRO[0]]);
+          if (line.who === "user") {
+            setComposerPreview("");
+            for (let c = 0; c < line.text.length; c += 1) {
+              if (cancelled) return;
+              setComposerPreview(line.text.slice(0, c + 1));
+              await wait(MS_PER_CHAR);
+            }
+            await wait(USER_AFTER_TYPE_MS);
+            if (cancelled) return;
+            setComposerPreview("");
+            setMessages((prev) => [...prev, { id: `m-${i}`, ...line }]);
+            await wait(PAUSE_MS);
+            continue;
+          }
 
-      await wait(INTRO_PAUSE_MS);
-      if (cancelled) return;
+          setTypingWho("ally");
+          await wait(allyTypingMs(line.text));
+          if (cancelled) return;
+          setTypingWho(null);
+          setMessages((prev) => [...prev, { id: `m-${i}`, ...line }]);
+          await wait(PAUSE_MS);
+        }
 
-      setTyping(true);
-      await wait(INTRO_TYPING_MS);
-      if (cancelled) return;
-
-      setTyping(false);
-      setMessages([...INTRO]);
-      setIntroComplete(true);
+        await wait(LOOP_PAUSE_MS);
+      }
     }
 
-    runIntro();
+    playScript();
     return () => {
       cancelled = true;
     };
-  }, [keyboardOpen, done, userTurns]);
-
-  function handleIosKey(key) {
-    if (key === "backspace") {
-      setDraft((d) => d.slice(0, -1));
-      return;
-    }
-    if (key === "space") {
-      setDraft((d) => `${d} `);
-      return;
-    }
-    if (key === "return") {
-      sendMessage();
-      return;
-    }
-    if (key.length === 1) {
-      setDraft((d) => d + key);
-    }
-  }
-
-  function sendMessage(e) {
-    e?.preventDefault?.();
-    const text = draft.trim();
-    if (!text || typing || done || userTurns >= MAX_USER_TURNS) return;
-
-    setDraft("");
-    setMessages((prev) => [...prev, { id: `u-${Date.now()}`, who: "user", text }]);
-    const turnIndex = userTurns;
-    setUserTurns((n) => n + 1);
-    setTyping(true);
-
-    const reply = safeAllyReply(text, turnIndex);
-
-    window.setTimeout(() => {
-      setTyping(false);
-      if (reply.cta) {
-        setDone(true);
-        dismissKeyboard();
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `a-${Date.now()}`,
-            who: "ally",
-            text: reply.text,
-            cta: true,
-          },
-        ]);
-        return;
-      }
-      setMessages((prev) => [
-        ...prev,
-        { id: `a-${Date.now()}`, who: "ally", text: reply.text },
-      ]);
-    }, 650 + Math.random() * 350);
-  }
-
-  const inputDisabled = typing || done || userTurns >= MAX_USER_TURNS || !introComplete;
-  const canSend = draft.trim().length > 0 && !inputDisabled;
+  }, []);
 
   return (
-    <div ref={phoneRootRef} className="alm-hero-phone" aria-label="Try texting Ally">
+    <div className="alm-hero-phone alm-hero-phone--auto" aria-label="Sample Ally conversation">
       <div className="alm-hero-phone__scene">
         <div className="alm-hero-phone__device">
           <div className="alm-hero-phone__bezel">
@@ -409,142 +201,53 @@ export default function HeroInteractivePhone() {
             <span className="alm-hero-phone__hw-btn alm-hero-phone__hw-btn--vol-down" aria-hidden />
             <span className="alm-hero-phone__hw-btn alm-hero-phone__hw-btn--power" aria-hidden />
             <div className="alm-hero-phone__bezel-glare" />
-            <div
-              ref={innerRef}
-              className={`alm-hero-phone__inner${keyboardOpen && useFakeKeyboard ? " is-keyboard-open" : ""}`}
-            >
+            <div className="alm-hero-phone__inner">
               <header className="alm-hero-phone__header">
-                <button
-                  type="button"
-                  className="alm-hero-phone__header-side alm-hero-phone__header-back"
-                  aria-label="Back"
-                  onMouseDown={(e) => e.preventDefault()}
-                >
+                <div className="alm-hero-phone__header-side alm-hero-phone__header-back" aria-hidden>
                   <IconChevLeft />
-                </button>
-                <button
-                  type="button"
-                  className="alm-hero-phone__header-center"
-                  onClick={openKeyboard}
-                  aria-label="Conversation with Ally"
-                >
-                  <img
-                    src={allyAvatar}
-                    alt=""
-                    className="alm-hero-phone__avatar"
-                    width={48}
-                    height={48}
-                  />
+                </div>
+                <div className="alm-hero-phone__header-center">
+                  <AllyMark className="alm-hero-phone__avatar alm-hero-phone__avatar-mark" />
                   <span className="alm-hero-phone__name">Ally</span>
-                </button>
-                <button
-                  type="button"
-                  className="alm-hero-phone__header-side alm-hero-phone__header-camera"
-                  aria-label="Video"
-                  onMouseDown={(e) => e.preventDefault()}
-                >
+                </div>
+                <div className="alm-hero-phone__header-side alm-hero-phone__header-camera" aria-hidden>
                   <IconCamera />
-                </button>
+                </div>
               </header>
 
-              <div
-                className="alm-hero-phone__body"
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) dismissKeyboard();
-                }}
-              >
-                <div
-                  ref={threadRef}
-                  className="alm-hero-phone__thread"
-                  role="log"
-                  aria-live="polite"
-                >
+              <div className="alm-hero-phone__body">
+                <div ref={threadRef} className="alm-hero-phone__thread" role="log" aria-live="polite">
                   {messages.map((m) => (
                     <div
                       key={m.id}
                       className={`alm-hero-phone__bubble alm-hero-phone__bubble--${m.who}`}
                     >
                       {m.text}
-                      {m.cta ? (
-                        <Link to="/login" className="alm-hero-phone__cta-link">
-                          sign in to keep going
-                        </Link>
-                      ) : null}
                     </div>
                   ))}
+                  {typingWho === "ally" ? (
+                    <div className="alm-hero-phone__bubble alm-hero-phone__bubble--ally alm-hero-phone__typing-bubble">
+                      <TypingDots />
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="alm-hero-phone__bottom">
-                  <form
-                    className="alm-hero-phone__composer"
-                    onSubmit={sendMessage}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      type="button"
-                      className="alm-hero-phone__plus"
-                      aria-label="Add"
-                      onMouseDown={(e) => e.preventDefault()}
-                      disabled={inputDisabled}
-                    >
+                  <div className="alm-hero-phone__composer">
+                    <span className="alm-hero-phone__plus" aria-hidden>
                       <IconPlus />
-                    </button>
-                    <label className="alm-hero-phone__field" htmlFor="hero-phone-input">
-                      <input
-                        ref={inputRef}
-                        id="hero-phone-input"
-                        type="text"
-                        inputMode="text"
-                        className="alm-hero-phone__input"
-                        placeholder={done ? "sign in to keep going" : "iMessage"}
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        onFocus={() => {
-                          setKeyboardOpen(true);
-                          if (!introComplete && prefersTouchInterface()) {
-                            setMessages([...INTRO]);
-                            setIntroComplete(true);
-                            introPlayedRef.current = true;
-                          }
-                        }}
-                        onBlur={() => {
-                          if (useFakeKeyboard) {
-                            window.setTimeout(() => {
-                              if (!innerRef.current?.contains(document.activeElement)) {
-                                setKeyboardOpen(false);
-                              }
-                            }, 120);
-                          }
-                        }}
-                        disabled={inputDisabled}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="sentences"
-                        enterKeyHint="send"
-                        maxLength={280}
-                        readOnly={useFakeKeyboard}
-                      />
-                    </label>
-                    {canSend ? (
-                      <button
-                        type="submit"
-                        className="alm-hero-phone__send"
-                        aria-label="Send"
-                        onMouseDown={(e) => e.preventDefault()}
+                    </span>
+                    <div className="alm-hero-phone__field">
+                      <span
+                        className={`alm-hero-phone__input alm-hero-phone__input--preview${composerPreview ? "" : " is-empty"}`}
                       >
-                        <IconArrowUp />
-                      </button>
-                    ) : (
-                      <span className="alm-hero-phone__mic" aria-hidden>
-                        <IconMic />
+                        {composerPreview || "iMessage"}
                       </span>
-                    )}
-                  </form>
-
-                  {useFakeKeyboard ? (
-                    <IosKeyboard onKey={handleIosKey} onDismiss={dismissKeyboard} />
-                  ) : null}
-
+                    </div>
+                    <span className="alm-hero-phone__mic" aria-hidden>
+                      <IconMic />
+                    </span>
+                  </div>
                   <div className="alm-hero-phone__home-indicator" aria-hidden />
                 </div>
               </div>

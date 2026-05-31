@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import AllyMark from "../AllyMark";
 import AllySearchField from "./AllySearchField";
 import TextAllyHandoff from "../TextAllyHandoff";
 import { openAccountSettings } from "../../utils/openAccountSettings";
@@ -217,9 +218,7 @@ export default function HomeExploreSection({
     <section className="home-explore" aria-labelledby="home-explore-heading">
       <div className="home-explore__hero">
         <p className="home-explore__badge">
-          <span className="home-explore__badge-icon" aria-hidden>
-            ✳
-          </span>
+          <AllyMark className="home-explore__badge-icon" />
           Hi, {first}
         </p>
         <h1 id="home-explore-heading" className="home-explore__title">

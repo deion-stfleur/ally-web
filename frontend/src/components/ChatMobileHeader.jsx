@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
 import { APP_HOME_PATH } from "../utils/appPaths";
 import AppShellHeader from "./AppShellHeader";
+import AllyMark from "./AllyMark";
 import MobileSlideMenu from "./MobileSlideMenu";
 
 function IconMenu() {
@@ -130,7 +131,7 @@ export default function ChatMobileHeader({
       >
         <div className="mobile-slide-menu__head">
           <span className="mobile-slide-menu__head-logo">
-            <span aria-hidden>✳</span> ally
+            <AllyMark /> ally
           </span>
           <button
             type="button"

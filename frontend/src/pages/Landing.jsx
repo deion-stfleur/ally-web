@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import FadeInSection from "../components/FadeInSection";
 import LandingTextLoop from "../components/LandingTextLoop";
 import LandingTestimonials from "../components/LandingTestimonials";
+import LandingUniqueAdvantage from "../components/LandingUniqueAdvantage";
 import LandingCompareTable from "../components/LandingCompareTable";
 import LandingProofPoints from "../components/LandingProofPoints";
 import LandingFaq from "../components/LandingFaq";
@@ -18,7 +19,6 @@ import {
   IconGoogleCalendar,
   IconGoogleSheets,
 } from "./IntegrationIcons";
-import heroMountains from "../assets/hero-mountains.png";
 import "./ally-lp.css";
 
 const INTEGRATIONS = [
@@ -32,24 +32,23 @@ const INTEGRATIONS = [
 
 const HERO_TITLE_PREFIX = "Meet Ally. ";
 const HERO_TITLE_BODY = "Like texting a friend who actually follows through.";
+const HERO_LEAD =
+  "You text once. Ally stays on it and pings you when something moves.";
+
+const HERO_TRUST = [
+  "Works with Google Workspace",
+  "SMS & iMessage",
+  "Background tasks & watches",
+];
 
 export default function Landing() {
   const [heroMotion, setHeroMotion] = useState(true);
-  const [mobileHero, setMobileHero] = useState(false);
 
   useEffect(() => {
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) setHeroMotion(false);
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 899px)");
-    const sync = () => setMobileHero(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
   }, []);
 
   const fadeClass = (step) =>
@@ -60,33 +59,30 @@ export default function Landing() {
   return (
     <div className="alm alm--landing">
       <main className="alm-main">
-        <section className="alm-hero">
-          <div
-            className={`alm-hero__stage${mobileHero ? " alm-hero__stage--mobile-blue" : ""}`}
-            style={
-              mobileHero
-                ? undefined
-                : { "--alm-hero-bg-image": `url(${heroMountains})` }
-            }
-          >
-            <MarketingNav overlay />
-            <div className="alm-hero__copy">
-              <h1 className="alm-hero__title">
-                <strong className={`alm-hero__title-strong ${fadeClass(1)}`}>
-                  {HERO_TITLE_PREFIX}
-                </strong>
-                <span className={`alm-hero__title-body ${fadeClass(1)}`}>
-                  {HERO_TITLE_BODY}
-                </span>
-              </h1>
-              <p className={`alm-hero__lead ${fadeClass(2)}`}>
-                You text once. Ally stays on it and pings you when something moves.
-              </p>
-              <Link to="/login" className={`alm-hero__cta ${fadeClass(3)}`}>
-                Text Ally
-              </Link>
-              <div className="alm-hero__phone">
-                <div className={fadeClass(4)}>
+        <section className="alm-hero alm-hero--split">
+          <div className="alm-hero__stage">
+            <MarketingNav overlay dark />
+            <div className="alm-hero__grid">
+              <div className="alm-hero__copy">
+                <h1 className={`alm-hero__title ${fadeClass(1)}`}>
+                  <strong className="alm-hero__title-strong">{HERO_TITLE_PREFIX}</strong>
+                  <span className="alm-hero__title-body">{HERO_TITLE_BODY}</span>
+                </h1>
+                <p className={`alm-hero__lead ${fadeClass(2)}`}>{HERO_LEAD}</p>
+                <div className={`alm-hero__actions ${fadeClass(3)}`}>
+                  <Link to="/login" className="alm-hero__cta alm-hero__cta--primary">
+                    Text Ally
+                  </Link>
+                </div>
+                <ul className={`alm-hero__trust ${fadeClass(3)}`} aria-label="Highlights">
+                  {HERO_TRUST.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="alm-hero__visual alm-hero-fade-up--static">
+                <div className="alm-hero__visual-glow" aria-hidden />
+                <div className="alm-hero__phone">
                   <HeroInteractivePhone />
                 </div>
               </div>
@@ -116,6 +112,10 @@ export default function Landing() {
 
         <FadeInSection as="div" className="alm-reveal-block">
           <LandingTestimonials />
+        </FadeInSection>
+
+        <FadeInSection as="div" className="alm-reveal-block alm-reveal-block--bleed">
+          <LandingUniqueAdvantage />
         </FadeInSection>
 
         <FadeInSection as="div" className="alm-reveal-block">

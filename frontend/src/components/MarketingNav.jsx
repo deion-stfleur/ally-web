@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
+import AllyMark from "./AllyMark";
 import MobileSlideMenu from "./MobileSlideMenu";
 
 const NAV_LINKS = [
@@ -34,15 +35,23 @@ function IconClose() {
   );
 }
 
-export default function MarketingNav({ overlay = false }) {
+export default function MarketingNav({ overlay = false, dark = false }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
+  const navClass = [
+    "alm-nav",
+    overlay && "alm-nav--overlay",
+    dark && "alm-nav--dark",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <header className={`alm-nav${overlay ? " alm-nav--overlay" : ""}`}>
+    <header className={navClass}>
       <div className="alm-nav__inner">
         <Link to="/" className="alm-nav__logo" onClick={closeMenu}>
-          <span aria-hidden>✳</span> ally
+          <AllyMark /> ally
         </Link>
         <nav className="alm-nav__links" aria-label="Marketing">
           {NAV_LINKS.map(({ to, label }) => (
@@ -81,7 +90,7 @@ export default function MarketingNav({ overlay = false }) {
       >
         <div className="mobile-slide-menu__head alm-nav__drawer-head">
           <Link to="/" className="alm-nav__drawer-logo" onClick={closeMenu}>
-            <span aria-hidden>✳</span> ally
+            <AllyMark /> ally
           </Link>
           <button
             type="button"

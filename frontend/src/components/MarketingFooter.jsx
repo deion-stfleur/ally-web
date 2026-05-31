@@ -1,13 +1,12 @@
 import { Link } from "react-router-dom";
+import AllyMark from "./AllyMark";
 
 export default function MarketingFooter() {
   return (
     <footer className="alm-site-footer">
       <div className="alm-site-footer__inner">
         <div className="alm-site-footer__brand">
-          <span className="alm-site-footer__logo" aria-hidden>
-            ✳
-          </span>
+          <AllyMark className="alm-site-footer__logo" />
           <div>
             <strong className="alm-site-footer__name">Ally</strong>
             <p className="alm-site-footer__tag">

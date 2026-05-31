@@ -1,12 +1,12 @@
-# Stripe setup (Ally $10 + Ally Pro $30)
+# Stripe setup (Ally $19.99 + Ally Pro $49.99)
 
-This app uses two recurring Stripe **Prices** mapped to plan ids `starter` ($10) and `pro` ($30).
+This app uses two recurring Stripe **Prices** mapped to plan ids `starter` ($19.99) and `pro` ($49.99).
 
 ## 1. Stripe Dashboard
 
 1. **Products** → create (or reuse) two products:
-   - **Ally** — $10.00 USD / month, recurring
-   - **Ally Pro** — $30.00 USD / month, recurring
+   - **Ally** — $19.99 USD / month, recurring
+   - **Ally Pro** — $49.99 USD / month, recurring
 2. Open each **Price** and copy the id (`price_…`).
 3. **Developers → API keys** → copy the **Secret key** (`sk_live_…` or `sk_test_…`).
 
@@ -38,8 +38,8 @@ Set on Heroku (`ally-web-backend`) and in `backend/.env` locally:
 ```bash
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_STARTER_MONTHLY=price_...   # Ally $10
-STRIPE_PRICE_PRO_MONTHLY=price_...       # Ally Pro $30
+STRIPE_PRICE_STARTER_MONTHLY=price_1TdEcxHahLICfy6LjEc7fdLG   # Ally $19.99
+STRIPE_PRICE_PRO_MONTHLY=price_1TdEeZHahLICfy6L06cd66ql       # Ally Pro $49.99
 FRONTEND_URL=https://resplendent-melba-7d820a.netlify.app   # or your prod URL
 ```
 
@@ -84,8 +84,8 @@ When Stripe is **not** configured, SMS gating and Pro-only proactive checks are 
 heroku config:set \
   STRIPE_SECRET_KEY=sk_... \
   STRIPE_WEBHOOK_SECRET=whsec_... \
-  STRIPE_PRICE_STARTER_MONTHLY=price_... \
-  STRIPE_PRICE_PRO_MONTHLY=price_... \
+  STRIPE_PRICE_STARTER_MONTHLY=price_1TdEcxHahLICfy6LjEc7fdLG \
+  STRIPE_PRICE_PRO_MONTHLY=price_1TdEeZHahLICfy6L06cd66ql \
   -a ally-web-backend
 
 heroku run alembic upgrade head -a ally-web-backend

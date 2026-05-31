@@ -47,7 +47,7 @@ class UserMeResponse(BaseModel):
 class CheckoutSessionRequest(BaseModel):
     plan: Literal["starter", "pro"] = Field(
         ...,
-        description="starter ($10/mo) or pro ($30/mo)",
+        description="starter ($19.99/mo) or pro ($49.99/mo)",
     )
 
 

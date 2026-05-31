@@ -3,25 +3,25 @@ import { Link } from "react-router-dom";
 const PROOF_POINTS = [
   {
     id: "meetings",
-    title: "Meeting notes",
+    title: "Joins your calls, texts notes",
     description:
       "Ally joins your Meet or Zoom call, listens, and texts you a summary when the meeting ends.",
   },
   {
     id: "shopping",
-    title: "Shopping links",
+    title: "Finds products & sends links",
     description:
       "Ask for a product or gift. Ally finds options and sends links so you can check out fast.",
   },
   {
     id: "meals",
-    title: "Meal photos",
+    title: "Snap a meal, Ally logs it",
     description:
       "Send a photo of your plate. Ally helps log what you ate and keeps it in one thread.",
   },
   {
     id: "research",
-    title: "Background research",
+    title: "Deep research in the background",
     description:
       "Big question? Ally runs multi-step research in the background and texts you when it is done.",
   },
@@ -50,10 +50,10 @@ export default function LandingProofPoints() {
         <div className="alm-proof__head">
           <div className="alm-proof__copy">
             <h2 id="alm-proof-heading" className="alm-proof__title">
-              Don&apos;t have a reliable assistant? Now you do.
+              Your assistant over text
             </h2>
             <p className="alm-proof__lead">
-              Text Ally once. She handles errands, research, and follow-up for you.
+              Meetings, shopping, meals, research, and more. Text once, Ally handles it.
             </p>
           </div>
           <Link to="/use-cases" className="alm-proof__explore">

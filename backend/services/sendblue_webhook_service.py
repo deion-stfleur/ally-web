@@ -384,7 +384,7 @@ async def process_sendblue_inbound(
         await db.commit()
         pay_url = f"{settings.frontend_url.rstrip('/')}/pricing"
         msg = (
-            "Ally SMS needs an active plan (Standard $10/mo or Pro $30/mo). "
+            "Ally SMS needs an active plan (Standard $19.99/mo or Pro $49.99/mo). "
             f"Subscribe here, then text again: {pay_url}"
         )
         try:
