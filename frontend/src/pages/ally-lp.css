@@ -4386,6 +4386,37 @@
   margin-top: 8px;
 }
 
+.alm-legal__updated {
+  margin: 0 0 32px;
+  font-size: 0.875rem;
+  color: var(--alm-muted);
+}
+
+.alm-legal__body a {
+  color: var(--alm-accent, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.alm-legal__body a:hover {
+  color: var(--alm-accent-hover, #1d4ed8);
+}
+
+.alm-site-footer__legal-links {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+}
+
+.alm-site-footer__legal-links a {
+  color: var(--alm-muted);
+  text-decoration: none;
+}
+
+.alm-site-footer__legal-links a:hover {
+  color: var(--alm-text, #0a0a0a);
+  text-decoration: underline;
+}
+
 /* ----- login ----- */
 .alm-login-main {
   display: flex;

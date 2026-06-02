@@ -13,7 +13,9 @@ import Features from "./pages/Features";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Pricing from "./pages/Pricing";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import PublishedSite from "./pages/PublishedSite";
+import TermsOfService from "./pages/TermsOfService";
 import UseCases from "./pages/UseCases";
 
 function ProtectedRoute({ children }) {
@@ -71,6 +73,8 @@ function AppRoutes() {
         <Route path="/recipes" element={<ChatRecipes />} />
       </Route>
       <Route path="/pricing" element={<Pricing />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsOfService />} />
       <Route path="/s/:slug" element={<PublishedSite />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

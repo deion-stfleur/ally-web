@@ -43,11 +43,27 @@ export default function MarketingFooter() {
               </li>
             </ul>
           </div>
+          <div className="alm-site-footer__col">
+            <h2 className="alm-site-footer__heading">Legal</h2>
+            <ul className="alm-site-footer__list">
+              <li>
+                <Link to="/privacy">Privacy Policy</Link>
+              </li>
+              <li>
+                <Link to="/terms">Terms of Service</Link>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
       <div className="alm-site-footer__bottom" id="contact">
         <p className="alm-site-footer__copy">
           © {new Date().getFullYear()} Ally. All rights reserved.
+        </p>
+        <p className="alm-site-footer__legal-links">
+          <Link to="/privacy">Privacy</Link>
+          <span aria-hidden="true"> · </span>
+          <Link to="/terms">Terms</Link>
         </p>
       </div>
     </footer>
