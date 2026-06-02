@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "../components/LegalPageLayout";
+import { APP_DOMAIN, APP_NAME, ASSISTANT_NAME } from "../constants/brand";
 import "./ally-lp.css";
 
 export default function TermsOfService() {
@@ -7,10 +8,10 @@ export default function TermsOfService() {
     <LegalPageLayout title="Terms of Service" lastUpdated="June 1, 2026">
       <section className="alm-subpage__section">
         <p className="alm-subpage__p">
-          These Terms of Service (&quot;Terms&quot;) govern your access to and use of Your Friend Ally
-          (&quot;Ally,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) at{" "}
-          <a href="https://yourfriendally.com">yourfriendally.com</a> and related services. By using
-          Ally, you agree to these Terms and our{" "}
+          These Terms of Service (&quot;Terms&quot;) govern your access to and use of {APP_NAME}
+          (&quot;{ASSISTANT_NAME},&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) at{" "}
+          <a href={`https://${APP_DOMAIN}`}>{APP_DOMAIN}</a> and related services. By using
+          {ASSISTANT_NAME}, you agree to these Terms and our{" "}
           <Link to="/privacy">Privacy Policy</Link>.
         </p>
       </section>

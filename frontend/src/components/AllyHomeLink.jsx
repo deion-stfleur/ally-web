@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import AllyMark from "./AllyMark";
+import BrandWordmark from "./BrandWordmark";
 import { APP_HOME_PATH } from "../utils/appPaths";
+import { APP_NAME } from "../constants/brand";
 
 /** Signed-in dashboard at /home (not /chat). */
 export function goToAllyHome(navigate, location) {
@@ -17,17 +18,13 @@ export default function AllyHomeLink({ className = "app-shell-header__logo", chi
     <a
       href={APP_HOME_PATH}
       className={className}
-      aria-label="Ally home"
+      aria-label={`${APP_NAME} home`}
       onClick={(e) => {
         e.preventDefault();
         goToAllyHome(navigate, location);
       }}
     >
-      {children ?? (
-        <>
-          <AllyMark /> ally
-        </>
-      )}
+      {children ?? <BrandWordmark />}
     </a>
   );
 }

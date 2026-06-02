@@ -11,6 +11,7 @@ import LandingPricing from "../components/LandingPricing";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import HeroInteractivePhone from "../components/HeroInteractivePhone";
+import { APP_NAME, APP_TAGLINE, ASSISTANT_NAME } from "../constants/brand";
 import {
   IconAndroid,
   IconApple,
@@ -30,10 +31,10 @@ const INTEGRATIONS = [
   { label: "Android", Icon: IconAndroid },
 ];
 
-const HERO_TITLE_PREFIX = "Meet Ally. ";
-const HERO_TITLE_BODY = "Like texting a friend who actually follows through.";
+const HERO_TITLE_PREFIX = `Meet ${APP_NAME}. `;
+const HERO_TITLE_BODY = APP_TAGLINE;
 const HERO_LEAD =
-  "You text once. Ally stays on it and pings you when something moves.";
+  `You text once. ${ASSISTANT_NAME} stays on it and pings you when something moves.`;
 
 const HERO_TRUST = [
   "Works with Google Workspace",
@@ -71,7 +72,7 @@ export default function Landing() {
                 <p className={`alm-hero__lead ${fadeClass(2)}`}>{HERO_LEAD}</p>
                 <div className={`alm-hero__actions ${fadeClass(3)}`}>
                   <Link to="/login" className="alm-hero__cta alm-hero__cta--primary">
-                    Text Ally
+                    Text {ASSISTANT_NAME}
                   </Link>
                 </div>
                 <ul className={`alm-hero__trust ${fadeClass(3)}`} aria-label="Highlights">

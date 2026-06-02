@@ -1,7 +1,8 @@
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import AllyMark from "./AllyMark";
+import BrandWordmark from "./BrandWordmark";
 import MobileSlideMenu from "./MobileSlideMenu";
+import { ASSISTANT_NAME } from "../constants/brand";
 
 const NAV_LINKS = [
   { to: "/features", label: "Features" },
@@ -51,7 +52,7 @@ export default function MarketingNav({ overlay = false, dark = false }) {
     <header className={navClass}>
       <div className="alm-nav__inner">
         <Link to="/" className="alm-nav__logo" onClick={closeMenu}>
-          <AllyMark /> ally
+          <BrandWordmark />
         </Link>
         <nav className="alm-nav__links" aria-label="Marketing">
           {NAV_LINKS.map(({ to, label }) => (
@@ -83,14 +84,14 @@ export default function MarketingNav({ overlay = false, dark = false }) {
         footer={
           <div className="mobile-slide-menu__foot">
             <Link to="/login" className="mobile-slide-menu__cta" onClick={closeMenu}>
-              Text Ally
+              Text {ASSISTANT_NAME}
             </Link>
           </div>
         }
       >
         <div className="mobile-slide-menu__head alm-nav__drawer-head">
           <Link to="/" className="alm-nav__drawer-logo" onClick={closeMenu}>
-            <AllyMark /> ally
+            <BrandWordmark />
           </Link>
           <button
             type="button"

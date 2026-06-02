@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import { useAuth } from "../hooks/useAuth";
+import { APP_NAME, ASSISTANT_NAME } from "../constants/brand";
 import "./ally-lp.css";
 
 function IconStar() {
@@ -101,12 +102,12 @@ export default function Login() {
               Works with the tools you already use
             </div>
             <h1 className="alm-login__title">
-              <strong>Welcome to Ally</strong>
+              <strong>Welcome to {APP_NAME}</strong>
               <span>Sign in with Google to get started</span>
             </h1>
             <p className="alm-login__lead">
               Google sign-in unlocks Gmail, Calendar, and Drive. After you&apos;re in, add your
-              phone in the app — we&apos;ll give you Ally&apos;s number to text.
+              phone in the app — we&apos;ll give you {ASSISTANT_NAME}&apos;s number to text.
             </p>
 
             <div className="alm-login__panel">

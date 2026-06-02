@@ -1,4 +1,5 @@
 import LegalPageLayout from "../components/LegalPageLayout";
+import { APP_NAME, ASSISTANT_NAME } from "../constants/brand";
 import "./ally-lp.css";
 
 export default function PrivacyPolicy() {
@@ -6,10 +7,10 @@ export default function PrivacyPolicy() {
     <LegalPageLayout title="Privacy Policy" lastUpdated="June 1, 2026">
       <section className="alm-subpage__section">
         <p className="alm-subpage__p">
-          Your Friend Ally (&quot;Ally,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates{" "}
+          Your Friend Ally (&quot;{APP_NAME}&quot;, &quot;{ASSISTANT_NAME},&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates{" "}
           <a href="https://yourfriendally.com">yourfriendally.com</a> and related services, including
           our web application and optional SMS features. This Privacy Policy explains how we collect,
-          use, share, and protect information when you use Ally.
+          use, share, and protect information when you use {ASSISTANT_NAME}.
         </p>
       </section>
 

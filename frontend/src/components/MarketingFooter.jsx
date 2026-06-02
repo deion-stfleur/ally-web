@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
-import AllyMark from "./AllyMark";
+import BrandWordmark from "./BrandWordmark";
+import { APP_NAME } from "../constants/brand";
 
 export default function MarketingFooter() {
   return (
     <footer className="alm-site-footer">
       <div className="alm-site-footer__inner">
         <div className="alm-site-footer__brand">
-          <AllyMark className="alm-site-footer__logo" />
+          <BrandWordmark markClassName="alm-site-footer__logo" nameClassName="alm-site-footer__name" />
           <div>
-            <strong className="alm-site-footer__name">Ally</strong>
             <p className="alm-site-footer__tag">
               Your Google-native AI assistant.
             </p>
@@ -58,7 +58,7 @@ export default function MarketingFooter() {
       </div>
       <div className="alm-site-footer__bottom" id="contact">
         <p className="alm-site-footer__copy">
-          © {new Date().getFullYear()} Ally. All rights reserved.
+          © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
         </p>
         <p className="alm-site-footer__legal-links">
           <Link to="/privacy">Privacy</Link>
