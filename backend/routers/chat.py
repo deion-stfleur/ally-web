@@ -41,7 +41,9 @@ from services.chat_persist import (
     resolve_db_user_id,
 )
 from services.browser_job_service import PRO_REQUIRED_MSG
+from services.billing_plans import STARTER_REQUIRED_MSG, user_has_starter_or_pro
 from services.schedule_service import (
+    TASK_RUNNER_DAILY_LIMIT_MSG,
     create_agent_task_job,
     create_browser_task_job,
     create_send_gmail_job,
@@ -385,7 +387,12 @@ async def chat_endpoint(
                             conversation_id=conv.id,
                         )
                         background_job = _job_to_chat_response(job)
-                    except (ValueError, ValidationError) as exc:
+                    except ValueError as exc:
+                        if str(exc) == "daily_limit_reached":
+                            text = f"{text}\n\n({TASK_RUNNER_DAILY_LIMIT_MSG})".strip()
+                        else:
+                            text = f"{text}\n\n(Background task failed: {exc})"
+                    except ValidationError as exc:
                         text = f"{text}\n\n(Background task failed: {exc})"
                     except Exception:
                         logger.exception("Background agent job creation failed")
@@ -422,13 +429,20 @@ async def chat_endpoint(
                             poll_interval_minutes=register_watch_payload.poll_interval_minutes,
                         )
                         watch_rule = _watch_rule_out(wr)
-                    except (ValueError, ValidationError) as exc:
+                    except ValueError as exc:
+                        if str(exc) == "starter_required":
+                            text = f"{text}\n\n({STARTER_REQUIRED_MSG})".strip()
+                        else:
+                            text = f"{text}\n\n(Watch rule failed: {exc})"
+                    except ValidationError as exc:
                         text = f"{text}\n\n(Watch rule failed: {exc})"
                     except Exception:
                         logger.exception("Watch rule creation failed")
                         text = f"{text}\n\n(Watch rule failed: could not save.)"
                 if chat_user is not None and enable_meeting_auto_join:
-                    if chat_user.google_refresh_token_encrypted:
+                    if not user_has_starter_or_pro(chat_user):
+                        text = f"{text}\n\n({STARTER_REQUIRED_MSG})".strip()
+                    elif chat_user.google_refresh_token_encrypted:
                         await set_calendar_auto_join(db, user=chat_user, enabled=True)
                     else:
                         text = (

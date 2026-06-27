@@ -112,6 +112,15 @@ async def create_watch_rule(
     watch_mode: str | None = None,
     poll_interval_minutes: int | None = None,
 ) -> UserWatchRule:
+    from db.models import User
+    from services.billing_plans import user_has_starter_or_pro
+
+    user = await db.get(User, user_id)
+    if user is None:
+        raise ValueError("user not found.")
+    if not user_has_starter_or_pro(user):
+        raise ValueError("starter_required")
+
     spec = (spec_text or "").strip()
     if not spec:
         raise ValueError("spec_text is required.")

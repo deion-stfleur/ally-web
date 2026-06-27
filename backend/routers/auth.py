@@ -55,7 +55,7 @@ def _subscription_fields(row: User | None) -> tuple[bool, str | None, str | None
         return False, None, None
     st = row.stripe_subscription_status
     plan = (row.stripe_plan or "").strip().lower() or None
-    if plan not in ("starter", "pro"):
+    if plan not in ("task_runner", "starter", "pro"):
         plan = None
     if not st:
         return False, st, plan

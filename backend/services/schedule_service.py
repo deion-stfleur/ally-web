@@ -3,9 +3,10 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import settings
 from db.models import ScheduledJob
 
 JOB_SEND_GMAIL = "send_gmail"
@@ -14,6 +15,12 @@ JOB_BROWSER_TASK = "browser_task"
 JOB_EXTRACT_USER_PROFILE = "extract_user_profile"
 MAX_LEAD = timedelta(days=90)
 _MAX_INSTRUCTION = 12_000
+from services.billing_plans import TASK_RUNNER_DAILY_AUTOMATIONS
+
+TASK_RUNNER_DAILY_LIMIT_MSG = (
+    f"task runner plan allows {TASK_RUNNER_DAILY_AUTOMATIONS} background automations per day — upgrade at "
+    f"{settings.frontend_url.rstrip('/')}/pricing for unlimited tasks."
+)
 
 
 async def create_send_gmail_job(
@@ -51,6 +58,26 @@ async def create_send_gmail_job(
     return job
 
 
+async def count_agent_tasks_today(
+    db: AsyncSession, *, user_id: uuid.UUID
+) -> int:
+    """Background automations queued today (UTC), excluding internal jobs."""
+    now = datetime.now(timezone.utc)
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end = start + timedelta(days=1)
+    result = await db.execute(
+        select(func.count())
+        .select_from(ScheduledJob)
+        .where(
+            ScheduledJob.user_id == user_id,
+            ScheduledJob.job_type == JOB_AGENT_TASK_SMS,
+            ScheduledJob.created_at >= start,
+            ScheduledJob.created_at < end,
+        )
+    )
+    return int(result.scalar_one() or 0)
+
+
 async def create_agent_task_job(
     db: AsyncSession,
     *,
@@ -61,6 +88,20 @@ async def create_agent_task_job(
     watch_rule_id: uuid.UUID | None = None,
 ) -> ScheduledJob:
     """Queue a background `run_chat` turn; worker texts the user when done (if phone on file)."""
+    from db.models import User
+    from services.billing_plans import (
+        TASK_RUNNER_DAILY_AUTOMATIONS,
+        user_on_task_runner,
+    )
+
+    user = await db.get(User, user_id)
+    if user is None:
+        raise ValueError("user not found.")
+    if user_on_task_runner(user):
+        used = await count_agent_tasks_today(db, user_id=user_id)
+        if used >= TASK_RUNNER_DAILY_AUTOMATIONS:
+            raise ValueError("daily_limit_reached")
+
     text = (instruction or "").strip()
     if not text:
         raise ValueError("instruction is required.")

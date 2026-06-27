@@ -47,6 +47,7 @@ class Settings:
     # Stripe (optional). When prices + secret are set, SMS is gated on active subscription.
     stripe_secret_key: str | None
     stripe_webhook_secret: str | None
+    stripe_price_task_runner_monthly: str | None
     stripe_price_starter_monthly: str | None
     stripe_price_pro_monthly: str | None
     stripe_price_sms_monthly: str | None  # legacy alias for Pro price id
@@ -95,6 +96,7 @@ def load_settings() -> Settings:
         sendblue_webhook_secret=_optional("SENDBLUE_WEBHOOK_SECRET"),
         stripe_secret_key=_optional("STRIPE_SECRET_KEY"),
         stripe_webhook_secret=_optional("STRIPE_WEBHOOK_SECRET"),
+        stripe_price_task_runner_monthly=_optional("STRIPE_PRICE_TASK_RUNNER_MONTHLY"),
         stripe_price_starter_monthly=_optional("STRIPE_PRICE_STARTER_MONTHLY"),
         stripe_price_pro_monthly=_optional("STRIPE_PRICE_PRO_MONTHLY"),
         stripe_price_sms_monthly=_optional("STRIPE_PRICE_SMS_MONTHLY"),

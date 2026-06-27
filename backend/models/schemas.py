@@ -41,13 +41,13 @@ class UserMeResponse(BaseModel):
     receipts_confirm_before_append: bool = True
     sms_plan_active: bool = False
     stripe_subscription_status: str | None = None
-    subscription_plan: Literal["starter", "pro"] | None = None
+    subscription_plan: Literal["task_runner", "starter", "pro"] | None = None
 
 
 class CheckoutSessionRequest(BaseModel):
-    plan: Literal["starter", "pro"] = Field(
+    plan: Literal["task_runner", "starter", "pro"] = Field(
         ...,
-        description="starter ($19.99/mo) or pro ($49.99/mo)",
+        description="task_runner ($9.99/mo), starter ($19.99/mo), or pro ($49.99/mo)",
     )
 
 

@@ -4635,14 +4635,20 @@ button.alm-login__cta:disabled {
 .alm-pricing__grid {
   display: grid;
   gap: 24px;
-  max-width: 880px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
 @media (min-width: 768px) {
   .alm-pricing__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     align-items: stretch;
+  }
+}
+
+@media (min-width: 1024px) {
+  .alm-pricing__grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -4684,9 +4690,16 @@ button.alm-login__cta:disabled {
 }
 
 .alm-pricing__plan-tag {
-  margin: 0 0 20px;
+  margin: 0 0 12px;
   font-size: 0.9375rem;
   line-height: 1.45;
+  color: var(--alm-muted);
+}
+
+.alm-pricing__plan-desc {
+  margin: 0 0 20px;
+  font-size: 0.875rem;
+  line-height: 1.55;
   color: var(--alm-muted);
 }
 

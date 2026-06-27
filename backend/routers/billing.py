@@ -20,8 +20,7 @@ from models.schemas import (
     CheckoutSessionResponse,
 )
 from services.billing_plans import (
-    PLAN_PRO,
-    PLAN_STARTER,
+    VALID_PLANS,
     plan_from_subscription_object,
     price_id_for_plan,
     stripe_billing_configured,
@@ -94,7 +93,7 @@ async def _sync_subscription_on_user(
         row.stripe_subscription_id = subscription_id
     if status is not None and str(status).strip():
         row.stripe_subscription_status = str(status).strip()[:64]
-    if plan in (PLAN_STARTER, PLAN_PRO):
+    if plan in VALID_PLANS:
         row.stripe_plan = plan
     elif status and str(status).strip().lower() in ("canceled", "unpaid", "incomplete_expired"):
         row.stripe_plan = None
@@ -121,7 +120,7 @@ async def _sync_from_subscription_id(
         return
     sub = await asyncio.to_thread(stripe.Subscription.retrieve, subscription_id)
     plan, _price_id = plan_from_subscription_object(sub)
-    if plan is None and plan_hint in (PLAN_STARTER, PLAN_PRO):
+    if plan is None and plan_hint in VALID_PLANS:
         plan = plan_hint
     await _sync_subscription_on_user(
         db,
@@ -144,7 +143,7 @@ async def create_checkout_session(
     if not stripe_billing_configured() or not price_id:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Checkout is not configured. Set STRIPE_SECRET_KEY and STRIPE_PRICE_STARTER_MONTHLY / STRIPE_PRICE_PRO_MONTHLY.",
+            detail="Checkout is not configured. Set STRIPE_SECRET_KEY and STRIPE_PRICE_TASK_RUNNER_MONTHLY / STRIPE_PRICE_STARTER_MONTHLY / STRIPE_PRICE_PRO_MONTHLY.",
         )
     _set_stripe_key()
     user_id, user = await _load_billing_user(db, session)
@@ -257,7 +256,7 @@ async def stripe_webhook(
                 user_id=user_uuid,
                 subscription_id=str(sub_id) if sub_id else None,
                 customer_id=str(cust_id) if cust_id else None,
-                plan_hint=plan_hint if plan_hint in (PLAN_STARTER, PLAN_PRO) else None,
+                plan_hint=plan_hint if plan_hint in VALID_PLANS else None,
             )
 
         elif etype in ("customer.subscription.updated", "customer.subscription.deleted"):

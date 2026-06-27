@@ -100,7 +100,7 @@ export default function PricingModal({ open, onClose }) {
               Pick your plan
             </h2>
             <p className="pricing-modal__intro">
-              Both plans include web and SMS. Pro adds proactive texts and deeper follow-through.
+              Task Runner is 3 jobs/day — no Gmail, no chat memory. Ally and Ally Pro are full assistants with Google tools.
             </p>
           </div>
         </div>
@@ -125,6 +125,9 @@ export default function PricingModal({ open, onClose }) {
                     )}
                     <h3 className="pricing-modal__plan-name">{plan.name}</h3>
                     <p className="pricing-modal__plan-tag">{plan.tagline}</p>
+                    {plan.description ? (
+                      <p className="pricing-modal__plan-desc">{plan.description}</p>
+                    ) : null}
                     <PlanPriceDisplay
                       plan={plan}
                       priceClassName="pricing-modal__price"

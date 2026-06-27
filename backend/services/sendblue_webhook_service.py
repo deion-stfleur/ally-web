@@ -28,7 +28,12 @@ from services.site_service import SiteToolContext
 from services.job_runner import _credentials_from_user
 from models.schemas import BrowserTaskActionPayload, RegisterWatchActionPayload
 from services.browser_job_service import PRO_REQUIRED_MSG
-from services.schedule_service import create_agent_task_job, create_browser_task_job
+from services.billing_plans import STARTER_REQUIRED_MSG, user_has_starter_or_pro
+from services.schedule_service import (
+    TASK_RUNNER_DAILY_LIMIT_MSG,
+    create_agent_task_job,
+    create_browser_task_job,
+)
 from services.user_profile_service import (
     ONBOARDING_QUESTION,
     clear_proactive_awaiting_reply,
@@ -526,7 +531,10 @@ async def process_sendblue_inbound(
                 )
                 reply = (reply or "").strip() or "queued — texting you when it's done."
             except ValueError as exc:
-                reply = f"{(reply or '').strip()}\n\n(couldn't queue: {exc})".strip()
+                if str(exc) == "daily_limit_reached":
+                    reply = f"{(reply or '').strip()}\n\n{TASK_RUNNER_DAILY_LIMIT_MSG}".strip()
+                else:
+                    reply = f"{(reply or '').strip()}\n\n(couldn't queue: {exc})".strip()
             except Exception:
                 logger.exception("sendblue background job create failed")
                 reply = (
@@ -536,7 +544,9 @@ async def process_sendblue_inbound(
     if isinstance(action_dict, dict) and action_dict.get("action") == "enable_meeting_auto_join":
         from services.meeting_calendar_auto_join_service import set_calendar_auto_join
 
-        if user.google_refresh_token_encrypted:
+        if not user_has_starter_or_pro(user):
+            reply = f"{(reply or '').strip()}\n\n{STARTER_REQUIRED_MSG}".strip()
+        elif user.google_refresh_token_encrypted:
             await set_calendar_auto_join(db, user=user, enabled=True)
             reply = (
                 (reply or "").strip()
@@ -571,7 +581,10 @@ async def process_sendblue_inbound(
                 (reply or "").strip() + f"\n\n(saved your {mode_label} SMS watch.)"
             ).strip()
         except ValueError as exc:
-            reply = f"{(reply or '').strip()}\n\n(watch save failed: {exc})".strip()
+            if str(exc) == "starter_required":
+                reply = f"{(reply or '').strip()}\n\n{STARTER_REQUIRED_MSG}".strip()
+            else:
+                reply = f"{(reply or '').strip()}\n\n(watch save failed: {exc})".strip()
         except Exception:
             logger.exception("sendblue register_watch failed")
             reply = f"{(reply or '').strip()}\n\n(watch save failed.)".strip()

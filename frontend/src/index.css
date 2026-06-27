@@ -1317,6 +1317,13 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
   color: #64748b;
 }
 
+.pricing-modal__plan-desc {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
 .pricing-modal__price {
   display: flex;
   flex-wrap: wrap;
@@ -1472,7 +1479,7 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 
 @media (min-width: 640px) {
   .pricing-modal__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
 
@@ -1523,5 +1530,11 @@ aside.flex.w-\[72px\].shrink-0.flex-col.items-center.border-r.border-slate-200\/
 
   .pricing-modal__card {
     padding: 1.125rem 1.125rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pricing-modal__grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

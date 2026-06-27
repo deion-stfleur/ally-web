@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
-import { PRO_MONTHLY_LABEL, STARTER_MONTHLY_LABEL } from "../constants/plans";
+import { PRO_MONTHLY_LABEL, STARTER_MONTHLY_LABEL, TASK_RUNNER_MONTHLY_LABEL } from "../constants/plans";
 
 function formatApiError(err) {
   const d = err.response?.data?.detail;
@@ -133,8 +133,10 @@ export default function AccountSettingsPanel({
         </p>
         <p className={isPage ? "account-settings__body" : "mt-1 text-sm leading-relaxed text-slate-600"}>
           Text Ally from your phone on the same Google-connected account.{" "}
-          <strong className="font-medium text-slate-800">{STARTER_MONTHLY_LABEL}</strong> includes web chat,
-          Google (Gmail, Calendar, Drive), and SMS when you text first.{" "}
+          <strong className="font-medium text-slate-800">{TASK_RUNNER_MONTHLY_LABEL}</strong> runs up to 3
+          background automations per day.{" "}
+          <strong className="font-medium text-slate-800">{STARTER_MONTHLY_LABEL}</strong> adds Google
+          (Gmail, Calendar, Drive), unlimited tasks, and SMS when you text first.{" "}
           <strong className="font-medium text-slate-800">{PRO_MONTHLY_LABEL}</strong> adds proactive texts,
           profile memory, and deeper follow-through.
         </p>
@@ -145,7 +147,9 @@ export default function AccountSettingsPanel({
                 ? "Ally Pro active"
                 : user.subscription_plan === "starter"
                   ? "Ally Standard active"
-                  : "Active"}
+                  : user.subscription_plan === "task_runner"
+                    ? "Ally Task Runner active"
+                    : "Active"}
             </span>
             <button
               type="button"
