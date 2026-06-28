@@ -74,12 +74,25 @@ def _send_via_resend(*, to_email: str, subject: str, body: str) -> bool:
         return False
 
 
-def _send_via_smtp(*, to_email: str, subject: str, body: str) -> bool:
-    host = (settings.waitlist_smtp_host or "").strip()
+def _smtp_config() -> tuple[str, int, str, str] | None:
     user = (settings.waitlist_smtp_user or "").strip()
     password = (settings.waitlist_smtp_password or "").strip()
-    if not host or not user or not password:
+    if not user or not password:
+        return None
+    host = (settings.waitlist_smtp_host or "").strip()
+    port = settings.waitlist_smtp_port
+    if not host and user.lower().endswith("@gmail.com"):
+        host, port = "smtp.gmail.com", 587
+    if not host:
+        return None
+    return host, port, user, password
+
+
+def _send_via_smtp(*, to_email: str, subject: str, body: str) -> bool:
+    cfg = _smtp_config()
+    if not cfg:
         return False
+    host, port, user, password = cfg
     from_email = (settings.waitlist_from_email or user).strip()
     msg = EmailMessage()
     msg["Subject"] = subject
@@ -87,7 +100,7 @@ def _send_via_smtp(*, to_email: str, subject: str, body: str) -> bool:
     msg["To"] = to_email
     msg.set_content(body)
     try:
-        with smtplib.SMTP(host, settings.waitlist_smtp_port, timeout=20) as smtp:
+        with smtplib.SMTP(host, port, timeout=20) as smtp:
             smtp.starttls()
             smtp.login(user, password)
             smtp.send_message(msg)
@@ -131,9 +144,9 @@ def notify_waitlist_signup(
         use_case=use_case,
         source=source,
     )
-    if _send_via_resend(to_email=to_email, subject=subject, body=body):
-        return True
     if _send_via_smtp(to_email=to_email, subject=subject, body=body):
+        return True
+    if _send_via_resend(to_email=to_email, subject=subject, body=body):
         return True
     if _send_via_sendblue_sms(subject=subject, body=body):
         logger.info("Waitlist notify sent via Sendblue SMS to owner")
