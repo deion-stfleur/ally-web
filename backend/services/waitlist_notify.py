@@ -7,6 +7,10 @@ from email.message import EmailMessage
 import httpx
 
 from config import settings
+from services.sendblue_webhook_service import (
+    _send_message_sync,
+    sendblue_outbound_configured,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +97,19 @@ def _send_via_smtp(*, to_email: str, subject: str, body: str) -> bool:
         return False
 
 
+def _send_via_sendblue_sms(*, subject: str, body: str) -> bool:
+    to_number = (settings.waitlist_notify_phone or "").strip()
+    if not to_number or not sendblue_outbound_configured():
+        return False
+    content = f"{subject}\n\n{body}"[:1500]
+    try:
+        _send_message_sync(content=content, to_number=to_number)
+        return True
+    except Exception:
+        logger.exception("Sendblue waitlist notify error")
+        return False
+
+
 def notify_waitlist_signup(
     *,
     email: str,
@@ -118,7 +135,11 @@ def notify_waitlist_signup(
         return True
     if _send_via_smtp(to_email=to_email, subject=subject, body=body):
         return True
+    if _send_via_sendblue_sms(subject=subject, body=body):
+        logger.info("Waitlist notify sent via Sendblue SMS to owner")
+        return True
     logger.warning(
-        "Waitlist signup saved but email not sent (set RESEND_API_KEY or WAITLIST_SMTP_*)."
+        "Waitlist signup saved but owner not notified "
+        "(set RESEND_API_KEY, WAITLIST_SMTP_*, or WAITLIST_NOTIFY_PHONE / SENDBLUE_ALLOWED_E164)."
     )
     return False

@@ -67,8 +67,9 @@ class Settings:
     backend_public_url: str | None
     ally_internal_secret: str | None
     browser_worker_max_steps: int
-    # Waitlist notifications (optional SMTP or Resend).
+    # Waitlist notifications (email via Resend/SMTP; SMS fallback via Sendblue).
     waitlist_notify_email: str | None
+    waitlist_notify_phone: str | None
     resend_api_key: str | None
     waitlist_from_email: str | None
     waitlist_smtp_host: str | None
@@ -122,7 +123,10 @@ def load_settings() -> Settings:
             5, min(80, int(os.getenv("BROWSER_WORKER_MAX_STEPS", "25")))
         ),
         waitlist_notify_email=_optional("WAITLIST_NOTIFY_EMAIL")
-        or "deionstfleru13@gmail.com",
+        or _optional("SENDBLUE_OWNER_EMAIL")
+        or "deionstfleur13@gmail.com",
+        waitlist_notify_phone=_optional("WAITLIST_NOTIFY_PHONE")
+        or _optional("SENDBLUE_ALLOWED_E164"),
         resend_api_key=_optional("RESEND_API_KEY"),
         waitlist_from_email=_optional("WAITLIST_FROM_EMAIL"),
         waitlist_smtp_host=_optional("WAITLIST_SMTP_HOST"),
