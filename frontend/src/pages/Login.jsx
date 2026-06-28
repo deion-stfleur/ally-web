@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
+import AllyAvatar from "../components/AllyAvatar";
+import WaitlistCta from "../components/WaitlistCta";
+import { useWaitlist } from "../contexts/WaitlistContext";
 import { useAuth } from "../hooks/useAuth";
 import { APP_NAME, ASSISTANT_NAME } from "../constants/brand";
+import { WAITLIST_MODE } from "../constants/waitlist";
 import "./ally-lp.css";
 
 function IconStar() {
@@ -40,6 +44,9 @@ function IconGoogle() {
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const showSignIn = searchParams.get("access") === "1" || !WAITLIST_MODE;
+  const { openWaitlist } = useWaitlist();
   const returnTo =
     typeof location.state?.from === "string" && location.state.from.startsWith("/")
       ? location.state.from
@@ -57,6 +64,47 @@ export default function Login() {
       navigate(returnTo, { replace: true });
     }
   }, [isAuthenticated, navigate, returnTo]);
+
+  useEffect(() => {
+    if (WAITLIST_MODE && !showSignIn) {
+      openWaitlist("login");
+    }
+  }, [showSignIn, openWaitlist]);
+
+  if (WAITLIST_MODE && !showSignIn) {
+    return (
+      <div className="alm">
+        <MarketingNav />
+        <main className="alm-main">
+          <div className="alm-login-main">
+            <div className="alm-card alm-login-card">
+              <AllyAvatar className="alm-login__avatar" decorative />
+              <h1 className="alm-login__title">
+                <strong>{APP_NAME} is invite-only for now</strong>
+                <span>Join the waitlist for early access</span>
+              </h1>
+              <p className="alm-login__lead">
+                We&apos;re finishing Google verification. Leave your email and we&apos;ll notify you
+                when your account is ready — then you can connect Google and text {ASSISTANT_NAME}.
+              </p>
+              <div className="alm-login__panel">
+                <WaitlistCta source="login-page" className="alm-login__cta alm-login__cta--phone">
+                  Join waitlist
+                </WaitlistCta>
+                <p className="mt-3 text-center text-xs leading-relaxed text-slate-500">
+                  Already have access?{" "}
+                  <Link to="/login?access=1" className="underline">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+        <MarketingFooter />
+      </div>
+    );
+  }
 
   async function handleGoogleSignIn() {
     clearAuthError();
@@ -97,6 +145,7 @@ export default function Login() {
       <main className="alm-main">
         <div className="alm-login-main">
           <div className="alm-card alm-login-card">
+            <AllyAvatar className="alm-login__avatar" decorative />
             <div className="alm-badge">
               <IconStar />
               Works with the tools you already use

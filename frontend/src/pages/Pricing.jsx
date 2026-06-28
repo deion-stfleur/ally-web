@@ -96,7 +96,7 @@ export default function Pricing() {
               >
                 {plan.featured ? <p className="alm-pricing__badge">Most popular</p> : null}
                 <h2 className="alm-pricing__plan-name">{plan.name}</h2>
-                <p className="alm-pricing__plan-tag">{plan.tagline}</p>
+                {plan.tagline ? <p className="alm-pricing__plan-tag">{plan.tagline}</p> : null}
                 {plan.description ? (
                   <p className="alm-pricing__plan-desc">{plan.description}</p>
                 ) : null}

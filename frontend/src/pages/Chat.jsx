@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ChatMobileHeader, { ChatMobileMenuIcon } from "../components/ChatMobileHeader";
 import PricingModal from "../components/PricingModal";
 import ChatSearchModal from "../components/ChatSearchModal";
@@ -12,9 +12,9 @@ import ContextFilesPanel from "../components/ContextFilesPanel";
 import EmailDraftCard from "../components/EmailDraftCard";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { WAITLIST_MODE } from "../constants/waitlist";
 import { useChat } from "../hooks/useChat";
 import { newClientTodoId, useUserTodos } from "../hooks/useUserTodos";
-import { APP_HOME_PATH } from "../utils/appPaths";
 import {
   clearPendingPhone,
   getPendingPhone,
@@ -44,17 +44,12 @@ function localCalendarDateKey() {
   return `${y}-${m}-${day}`;
 }
 
-function hasChatIntent(state) {
-  if (!state) return false;
-  return Boolean(
-    state.newChat ||
-      state.loadConversationId ||
-      state.seedPrompt ||
-      state.openPricing
-  );
-}
-
-export default function Chat() {
+export default function Chat({
+  embedded = false,
+  onExit,
+  initialNewChat = false,
+  initialConversationId = null,
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,6 +59,7 @@ export default function Chat() {
   const [phonePromptOpen, setPhonePromptOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pricingOpen, setPricingOpen] = useState(false);
+  const urlParamsHandled = useRef(false);
   const { appendTodo } = useUserTodos(sessionToken);
   const {
     ready,
@@ -146,46 +142,65 @@ export default function Chat() {
     const state = location.state;
     if (!state) return;
 
-    if (state.newChat) {
-      setSearchOpen(false);
-      setContextOpen(false);
-      setMobileMenuOpen(false);
-      startNewChat();
-      navigate(location.pathname, { replace: true, state: null });
-      return;
-    }
-
-    if (state.openPricing) {
+    if (!WAITLIST_MODE && state.openPricing) {
       setPricingOpen(true);
-    }
-    if (state.loadConversationId) {
-      loadConversation(state.loadConversationId);
     }
     if (state.seedPrompt) {
       sendFromComposer(state.seedPrompt);
     }
 
-    if (state.openPricing || state.loadConversationId || state.seedPrompt) {
+    if (state.openPricing || state.seedPrompt) {
       navigate(location.pathname, { replace: true, state: null });
     }
   }, [
     location.pathname,
     location.state,
     navigate,
-    loadConversation,
     sendFromComposer,
-    startNewChat,
   ]);
 
   useEffect(() => {
-    if (!ready || !sessionToken) return;
-    if (hasChatIntent(location.state)) return;
-    if (messages.length === 0) {
-      navigate(APP_HOME_PATH, { replace: true });
-    }
-  }, [ready, sessionToken, messages.length, location.state, navigate]);
+    if (!ready || urlParamsHandled.current || embedded) return;
+    const isNew = searchParams.get("new") === "1";
+    const loadId = (searchParams.get("c") || "").trim();
+    if (!isNew && !loadId) return;
 
-  const showChatChrome = messages.length > 0;
+    urlParamsHandled.current = true;
+    if (isNew) {
+      startNewChat();
+    } else if (loadId) {
+      loadConversation(loadId);
+    }
+    setSearchParams({}, { replace: true });
+  }, [
+    ready,
+    embedded,
+    searchParams,
+    setSearchParams,
+    startNewChat,
+    loadConversation,
+  ]);
+
+  useEffect(() => {
+    if (!embedded || !ready || urlParamsHandled.current) return;
+    urlParamsHandled.current = true;
+    if (initialNewChat) {
+      startNewChat();
+    } else if (initialConversationId) {
+      loadConversation(initialConversationId);
+    }
+  }, [
+    embedded,
+    ready,
+    initialNewChat,
+    initialConversationId,
+    startNewChat,
+    loadConversation,
+  ]);
+
+  const handleNewChat = useCallback(() => {
+    startNewChat();
+  }, [startNewChat]);
 
   return (
     <div className="chat-page flex h-full min-h-0 bg-[#F9FAFB] text-slate-900">
@@ -204,20 +219,21 @@ export default function Chat() {
       <div className="chat-page__main relative flex min-h-0 min-w-0 flex-1 flex-col">
         <ChatMobileHeader
           user={user}
-          showHeaderMenu={false}
           menuOpen={mobileMenuOpen}
           onMenuOpenChange={setMobileMenuOpen}
           onOpenPricing={() => setPricingOpen(true)}
+          showBack={embedded}
+          onBack={onExit}
+          backLabel="Home"
           onNewChat={() => {
             setSearchOpen(false);
-            startNewChat();
             setContextOpen(false);
+            handleNewChat();
           }}
           onOpenSearch={() => setSearchOpen(true)}
           onLinkPhone={() => setPhonePromptOpen(true)}
           headerRight={
-            showChatChrome ? (
-              <div className="chat-app-header__actions">
+            <div className="chat-app-header__actions">
                 <button
                   type="button"
                   title="Search chats and completed tasks"
@@ -236,36 +252,33 @@ export default function Chat() {
                   type="button"
                   onClick={() => {
                     setSearchOpen(false);
-                    startNewChat();
                     setContextOpen(false);
+                    handleNewChat();
                   }}
                   className="chat-app-header__new-chat"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                   </svg>
-                  New chat
-                </button>
-              </div>
-            ) : null
+                New chat
+              </button>
+            </div>
           }
         />
-        {!user?.sms_plan_active ? (
+        {!WAITLIST_MODE && !user?.sms_plan_active ? (
           <SmsSubscribeBanner
             phoneE164={user?.phone_e164}
             onViewPlans={() => setPricingOpen(true)}
           />
         ) : null}
-        {showChatChrome ? (
-          <button
-            type="button"
-            className="chat-mobile-menu-fab lg:hidden"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open menu"
-          >
-            <ChatMobileMenuIcon />
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className="chat-mobile-menu-fab lg:hidden"
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open menu"
+        >
+          <ChatMobileMenuIcon />
+        </button>
         <ContextFilesPanel
           open={contextOpen}
           onClose={() => setContextOpen(false)}
@@ -277,28 +290,45 @@ export default function Chat() {
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
           sessionToken={sessionToken}
-          onSelectConversation={(id) => loadConversation(id)}
+          onSelectConversation={(id) => {
+            loadConversation(id);
+          }}
         />
 
         <div className="chat-page__scroll min-h-0 flex-1 overflow-y-auto">
-          {showChatChrome ? (
-            <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
-              {user?.email && (
-                <p className="text-center text-xs text-slate-400">{user.email}</p>
-              )}
-              {messages.map((m) => (
-                <ChatMessage key={m.id} message={m} />
-              ))}
-              {streaming && (
-                <p className="text-center text-xs italic text-slate-400">Assistant is typing…</p>
-              )}
-              {sendError && !pendingEmail && (
-                <p className="text-center text-xs text-red-600" role="alert">
-                  {sendError}
-                </p>
-              )}
+          <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
+            {user?.email && (
+              <p className="text-center text-xs text-slate-400">{user.email}</p>
+            )}
+            {!ready ? (
+              <p className="text-center text-sm text-slate-500">Loading chat…</p>
+            ) : null}
+            {ready && messages.length === 0 ? (
+                <div className="chat-page__empty rounded-2xl border border-slate-200/90 bg-white px-5 py-8 text-center shadow-sm">
+                  <p className="text-base font-semibold text-slate-900">New chat with Ally</p>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                    Ask about Gmail, Calendar, Drive, Docs, or Sheets. Ally uses your connected
+                    Google account to complete tasks you request.
+                  </p>
+                  <ul className="mt-4 space-y-2 text-left text-sm text-slate-600">
+                    <li>“What&apos;s on my calendar today?”</li>
+                    <li>“Summarize my unread emails from this week”</li>
+                    <li>“Search my Drive for recent spreadsheets”</li>
+              </ul>
             </div>
-          ) : null}
+            ) : null}
+            {messages.map((m) => (
+              <ChatMessage key={m.id} message={m} />
+            ))}
+            {streaming && (
+              <p className="text-center text-xs italic text-slate-400">Assistant is typing…</p>
+            )}
+            {sendError && !pendingEmail && (
+              <p className="text-center text-xs text-red-600" role="alert">
+                {sendError}
+              </p>
+            )}
+          </div>
           <InPageMobileFooter />
         </div>
 
@@ -316,9 +346,8 @@ export default function Chat() {
           </div>
         )}
 
-        {showChatChrome ? (
-          <div className="chat-page__composer-wrap">
-            <ChatInput
+        <div className="chat-page__composer-wrap">
+          <ChatInput
               onSend={sendFromComposer}
               disabled={streaming || emailSending}
               attachIds={attachIds}
@@ -326,10 +355,9 @@ export default function Chat() {
                 setAttachIds((prev) => prev.filter((x) => x !== id))
               }
               onReceiptImages={addReceiptImages}
-              onOpenMobileMenu={() => setMobileMenuOpen(true)}
-            />
-          </div>
-        ) : null}
+            onOpenMobileMenu={() => setMobileMenuOpen(true)}
+          />
+        </div>
       </div>
     </div>
   );

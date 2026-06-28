@@ -10,6 +10,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  REACT_APP_WAITLIST_MODE = "true"
 
 # Google Sign-In popup needs to read window.closed (avoids COOP console noise).
 [[headers]]

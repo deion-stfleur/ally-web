@@ -9,9 +9,8 @@ export default function RedirectChatConversation() {
 
   useEffect(() => {
     const id = String(conversationId || "").trim();
-    navigate(id ? CHAT_PATH : APP_HOME_PATH, {
+    navigate(id ? `${CHAT_PATH}?c=${encodeURIComponent(id)}` : APP_HOME_PATH, {
       replace: true,
-      state: id ? { loadConversationId: id } : null,
     });
   }, [conversationId, navigate]);
 

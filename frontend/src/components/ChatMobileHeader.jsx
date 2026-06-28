@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../hooks/useAuth";
+import { WAITLIST_MODE } from "../constants/waitlist";
 import { APP_HOME_PATH } from "../utils/appPaths";
 import AppShellHeader from "./AppShellHeader";
 import AllyMark from "./AllyMark";
@@ -45,6 +46,9 @@ export default function ChatMobileHeader({
   onMenuOpenChange,
   onOpenPricing,
   showHeaderMenu = true,
+  showBack = false,
+  onBack,
+  backLabel = "Back",
   headerRight = null,
   headerClassName = "",
 }) {
@@ -107,7 +111,14 @@ export default function ChatMobileHeader({
 
   return (
     <>
-      <AppShellHeader right={right} user={user} className={headerClassName} />
+      <AppShellHeader
+        showBack={showBack}
+        onBack={onBack}
+        backLabel={backLabel}
+        right={right}
+        user={user}
+        className={headerClassName}
+      />
 
       <MobileSlideMenu
         open={menuOpen}
@@ -143,12 +154,12 @@ export default function ChatMobileHeader({
           </button>
         </div>
         <nav className="mobile-slide-menu__links">
-          {menuItem("Home", () => navigate(APP_HOME_PATH))}
+          {menuItem("Home", () => (showBack && onBack ? onBack() : navigate(APP_HOME_PATH)))}
           {menuItem("Account", () =>
             navigate("/account", { state: { from: location.pathname } })
           )}
           {menuItem(billingBusy ? "Opening billing…" : "Billing & plan", openBilling)}
-          {menuItem("Pricing", () => onOpenPricing?.())}
+          {!WAITLIST_MODE ? menuItem("Pricing", () => onOpenPricing?.()) : null}
           {menuItem("New chat", onNewChat)}
           {menuItem("Search chats", onOpenSearch)}
           {menuItem("Sign out", async () => {

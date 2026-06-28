@@ -124,7 +124,9 @@ export default function PricingModal({ open, onClose }) {
                       </p>
                     )}
                     <h3 className="pricing-modal__plan-name">{plan.name}</h3>
-                    <p className="pricing-modal__plan-tag">{plan.tagline}</p>
+                    {plan.tagline ? (
+                      <p className="pricing-modal__plan-tag">{plan.tagline}</p>
+                    ) : null}
                     {plan.description ? (
                       <p className="pricing-modal__plan-desc">{plan.description}</p>
                     ) : null}

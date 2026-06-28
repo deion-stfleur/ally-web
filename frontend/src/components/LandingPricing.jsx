@@ -22,7 +22,7 @@ export default function LandingPricing() {
             >
               {plan.featured ? <p className="alm-pricing__badge">Most popular</p> : null}
               <h3 className="alm-pricing__plan-name">{plan.name}</h3>
-              <p className="alm-pricing__plan-tag">{plan.tagline}</p>
+              {plan.tagline ? <p className="alm-pricing__plan-tag">{plan.tagline}</p> : null}
               {plan.description ? (
                 <p className="alm-pricing__plan-desc">{plan.description}</p>
               ) : null}

@@ -26,10 +26,10 @@ function ArrowIcon({ className = "" }) {
 const EXPLORE_CARDS = [
   {
     id: "text",
-    title: "Text Ally",
+    title: "Text Ally (SMS)",
     icon: "imessage",
-    usersLabel: "Messages",
-    usersValue: "iOS",
+    usersLabel: "Link",
+    usersValue: "Phone",
     downloadsLabel: "Text",
     downloadsValue: "Ally",
     tone: "brand",
@@ -40,11 +40,11 @@ const EXPLORE_CARDS = [
     title: "Past messages",
     icon: "chat",
     usersLabel: "Your threads",
-    usersValue: "Search",
-    downloadsLabel: "Opens",
-    downloadsValue: "Chats",
+    usersValue: "Browse",
+    downloadsLabel: "View",
+    downloadsValue: "Read-only",
     tone: "sky",
-    action: "search",
+    action: "pastMessages",
   },
   {
     id: "automations",
@@ -175,6 +175,7 @@ export default function HomeExploreSection({
   user,
   allySmsE164,
   onOpenSearch,
+  onOpenPastMessages,
   onLinkPhone,
   onOpenChat,
 }) {
@@ -193,6 +194,9 @@ export default function HomeExploreSection({
     switch (card.action) {
       case "search":
         onOpenSearch?.();
+        break;
+      case "pastMessages":
+        onOpenPastMessages?.();
         break;
       case "phone":
         onLinkPhone?.();
@@ -225,10 +229,19 @@ export default function HomeExploreSection({
           Ally is ready
         </h1>
         <p className="home-explore__lead">
-          Text Ally from Messages to book flights, reserve dates, find restaurants, and more—or search
-          your past chats below.
+          Start a web chat below or text Ally from Messages. Search past threads or browse them
+          read-only.
         </p>
-        <AllySearchField onOpen={onOpenSearch} />
+        <div className="home-explore__hero-actions">
+          <button
+            type="button"
+            className="home-explore__new-chat-btn"
+            onClick={() => onOpenChat?.({ newChat: true })}
+          >
+            New chat
+          </button>
+          <AllySearchField onOpen={onOpenSearch} className="home-explore__search-inline" />
+        </div>
       </div>
 
       <div className="home-explore__market">

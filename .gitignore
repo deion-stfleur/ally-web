@@ -2,3 +2,7 @@ TODO-comp-nsimeon-pro.md
 
 # Local Netlify folder
 .netlify
+
+# Generated outreach emails (may contain real addresses)
+scripts/outreach/output/
+scripts/outreach/discovered-leads.csv

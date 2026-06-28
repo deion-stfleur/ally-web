@@ -10,6 +10,9 @@ export const CHAT_UI_SNAPSHOT_KEY = "ally_chat_ui_snapshot_v1";
  */
 export const OPEN_HOME_AFTER_AUTH_KEY = "ally_open_home_v1";
 
+/** Set before navigating to /chat?new=1 so hydrate skips server/snapshot restore. */
+export const FORCE_NEW_CHAT_KEY = "ally_force_new_chat_v1";
+
 let msgId = 0;
 function nextId() {
   msgId += 1;
@@ -83,6 +86,26 @@ export function useChat(opts = {}) {
       }
       if (openHomeAppliedForTokenRef.current === sessionToken) {
         return;
+      }
+
+      try {
+        const forceNew = sessionStorage.getItem(FORCE_NEW_CHAT_KEY);
+        if (forceNew && forceNew === sessionToken) {
+          sessionStorage.removeItem(FORCE_NEW_CHAT_KEY);
+          if (cancelled) return;
+          setMessages([]);
+          messagesRef.current = [];
+          setConversationId(null);
+          conversationIdRef.current = null;
+          try {
+            sessionStorage.removeItem(CHAT_UI_SNAPSHOT_KEY);
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+      } catch {
+        /* ignore */
       }
 
       function readOpenHomeAfterAuth() {

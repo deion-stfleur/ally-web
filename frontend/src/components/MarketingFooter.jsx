@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import BrandWordmark from "./BrandWordmark";
+import WaitlistCta from "./WaitlistCta";
 import { APP_NAME } from "../constants/brand";
+import { WAITLIST_MODE } from "../constants/waitlist";
 
 export default function MarketingFooter() {
   return (
@@ -24,11 +26,15 @@ export default function MarketingFooter() {
               <li>
                 <Link to="/use-cases">Use cases</Link>
               </li>
+              {!WAITLIST_MODE ? (
+                <li>
+                  <Link to="/pricing">Pricing</Link>
+                </li>
+              ) : null}
               <li>
-                <Link to="/pricing">Pricing</Link>
-              </li>
-              <li>
-                <Link to="/login">Get started</Link>
+                <WaitlistCta source="footer">
+                  {WAITLIST_MODE ? "Join waitlist" : "Get started"}
+                </WaitlistCta>
               </li>
             </ul>
           </div>
@@ -36,7 +42,11 @@ export default function MarketingFooter() {
             <h2 className="alm-site-footer__heading">Account</h2>
             <ul className="alm-site-footer__list">
               <li>
-                <Link to="/login">Log in</Link>
+                {WAITLIST_MODE ? (
+                  <WaitlistCta source="footer-login">Join waitlist</WaitlistCta>
+                ) : (
+                  <Link to="/login">Log in</Link>
+                )}
               </li>
               <li>
                 <Link to="/home">Open app</Link>

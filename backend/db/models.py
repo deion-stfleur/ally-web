@@ -464,6 +464,24 @@ class MeetingBotJob(Base):
     )
 
 
+class WaitlistSignup(Base):
+    """Marketing waitlist while Google OAuth verification is in progress."""
+
+    __tablename__ = "waitlist_signups"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    use_case: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class AuthSession(Base):
     """Server-side session backing JWT sub (survives Heroku dyno restarts)."""
 

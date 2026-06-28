@@ -6,6 +6,8 @@ import iconFile from "../assets/file-dynamic-color.png";
 import iconMobile from "../assets/mobile-dynamic-color.png";
 import iconPencil from "../assets/pencil-dynamic-color.png";
 import iconShield from "../assets/sheild-dynamic-color.png";
+import WaitlistCta from "./WaitlistCta";
+import { WAITLIST_MODE } from "../constants/waitlist";
 
 /**
  * Feature grid (wide rows + tiles). Icons use imported PNG assets; cards stay white on the page background.
@@ -119,9 +121,9 @@ export default function LandingAutomations() {
       </div>
 
       <div className="alm-auto__cta-wrap">
-        <Link to="/login" className="alm-hero__cta">
-          Try for $0
-        </Link>
+        <WaitlistCta source="features" className="alm-hero__cta">
+          {WAITLIST_MODE ? "Join waitlist" : "Try for $0"}
+        </WaitlistCta>
       </div>
     </section>
   );

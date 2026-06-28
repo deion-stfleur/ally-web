@@ -27,15 +27,12 @@
 }
 
 .home-explore__badge-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: cover;
   border-radius: 999px;
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-  color: #fff;
-  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
 .home-explore__title {
@@ -49,10 +46,43 @@
 
 .home-explore__lead {
   margin: 0.75rem auto 1.25rem;
-  max-width: 22rem;
+  max-width: 26rem;
   font-size: 0.9375rem;
   line-height: 1.5;
   color: #64748b;
+}
+
+.home-explore__hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.home-explore__new-chat-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--alm-brand, #4f6ef7);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px -8px rgba(79, 110, 247, 0.55);
+  transition: opacity 0.15s ease;
+}
+
+.home-explore__new-chat-btn:hover {
+  opacity: 0.92;
+}
+
+.home-explore__search-inline {
+  max-width: none;
 }
 
 .ally-search-field {

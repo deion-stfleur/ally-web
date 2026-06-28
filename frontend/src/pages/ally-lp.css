@@ -128,13 +128,21 @@
 
 .alm-nav__logo span,
 .alm-nav__logo .ally-mark {
-  font-size: 1.25rem;
-  line-height: 1;
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .ally-mark {
   display: inline-block;
-  line-height: 1;
+  width: 1.35em;
+  height: 1.35em;
+  object-fit: cover;
+  border-radius: 50%;
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 
 .alm-nav--overlay .alm-nav__logo {
@@ -602,6 +610,15 @@
   font-size: 0.9375rem;
   font-weight: 600;
   text-decoration: none;
+}
+
+button.alm-hero__cta,
+button.alm-nav__cta,
+button.mobile-slide-menu__cta,
+button.biz-outreach__cta {
+  border: none;
+  cursor: pointer;
+  font: inherit;
 }
 
 .alm-hero__cta:hover {
@@ -1327,12 +1344,12 @@
 }
 
 .alm-hero-phone__avatar-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.35rem;
-  color: var(--alm-brand);
   flex-shrink: 0;
+}
+
+.alm-hero-phone__avatar.ally-mark {
+  width: 48px;
+  height: 48px;
 }
 
 .alm-hero-phone__name {
@@ -2685,13 +2702,13 @@
 }
 
 .alm-testimonials__eyebrow {
+  display: block;
   margin: 0 auto 14px;
-  width: 14px;
-  height: 14px;
-  font-size: 0.625rem;
-  line-height: 14px;
-  color: var(--alm-black);
-  opacity: 0.85;
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 50%;
+  opacity: 0.95;
 }
 
 .alm-testimonials__title {
@@ -3277,9 +3294,11 @@
 }
 
 .alm-advantage__ally-mark {
-  font-size: 1.375rem;
-  line-height: 1;
-  color: var(--alm-brand);
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .alm-advantage__body {
@@ -4211,9 +4230,9 @@
 }
 
 .alm-landing-pricing__inner {
-  max-width: 880px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 32px;
   box-sizing: border-box;
 }
 
@@ -4260,16 +4279,14 @@
 }
 
 .alm-site-footer__logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 40px;
   height: 40px;
   border-radius: 12px;
+  object-fit: cover;
   background: var(--alm-white);
   border: 1px solid var(--alm-border);
-  font-size: 1.25rem;
-  line-height: 1;
+  flex-shrink: 0;
 }
 
 .alm-site-footer__name {
@@ -4316,7 +4333,24 @@
   text-decoration: none;
 }
 
+.alm-site-footer__list button {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--alm-black);
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+}
+
 .alm-site-footer__list a:hover {
+  text-decoration: underline;
+}
+
+.alm-site-footer__list button:hover {
   text-decoration: underline;
 }
 
@@ -4440,6 +4474,16 @@
   max-width: 440px;
   padding: 32px 28px 28px;
   text-align: center;
+}
+
+.alm-login__avatar {
+  display: block;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(79, 110, 247, 0.18);
 }
 
 .alm-login-card .alm-badge {
@@ -4607,6 +4651,12 @@ button.alm-login__cta:disabled {
 }
 
 /* ----- pricing ----- */
+.alm-main.alm-pricing {
+  max-width: 1360px;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+
 .alm-pricing {
   padding-top: 48px;
   padding-bottom: 56px;
@@ -4634,21 +4684,23 @@ button.alm-login__cta:disabled {
 
 .alm-pricing__grid {
   display: grid;
-  gap: 24px;
-  max-width: 1100px;
+  gap: 28px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
 }
 
 @media (min-width: 768px) {
   .alm-pricing__grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: stretch;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1100px) {
   .alm-pricing__grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 32px;
   }
 }
 
@@ -4656,11 +4708,12 @@ button.alm-login__cta:disabled {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 28px 24px 24px;
+  padding: 26px 32px 24px;
   border-radius: 20px;
   border: 1px solid var(--alm-border);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  min-width: 0;
 }
 
 .alm-pricing__card--featured {
@@ -4737,18 +4790,18 @@ button.alm-login__cta:disabled {
 
 .alm-pricing__features {
   flex: 1;
-  margin: 0 0 24px;
+  margin: 0 0 20px;
   padding: 0;
   list-style: none;
-  font-size: 0.9375rem;
-  line-height: 1.5;
+  font-size: 0.875rem;
+  line-height: 1.45;
 }
 
 .alm-pricing__features li {
   position: relative;
   padding-left: 1.35rem;
-  margin-bottom: 12px;
-  line-height: 1.5;
+  margin-bottom: 8px;
+  line-height: 1.45;
   color: #404040;
 }
 

@@ -1,0 +1,387 @@
+{
+  "legal": {
+    "tagline": "Less admin between hearings. More billable work.",
+    "groups": [
+      {
+        "id": "gmail",
+        "label": "Gmail",
+        "icon": "gmail",
+        "items": [
+          {
+            "title": "Client follow-ups without reopening threads",
+            "example": "\"Draft a status update to the Martinez matter — reference yesterday's email and say we expect filing by Friday. Hold for my OK.\""
+          },
+          {
+            "title": "Engagement letters on a schedule",
+            "example": "\"Schedule the engagement letter to new client Kim at 9am tomorrow — use the standard template from last month.\""
+          },
+          {
+            "title": "Inbox triage before court",
+            "example": "\"What needs a reply today? Summarize urgent client threads and flag anything with deadlines this week.\""
+          }
+        ]
+      },
+      {
+        "id": "calendar",
+        "label": "Calendar",
+        "icon": "calendar",
+        "items": [
+          {
+            "title": "Hearing prep in one ask",
+            "example": "\"What's on my calendar Thursday? Pull related Gmail threads and bullet what I still owe each client.\""
+          },
+          {
+            "title": "Block focus time around depositions",
+            "example": "\"Add 90 minutes prep before the 2pm deposition and a 30-minute debrief after — don't double-book.\""
+          }
+        ]
+      },
+      {
+        "id": "drive",
+        "label": "Drive & Docs",
+        "icon": "drive",
+        "items": [
+          {
+            "title": "Brief prep from case files",
+            "example": "\"Read the Smith folder in Drive and draft a one-page memo on open discovery issues — queue as background, text me when done.\""
+          },
+          {
+            "title": "Pull clauses from prior work",
+            "example": "\"Find our last NDA template in Drive and draft a client-specific version for Acme Corp.\""
+          }
+        ]
+      },
+      {
+        "id": "sheets",
+        "label": "Sheets",
+        "icon": "sheets",
+        "items": [
+          {
+            "title": "Matter tracking without opening the sheet",
+            "example": "\"Add a row to the matters tracker: Chen v. Park, intake 3/12, status discovery, partner Rivera.\""
+          }
+        ]
+      },
+      {
+        "id": "background",
+        "label": "Background tasks",
+        "icon": "tasks",
+        "items": [
+          {
+            "title": "Deep research while you're in court",
+            "example": "\"Research Massachusetts LLC operating agreement requirements for a single-member client — cite sources, SMS me the summary.\""
+          },
+          {
+            "title": "Conflict checks",
+            "example": "\"Search our Gmail and Drive for any prior work with 'Northwind Logistics' — background task, text results.\""
+          }
+        ]
+      }
+    ]
+  },
+  "dental": {
+    "tagline": "Front desk stays calm. The schedule stays full.",
+    "groups": [
+      {
+        "id": "gmail",
+        "label": "Gmail",
+        "icon": "gmail",
+        "items": [
+          {
+            "title": "Insurance & referral follow-ups",
+            "example": "\"Draft follow-ups to patients whose claims are still pending — pull names from yesterday's thread with Delta. Don't send yet.\""
+          },
+          {
+            "title": "New patient welcome sequence",
+            "example": "\"Schedule a welcome email to everyone with a first visit next week — include parking and forms link.\""
+          },
+          {
+            "title": "Lab case chasers",
+            "example": "\"Find emails from Precision Dental Lab this week and draft a polite nudge on anything still open.\""
+          }
+        ]
+      },
+      {
+        "id": "calendar",
+        "label": "Calendar",
+        "icon": "calendar",
+        "items": [
+          {
+            "title": "Morning huddle brief",
+            "example": "\"Summarize today's schedule — highlight new patients, long appointments, and any gaps over 45 minutes.\""
+          },
+          {
+            "title": "Fill last-minute openings",
+            "example": "\"Two cancellations at 3pm — check waitlist notes in Gmail and draft texts to patients who wanted sooner slots.\""
+          },
+          {
+            "title": "Hygiene recall planning",
+            "example": "\"Who's due for hygiene in the next 30 days? Cross-check Calendar and draft recall outreach for approval.\""
+          }
+        ]
+      },
+      {
+        "id": "sheets",
+        "label": "Sheets",
+        "icon": "sheets",
+        "items": [
+          {
+            "title": "Supply & lab log from text",
+            "example": "\"Log 2 boxes of composite resin and an emergency PPE order to the supplies sheet — today's date.\""
+          },
+          {
+            "title": "Daily production snapshot",
+            "example": "\"Append today's production numbers to the monthly tracker — I'll dictate the totals.\""
+          }
+        ]
+      },
+      {
+        "id": "drive",
+        "label": "Drive",
+        "icon": "drive",
+        "items": [
+          {
+            "title": "Policy docs on demand",
+            "example": "\"Find our HIPAA patient communication policy in Drive and summarize what we can say in review requests.\""
+          }
+        ]
+      },
+      {
+        "id": "background",
+        "label": "Background tasks",
+        "icon": "tasks",
+        "items": [
+          {
+            "title": "End-of-day ops recap",
+            "example": "\"Background: review tomorrow's calendar, open Gmail flags, and text me a 5-bullet morning brief tonight.\""
+          }
+        ]
+      }
+    ]
+  },
+  "real_estate": {
+    "tagline": "Showings, listings, and leads — one thread, not six apps.",
+    "groups": [
+      {
+        "id": "gmail",
+        "label": "Gmail",
+        "icon": "gmail",
+        "items": [
+          {
+            "title": "Offer & counter follow-ups",
+            "example": "\"Draft a follow-up to the buyers on 42 Oak St — reference their last counter and ask for decision by Friday.\""
+          },
+          {
+            "title": "Lead nurture while you're on the road",
+            "example": "\"Summarize unread leads from Zillow/Realtor emails today and draft a personal reply to the top three.\""
+          },
+          {
+            "title": "Attorney & lender coordination",
+            "example": "\"Schedule a check-in email to the lender on the Walsh closing — include contract date and missing docs list.\""
+          }
+        ]
+      },
+      {
+        "id": "calendar",
+        "label": "Calendar",
+        "icon": "calendar",
+        "items": [
+          {
+            "title": "Showing day orchestration",
+            "example": "\"Map today's showings — travel time between 10am and 2pm, and draft a confirmation text template for each seller.\""
+          },
+          {
+            "title": "Listing launch timeline",
+            "example": "\"Block staging, photography, and broker open on Calendar for 88 Beacon — spread across next week.\""
+          }
+        ]
+      },
+      {
+        "id": "sheets",
+        "label": "Sheets",
+        "icon": "sheets",
+        "items": [
+          {
+            "title": "Pipeline without opening CRM export",
+            "example": "\"Add offer received on 15 Commonwealth — $1.2M, inspection contingency, buyer pre-approved — to the deals sheet.\""
+          },
+          {
+            "title": "Open house sign-in follow-up",
+            "example": "\"Log these open house visitors to the sheet and draft thank-you emails with the listing link.\""
+          }
+        ]
+      },
+      {
+        "id": "drive",
+        "label": "Drive",
+        "icon": "drive",
+        "items": [
+          {
+            "title": "Listing packet assembly",
+            "example": "\"Pull disclosures and floor plans for 22 Marlborough from Drive and list what's missing for MLS.\""
+          }
+        ]
+      },
+      {
+        "id": "background",
+        "label": "Background tasks",
+        "icon": "tasks",
+        "items": [
+          {
+            "title": "Comp research while you show",
+            "example": "\"Run comps on 3-bed condos sold in South End last 90 days — background task, text me a one-page summary with links.\""
+          },
+          {
+            "title": "Neighborhood market brief",
+            "example": "\"Research new listings and price drops in Back Bay this week — SMS me before my 4pm listing appointment.\""
+          }
+        ]
+      }
+    ]
+  },
+  "accounting": {
+    "tagline": "Client work in Gmail. Numbers in Sheets. Ally connects both.",
+    "groups": [
+      {
+        "id": "gmail",
+        "label": "Gmail",
+        "icon": "gmail",
+        "items": [
+          {
+            "title": "Document chase emails",
+            "example": "\"Draft a friendly 1099/W-2 reminder to clients who haven't uploaded to the shared folder — batch by due date.\""
+          },
+          {
+            "title": "Quarterly check-in sequences",
+            "example": "\"Schedule estimated tax reminder emails for Q2 — pull client list from the sheet tab 'Active SMB'.\""
+          },
+          {
+            "title": "Meeting follow-ups",
+            "example": "\"After the Chen call, draft next steps email with action items and attach link to their shared Drive folder.\""
+          }
+        ]
+      },
+      {
+        "id": "sheets",
+        "label": "Sheets",
+        "icon": "sheets",
+        "items": [
+          {
+            "title": "Receipt capture from your phone",
+            "example": "\"Append this receipt photo to Client ABC expenses — category meals, date today, confirm before saving.\""
+          },
+          {
+            "title": "Engagement tracking",
+            "example": "\"Log 2 hours tax prep for Rivera LLC on the time sheet — project code 2024-1040.\""
+          },
+          {
+            "title": "Close checklist updates",
+            "example": "\"Mark bank rec complete for March on the close tracker and flag anything still open for Smith Co.\""
+          }
+        ]
+      },
+      {
+        "id": "calendar",
+        "label": "Calendar",
+        "icon": "calendar",
+        "items": [
+          {
+            "title": "Tax season capacity view",
+            "example": "\"What's my client meeting load next week? Block 2 hours daily for returns and show conflicts.\""
+          }
+        ]
+      },
+      {
+        "id": "drive",
+        "label": "Drive",
+        "icon": "drive",
+        "items": [
+          {
+            "title": "Workpaper prep",
+            "example": "\"List all PDFs uploaded to the Johnson folder this month and note what's still missing for filing.\""
+          }
+        ]
+      },
+      {
+        "id": "background",
+        "label": "Background tasks",
+        "icon": "tasks",
+        "items": [
+          {
+            "title": "Research while you review returns",
+            "example": "\"Background: summarize new MA pass-through entity rules for SMB clients — text me bullet points with sources.\""
+          }
+        ]
+      }
+    ]
+  },
+  "default": {
+    "tagline": "Your Google stack, one conversation away.",
+    "groups": [
+      {
+        "id": "gmail",
+        "label": "Gmail",
+        "icon": "gmail",
+        "items": [
+          {
+            "title": "Draft & schedule without context-switching",
+            "example": "\"Draft a reply to the vendor thread — firm but friendly, propose call Thursday. Schedule for 8am if I don't cancel.\""
+          },
+          {
+            "title": "Inbox summaries on demand",
+            "example": "\"What actually needs me today? Skip newsletters — flag clients and anything with dates.\""
+          }
+        ]
+      },
+      {
+        "id": "calendar",
+        "label": "Calendar",
+        "icon": "calendar",
+        "items": [
+          {
+            "title": "Smarter scheduling",
+            "example": "\"Find 45 minutes with Alex next week — avoid Monday — and send a hold invite.\""
+          },
+          {
+            "title": "Meeting prep packets",
+            "example": "\"Tomorrow's 10am — pull Calendar details plus related Gmail and bullet talking points.\""
+          }
+        ]
+      },
+      {
+        "id": "drive",
+        "label": "Drive, Docs & Sheets",
+        "icon": "drive",
+        "items": [
+          {
+            "title": "Find files by description",
+            "example": "\"Find last quarter's board deck in Drive and summarize the revenue slide in 3 bullets.\""
+          },
+          {
+            "title": "Update spreadsheets by text",
+            "example": "\"Add this lead to the pipeline sheet — name, company, source referral, status contacted.\""
+          },
+          {
+            "title": "Draft in Docs",
+            "example": "\"Create a one-page proposal outline in Docs for the Acme RFP — I'll iterate in chat.\""
+          }
+        ]
+      },
+      {
+        "id": "background",
+        "label": "Background & SMS",
+        "icon": "tasks",
+        "items": [
+          {
+            "title": "Work that runs while you're offline",
+            "example": "\"Research competitors' pricing pages — background task, text me a comparison when done.\""
+          },
+          {
+            "title": "Same assistant on iMessage",
+            "example": "Text Ally from your phone — queue work in the Uber, get the summary when you land."
+          }
+        ]
+      }
+    ]
+  }
+}

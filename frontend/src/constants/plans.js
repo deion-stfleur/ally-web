@@ -6,9 +6,6 @@ export const PLANS = [
     name: "Ally Task Runner",
     price: 9.99,
     compareAtPrice: 14.99,
-    tagline: "Three tasks a day. That's it.",
-    description:
-      "Not a chat assistant — a task runner. Queue up to 3 jobs per day, Ally works them in the background, and texts you when each one finishes. No Gmail, Calendar, Drive, or Sheets. No conversation memory or back-and-forth. Just hand off a task and get a text when it's done.",
     stripeDescription:
       "Run up to 3 background tasks per day. Ally completes each job and texts you when it's done. No Gmail, Calendar, or Drive. No chat memory or proactive messages. Upgrade to Ally ($19.99) for Google tools and unlimited tasks.",
     features: [

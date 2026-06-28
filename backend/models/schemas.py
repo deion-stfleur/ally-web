@@ -449,3 +449,17 @@ class UserTodoOut(BaseModel):
 
 class TodoListResponse(BaseModel):
     todos: list[UserTodoOut]
+
+
+class WaitlistSignupRequest(BaseModel):
+    email: str = Field(..., min_length=3, max_length=320)
+    name: str | None = Field(default=None, max_length=200)
+    company: str | None = Field(default=None, max_length=200)
+    use_case: str | None = Field(default=None, max_length=2000)
+    source: str | None = Field(default=None, max_length=64)
+
+
+class WaitlistSignupResponse(BaseModel):
+    ok: bool
+    already_registered: bool = False
+    message: str

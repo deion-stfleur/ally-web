@@ -2,12 +2,14 @@ import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import BrandWordmark from "./BrandWordmark";
 import MobileSlideMenu from "./MobileSlideMenu";
+import WaitlistCta from "./WaitlistCta";
 import { ASSISTANT_NAME } from "../constants/brand";
+import { WAITLIST_MODE } from "../constants/waitlist";
 
 const NAV_LINKS = [
   { to: "/features", label: "Features" },
   { to: "/use-cases", label: "Use cases" },
-  { to: "/pricing", label: "Pricing" },
+  ...(WAITLIST_MODE ? [] : [{ to: "/pricing", label: "Pricing" }]),
 ];
 
 function IconMenu() {
@@ -62,9 +64,12 @@ export default function MarketingNav({ overlay = false, dark = false }) {
           ))}
         </nav>
         <div className="alm-nav__actions">
-          <Link to="/login" className="alm-nav__cta alm-nav__cta--desktop">
-            Get started
-          </Link>
+          <WaitlistCta
+            source="nav"
+            className="alm-nav__cta alm-nav__cta--desktop"
+          >
+            {WAITLIST_MODE ? "Join waitlist" : "Get started"}
+          </WaitlistCta>
           <button
             type="button"
             className="alm-nav__menu-btn"
@@ -83,9 +88,13 @@ export default function MarketingNav({ overlay = false, dark = false }) {
         ariaLabel="Site menu"
         footer={
           <div className="mobile-slide-menu__foot">
-            <Link to="/login" className="mobile-slide-menu__cta" onClick={closeMenu}>
-              Text {ASSISTANT_NAME}
-            </Link>
+            <WaitlistCta
+              source="nav-mobile"
+              className="mobile-slide-menu__cta"
+              onClick={closeMenu}
+            >
+              {WAITLIST_MODE ? "Join waitlist" : `Text ${ASSISTANT_NAME}`}
+            </WaitlistCta>
           </div>
         }
       >

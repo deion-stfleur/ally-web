@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import FadeInSection from "../components/FadeInSection";
 import LandingTextLoop from "../components/LandingTextLoop";
 import LandingTestimonials from "../components/LandingTestimonials";
@@ -11,7 +10,9 @@ import LandingPricing from "../components/LandingPricing";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
 import HeroInteractivePhone from "../components/HeroInteractivePhone";
+import WaitlistCta from "../components/WaitlistCta";
 import { APP_NAME, APP_TAGLINE, ASSISTANT_NAME } from "../constants/brand";
+import { WAITLIST_MODE } from "../constants/waitlist";
 import {
   IconAndroid,
   IconApple,
@@ -71,9 +72,12 @@ export default function Landing() {
                 </h1>
                 <p className={`alm-hero__lead ${fadeClass(2)}`}>{HERO_LEAD}</p>
                 <div className={`alm-hero__actions ${fadeClass(3)}`}>
-                  <Link to="/login" className="alm-hero__cta alm-hero__cta--primary">
-                    Text {ASSISTANT_NAME}
-                  </Link>
+                  <WaitlistCta
+                    source="landing-hero"
+                    className="alm-hero__cta alm-hero__cta--primary"
+                  >
+                    {WAITLIST_MODE ? "Join waitlist" : `Text ${ASSISTANT_NAME}`}
+                  </WaitlistCta>
                 </div>
                 <ul className={`alm-hero__trust ${fadeClass(3)}`} aria-label="Highlights">
                   {HERO_TRUST.map((item) => (
@@ -131,9 +135,11 @@ export default function Landing() {
           <LandingFaq />
         </FadeInSection>
 
-        <FadeInSection as="div" className="alm-reveal-block">
-          <LandingPricing />
-        </FadeInSection>
+        {!WAITLIST_MODE ? (
+          <FadeInSection as="div" className="alm-reveal-block">
+            <LandingPricing />
+          </FadeInSection>
+        ) : null}
       </main>
       <MarketingFooter />
     </div>

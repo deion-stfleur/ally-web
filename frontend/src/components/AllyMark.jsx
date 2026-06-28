@@ -1,8 +1,14 @@
-/** Ally brand mark — same ✳ used in marketing nav. */
-export default function AllyMark({ className = "" }) {
+import { ALLY_AVATAR_URL } from "../constants/brand";
+
+/** Ally brand mark — mascot used in nav, footer, phone header, and chat chrome. */
+export default function AllyMark({ className = "", alt = "" }) {
   return (
-    <span className={className ? `ally-mark ${className}` : "ally-mark"} aria-hidden>
-      ✳
-    </span>
+    <img
+      src={ALLY_AVATAR_URL}
+      alt={alt}
+      className={className ? `ally-mark ${className}` : "ally-mark"}
+      decoding="async"
+      {...(alt ? {} : { "aria-hidden": true })}
+    />
   );
 }

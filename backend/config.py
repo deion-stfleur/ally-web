@@ -67,6 +67,14 @@ class Settings:
     backend_public_url: str | None
     ally_internal_secret: str | None
     browser_worker_max_steps: int
+    # Waitlist notifications (optional SMTP or Resend).
+    waitlist_notify_email: str | None
+    resend_api_key: str | None
+    waitlist_from_email: str | None
+    waitlist_smtp_host: str | None
+    waitlist_smtp_port: int
+    waitlist_smtp_user: str | None
+    waitlist_smtp_password: str | None
 
 
 def load_settings() -> Settings:
@@ -113,6 +121,14 @@ def load_settings() -> Settings:
         browser_worker_max_steps=max(
             5, min(80, int(os.getenv("BROWSER_WORKER_MAX_STEPS", "25")))
         ),
+        waitlist_notify_email=_optional("WAITLIST_NOTIFY_EMAIL")
+        or "deionstfleru13@gmail.com",
+        resend_api_key=_optional("RESEND_API_KEY"),
+        waitlist_from_email=_optional("WAITLIST_FROM_EMAIL"),
+        waitlist_smtp_host=_optional("WAITLIST_SMTP_HOST"),
+        waitlist_smtp_port=int(os.getenv("WAITLIST_SMTP_PORT", "587")),
+        waitlist_smtp_user=_optional("WAITLIST_SMTP_USER"),
+        waitlist_smtp_password=_optional("WAITLIST_SMTP_PASSWORD"),
     )
 
 
