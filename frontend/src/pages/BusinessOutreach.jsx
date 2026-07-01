@@ -1,4 +1,6 @@
 import { Link, Navigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { captureEvent } from "../analytics/posthog";
 import AllyAvatar from "../components/AllyAvatar";
 import MarketingFooter from "../components/MarketingFooter";
 import MarketingNav from "../components/MarketingNav";
@@ -19,6 +21,16 @@ import "./business-outreach.css";
 export default function BusinessOutreach() {
   const { slug } = useParams();
   const lead = slug ? leads[slug] : null;
+
+  useEffect(() => {
+    if (!lead || !slug) return;
+    captureEvent("outreach_page_viewed", {
+      slug,
+      business_name: lead.businessName,
+      vertical: lead.vertical,
+      city: lead.city,
+    });
+  }, [slug, lead]);
 
   if (!lead) {
     return <Navigate to="/" replace />;
@@ -64,6 +76,12 @@ export default function BusinessOutreach() {
               className="biz-outreach__cta biz-outreach__cta--secondary"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                captureEvent("outreach_booking_clicked", {
+                  slug,
+                  business_name: lead.businessName,
+                })
+              }
             >
               Book 15 min with Deion
             </a>

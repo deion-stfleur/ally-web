@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { captureEvent } from "../analytics/posthog";
 import WaitlistModal from "../components/WaitlistModal";
 
 const WaitlistContext = createContext(null);
@@ -8,8 +9,10 @@ export function WaitlistProvider({ children }) {
   const [source, setSource] = useState("site");
 
   const openWaitlist = useCallback((nextSource = "site") => {
-    setSource(nextSource || "site");
+    const src = nextSource || "site";
+    setSource(src);
     setOpen(true);
+    captureEvent("waitlist_modal_opened", { source: src });
   }, []);
 
   const closeWaitlist = useCallback(() => {

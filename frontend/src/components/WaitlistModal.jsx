@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../api/client";
+import { captureEvent } from "../analytics/posthog";
 import { APP_NAME } from "../constants/brand";
 import "./waitlist-modal.css";
 
@@ -57,8 +58,19 @@ export default function WaitlistModal({ open, onClose, source = "site" }) {
         source,
       });
       setSuccessMessage(res.data?.message || "You're on the list.");
+      captureEvent("waitlist_submitted", {
+        source,
+        already_registered: Boolean(res.data?.already_registered),
+        has_name: Boolean(name.trim()),
+        has_company: Boolean(company.trim()),
+        has_use_case: Boolean(useCase.trim()),
+      });
     } catch (err) {
       setError(formatApiError(err));
+      captureEvent("waitlist_submit_failed", {
+        source,
+        error: formatApiError(err),
+      });
     } finally {
       setBusy(false);
     }

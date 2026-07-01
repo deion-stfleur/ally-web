@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import GlobalMobileFooter from "./components/GlobalMobileFooter";
+import PostHogPageView from "./components/PostHogPageView";
 import ProtectedAppLayout from "./components/ProtectedAppLayout";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { WaitlistProvider } from "./contexts/WaitlistContext";
@@ -72,6 +73,7 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
+      <PostHogPageView />
       <AuthProvider>
         <WaitlistProvider>
           <div className="app-shell">

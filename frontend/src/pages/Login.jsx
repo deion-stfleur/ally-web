@@ -5,6 +5,7 @@ import MarketingNav from "../components/MarketingNav";
 import AllyAvatar from "../components/AllyAvatar";
 import WaitlistCta from "../components/WaitlistCta";
 import { useWaitlist } from "../contexts/WaitlistContext";
+import { captureEvent } from "../analytics/posthog";
 import { useAuth } from "../hooks/useAuth";
 import { APP_NAME, ASSISTANT_NAME } from "../constants/brand";
 import { WAITLIST_MODE } from "../constants/waitlist";
@@ -109,10 +110,13 @@ export default function Login() {
   async function handleGoogleSignIn() {
     clearAuthError();
     setBusyAction("google");
+    captureEvent("login_started", { method: "google" });
     try {
       await login();
+      captureEvent("login_succeeded", { method: "google" });
       navigate(returnTo, { replace: true });
     } catch {
+      captureEvent("login_failed", { method: "google" });
       // Error message is in authError
     } finally {
       setBusyAction(null);
@@ -123,6 +127,8 @@ export default function Login() {
     e?.preventDefault?.();
     clearAuthError();
     setBusyAction("phone");
+    const step = otpRequested ? "verify" : "request";
+    captureEvent("login_started", { method: "phone", step });
     try {
       const res = await loginWithPhone({
         phone,
@@ -130,9 +136,13 @@ export default function Login() {
       });
       if (res?.requested) {
         setOtpRequested(true);
+        captureEvent("login_phone_code_sent", {});
       } else {
+        captureEvent("login_succeeded", { method: "phone" });
         navigate(returnTo, { replace: true });
       }
+    } catch {
+      captureEvent("login_failed", { method: "phone", step });
     } finally {
       setBusyAction(null);
     }

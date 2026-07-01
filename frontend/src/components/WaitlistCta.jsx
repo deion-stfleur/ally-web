@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { captureEvent } from "../analytics/posthog";
 import { WAITLIST_MODE } from "../constants/waitlist";
 import { useWaitlist } from "../contexts/WaitlistContext";
 
@@ -17,7 +18,20 @@ export default function WaitlistCta({
 
   if (!WAITLIST_MODE) {
     return (
-      <Link to={to} className={className} onClick={onClick} {...rest}>
+      <Link
+        to={to}
+        className={className}
+        onClick={(e) => {
+          captureEvent("cta_clicked", {
+            source,
+            label: typeof children === "string" ? children : "cta",
+            type: "link",
+            destination: to,
+          });
+          onClick?.(e);
+        }}
+        {...rest}
+      >
         {children}
       </Link>
     );
@@ -28,6 +42,11 @@ export default function WaitlistCta({
       type="button"
       className={className}
       onClick={(e) => {
+        captureEvent("cta_clicked", {
+          source,
+          label: typeof children === "string" ? children : "cta",
+          type: "waitlist",
+        });
         onClick?.(e);
         if (!e.defaultPrevented) openWaitlist(source);
       }}

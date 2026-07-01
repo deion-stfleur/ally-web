@@ -8,6 +8,7 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { api, setAuthHeader } from "../api/client";
+import { identifyUser, resetPostHogUser } from "../analytics/posthog";
 import { OPEN_HOME_AFTER_AUTH_KEY } from "../hooks/useChat";
 
 const AuthContext = createContext(null);
@@ -88,6 +89,20 @@ export function AuthProvider({ children }) {
       cancelled = true;
     };
   }, [sessionToken]);
+
+  useEffect(() => {
+    if (user?.email) {
+      identifyUser(user.email, {
+        name: user.name || undefined,
+        sms_plan_active: Boolean(user.sms_plan_active),
+        subscription_plan: user.subscription_plan || undefined,
+      });
+      return;
+    }
+    if (!sessionToken) {
+      resetPostHogUser();
+    }
+  }, [user, sessionToken]);
 
   useEffect(() => {
     const onExpired = () => {
@@ -260,6 +275,7 @@ export function AuthProvider({ children }) {
       }
       setSessionToken(null);
       setUser(null);
+      resetPostHogUser();
     }
   }, [sessionToken]);
 
@@ -278,6 +294,7 @@ export function AuthProvider({ children }) {
     }
     setSessionToken(null);
     setUser(null);
+    resetPostHogUser();
   }, [sessionToken]);
 
   const value = useMemo(
