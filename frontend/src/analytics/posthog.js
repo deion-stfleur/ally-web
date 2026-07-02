@@ -11,6 +11,14 @@ export function initPostHog() {
   const key = process.env.REACT_APP_POSTHOG_KEY?.trim();
   if (!key) return;
 
+  if (key.startsWith("phx_")) {
+    console.error(
+      "[PostHog] REACT_APP_POSTHOG_KEY looks like a personal API key (phx_). " +
+        "Use the Project API key (phc_...) from PostHog → Project settings → Project API key."
+    );
+    return;
+  }
+
   posthog.init(key, {
     api_host: process.env.REACT_APP_POSTHOG_HOST?.trim() || "https://us.i.posthog.com",
     capture_pageview: false,

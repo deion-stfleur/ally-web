@@ -61,7 +61,8 @@ function AppRoutes() {
         <Route path="/recipes" element={<ChatRecipes />} />
       </Route>
       <Route path="/pricing" element={WAITLIST_MODE ? <Navigate to="/" replace /> : <Pricing />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
       <Route path="/terms" element={<TermsOfService />} />
       <Route path="/s/:slug" element={<PublishedSite />} />
       <Route path="/:slug" element={<BusinessOutreach />} />

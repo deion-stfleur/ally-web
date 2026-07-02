@@ -4401,6 +4401,17 @@ button.biz-outreach__cta {
   letter-spacing: -0.02em;
 }
 
+.alm-subpage__h3 {
+  margin: 20px 0 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.alm-subpage__section .alm-subpage__h3:first-of-type {
+  margin-top: 12px;
+}
+
 .alm-subpage__p {
   margin: 0;
   font-size: 0.9375rem;

@@ -12,7 +12,7 @@ export default function TermsOfService() {
           (&quot;{ASSISTANT_NAME},&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) at{" "}
           <a href={`https://${APP_DOMAIN}`}>{APP_DOMAIN}</a> and related services. By using
           {ASSISTANT_NAME}, you agree to these Terms and our{" "}
-          <Link to="/privacy">Privacy Policy</Link>.
+          <Link to="/privacy-policy">Privacy Policy</Link>.
         </p>
       </section>
 

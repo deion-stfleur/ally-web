@@ -57,7 +57,7 @@ export default function MarketingFooter() {
             <h2 className="alm-site-footer__heading">Legal</h2>
             <ul className="alm-site-footer__list">
               <li>
-                <Link to="/privacy">Privacy Policy</Link>
+                <Link to="/privacy-policy">Privacy Policy</Link>
               </li>
               <li>
                 <Link to="/terms">Terms of Service</Link>
@@ -71,7 +71,7 @@ export default function MarketingFooter() {
           © {new Date().getFullYear()} {APP_NAME}. All rights reserved.
         </p>
         <p className="alm-site-footer__legal-links">
-          <Link to="/privacy">Privacy</Link>
+          <Link to="/privacy-policy">Privacy</Link>
           <span aria-hidden="true"> · </span>
           <Link to="/terms">Terms</Link>
         </p>
