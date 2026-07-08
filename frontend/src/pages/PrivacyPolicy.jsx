@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
   return (
     <LegalPageLayout
       title="Privacy Policy"
-      lastUpdated="July 2, 2026"
+      lastUpdated="July 8, 2026"
       description="How Your Friend Ally (yourfriendally) collects, uses, stores, and shares information — including Google user data accessed through OAuth."
     >
       <section className="alm-subpage__section">
@@ -55,9 +55,10 @@ export default function PrivacyPolicy() {
             and profile picture — used to create and identify your {APP_NAME} account.
           </li>
           <li>
-            <strong>Gmail (gmail.modify):</strong> Email messages, headers, labels, and metadata in
-            mailboxes you authorize — used to read, draft, send, or organize email when you ask Ally to
-            help with inbox tasks.
+            <strong>Gmail (gmail.readonly, gmail.send):</strong> Email messages, headers, and metadata
+            in mailboxes you authorize — used to read and search your inbox when you ask Ally for help;
+            gmail.send is used only to send email on your behalf when you explicitly request it. We do not
+            modify labels, archive, or delete mail.
           </li>
           <li>
             <strong>Google Calendar (calendar):</strong> Calendar events and related metadata — used to
