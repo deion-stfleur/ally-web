@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
   return (
     <LegalPageLayout
       title="Privacy Policy"
-      lastUpdated="July 8, 2026"
+      lastUpdated="July 20, 2026"
       description="How Your Friend Ally (yourfriendally) collects, uses, stores, and shares information — including Google user data accessed through OAuth."
     >
       <section className="alm-subpage__section">
@@ -123,6 +123,41 @@ export default function PrivacyPolicy() {
           decisions, or unrelated profiling. Human access to Google user data is limited to what is
           necessary for support, security, or legal compliance.
         </p>
+
+        <h3 className="alm-subpage__h3">Limited Use compliance</h3>
+        <p className="alm-subpage__p">
+          The use of raw or derived user data received from Workspace APIs will adhere to the{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements.
+        </p>
+        <ul className="alm-subpage__list">
+          <li>
+            We do not use Google Workspace user data for advertising or for lending/credit
+            decisions.
+          </li>
+          <li>
+            We do not sell or transfer Google Workspace user data to data brokers, advertisers, or
+            other third parties except as needed to provide or improve user-facing features of{" "}
+            {ASSISTANT_NAME} (as described above).
+          </li>
+          <li>
+            We do not use Google Workspace user data to develop, improve, or train generalized AI/ML
+            models. Any AI processing is limited to fulfilling the specific user&apos;s request and
+            is not used to train models for other users or for general model improvement by us.
+          </li>
+          <li>
+            When we send Workspace-related content to third-party AI providers (e.g., Anthropic) to
+            generate a response for your request, we do so under provider terms that restrict use of
+            that data for training their models where such terms apply, and only as needed to
+            provide the feature you requested.
+          </li>
+        </ul>
 
         <h3 className="alm-subpage__h3">How we share Google user data</h3>
         <p className="alm-subpage__p">
@@ -259,7 +294,10 @@ export default function PrivacyPolicy() {
           {ASSISTANT_NAME} uses third-party AI providers (such as Anthropic) to generate responses and
           complete tasks. Content you submit — including relevant Google Workspace data needed for your
           request — may be sent to these providers under their terms and privacy policies. We configure
-          services to minimize unnecessary data retention where supported.
+          services to minimize unnecessary data retention where supported. We do not authorize
+          providers to use your Google Workspace data to train their AI/ML models for purposes beyond
+          fulfilling your request, and our own use of Workspace data complies with Google&apos;s
+          Limited Use requirements (see &quot;Limited Use compliance&quot; above).
         </p>
       </section>
 
