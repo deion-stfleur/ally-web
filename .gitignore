@@ -6,3 +6,4 @@ TODO-comp-nsimeon-pro.md
 # Generated outreach emails (may contain real addresses)
 scripts/outreach/output/
 scripts/outreach/discovered-leads.csv
+frontend/src/data/outreach-leads.json

@@ -1,0 +1,22 @@
+{
+  "harborline-law": {
+    "businessName": "Harborline Law Group",
+    "contactName": "Jordan",
+    "contactTitle": "Managing Partner",
+    "vertical": "legal",
+    "city": "Boston MA",
+    "neighborhood": "Financial District",
+    "email": "jordan@example.com",
+    "teamSize": "12"
+  },
+  "back-bay-dental": {
+    "businessName": "Back Bay Dental Studio",
+    "contactName": "Dr. Patel",
+    "contactTitle": "Owner",
+    "vertical": "dental",
+    "city": "Boston MA",
+    "neighborhood": "Back Bay",
+    "email": "hello@example.com",
+    "teamSize": "8"
+  }
+}

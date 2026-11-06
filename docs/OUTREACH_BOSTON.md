@@ -9,7 +9,7 @@ Example: `https://yourfriendally.com/harborline-law`
 
 | Piece | Location |
 |--------|-----------|
-| Lead data (slug → business) | `frontend/src/data/outreach-leads.json` |
+| Lead data (slug → business) | `frontend/src/data/outreach-leads.json` (git-ignored; fresh clones copy `outreach-leads.example.json`) |
 | Personalized landing page | `frontend/src/pages/BusinessOutreach.jsx` |
 | Email copy + use cases by vertical | `frontend/src/constants/outreachCopy.js` |
 | CSV template | `scripts/outreach/leads-template.csv` |
